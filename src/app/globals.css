@@ -430,11 +430,11 @@ html.lesson-play body {
 }
 
 .success-headline {
-  animation: success-copy-in 0.25s ease 0.3s both;
+  animation: success-copy-in 0.25s ease 0.2s both;
 }
 
 .success-teach {
-  animation: success-copy-in 0.25s ease 1.1s both;
+  animation: success-copy-in 0.25s ease 0.7s both;
 }
 
 @keyframes assoc-in {

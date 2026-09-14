@@ -42,7 +42,7 @@ export const defaultSettings: ParentSettings = {
   autoSpeakTarget: true,
   nameFrequency: "sometimes",
   voiceURI: "",
-  speechRate: 0.82,
+  speechRate: 0.95,
   voicePersonality: "playful",
   wrongVoiceHelp: true,
   preferLocalVoice: true,
@@ -71,7 +71,13 @@ export function loadSettings(): ParentSettings {
       parsed.celebrationLevel ??
       (parsed.celebrations === false ? "gentle" : "fun");
     const nameFrequency = parseNameFrequency(parsed.nameFrequency);
-    const speechRate = clamp(Number(parsed.speechRate ?? 0.9), 0.7, 1.1);
+    const speechRateRaw = clamp(Number(parsed.speechRate ?? 0.95), 0.7, 1.1);
+    const speechRate =
+      Number.isFinite(Number(parsed.speechRate)) &&
+      Number(parsed.speechRate) >= 0.8 &&
+      Number(parsed.speechRate) <= 0.86
+        ? 0.95
+        : speechRateRaw;
     const voicePersonality: VoicePersonality =
       parsed.voicePersonality === "calm" ? "calm" : "playful";
     const lessonPace: LessonPace = parsed.lessonPace === "steady" ? "steady" : "relaxed";

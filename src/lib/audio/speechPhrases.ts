@@ -59,11 +59,8 @@ export function getTargetInstruction(key: string, name?: string): string {
     : [];
   return pickFresh([
     ...named,
-    `Can you find ${label}?`,
-    `Find ${label}!`,
-    `Let's find ${label}!`,
-    `Where's ${label}?`,
-    `Find the letter ${label}!`,
+    `Find ${label}.`,
+    `Find the letter ${label}.`,
   ]);
 }
 

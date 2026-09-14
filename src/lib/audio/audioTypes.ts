@@ -4,7 +4,7 @@ export const AUDIO_TIMING = {
   streakSpeechDelay: 280,
   lessonCompleteSpeechDelay: 800,
   encouragementDelay: 300,
-  associationSpeechDelay: 1100,
+  associationSpeechDelay: 700,
 } as const;
 
 export type SpeechPriority = "high" | "medium" | "low";

@@ -9,19 +9,19 @@ type MoodTone = {
 };
 
 const PLAYFUL_MOODS: Record<SpeechMood, MoodTone> = {
-  instruction: { rate: 0.86, pitch: 1.1, volume: 1 },
-  hint: { rate: 0.82, pitch: 1.08, volume: 0.95 },
-  success: { rate: 0.9, pitch: 1.12, volume: 1 },
-  streak: { rate: 0.92, pitch: 1.14, volume: 1 },
-  celebration: { rate: 0.88, pitch: 1.12, volume: 1 },
+  instruction: { rate: 0.98, pitch: 1.04, volume: 1 },
+  hint: { rate: 0.96, pitch: 1.03, volume: 1 },
+  success: { rate: 1.02, pitch: 1.06, volume: 1 },
+  streak: { rate: 1.04, pitch: 1.06, volume: 1 },
+  celebration: { rate: 1, pitch: 1.05, volume: 1 },
 };
 
 const CALM_MOODS: Record<SpeechMood, MoodTone> = {
-  instruction: { rate: 0.88, pitch: 1.02, volume: 1 },
-  hint: { rate: 0.86, pitch: 1.02, volume: 0.95 },
-  success: { rate: 0.98, pitch: 1.08, volume: 1 },
-  streak: { rate: 1.02, pitch: 1.1, volume: 1 },
-  celebration: { rate: 0.96, pitch: 1.08, volume: 1 },
+  instruction: { rate: 0.94, pitch: 1.02, volume: 1 },
+  hint: { rate: 0.92, pitch: 1.02, volume: 1 },
+  success: { rate: 0.98, pitch: 1.03, volume: 1 },
+  streak: { rate: 1, pitch: 1.04, volume: 1 },
+  celebration: { rate: 0.96, pitch: 1.03, volume: 1 },
 };
 
 export function moodTone(
@@ -30,11 +30,11 @@ export function moodTone(
   speechRate: number,
 ): MoodTone {
   const base = personality === "calm" ? CALM_MOODS[mood] : PLAYFUL_MOODS[mood];
-  const pace = speechRate <= 0.82 ? 0.92 : speechRate >= 0.98 ? 1 : 0.94;
+  const rateNudge = (speechRate - 0.95) * 0.35;
   return {
-    rate: clamp(base.rate * pace, 0.72, 0.98),
-    pitch: clamp(base.pitch, 1, 1.18),
-    volume: base.volume,
+    rate: clamp(base.rate + rateNudge, 0.9, 1.08),
+    pitch: clamp(base.pitch, 1, 1.08),
+    volume: 1,
   };
 }
 

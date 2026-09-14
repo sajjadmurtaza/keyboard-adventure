@@ -59,10 +59,12 @@ export function scoreVoice(voice: RankableVoice, locale: string, preferLocal: bo
   if (lang === locale) score += 6;
   else if (lang.startsWith("en")) score += 3;
   if (preferLocal && voice.localService) score += 8;
-  if (/enhanced|premium|neural|natural|online \(natural\)|google/.test(name)) score += 4;
+  if (/enhanced|premium|neural|natural|online \(natural\)/.test(name)) score += 12;
+  if (/\bgoogle\b/.test(name) && /us|uk|english/.test(name)) score += 6;
   if (FRIENDLY_VOICE_HINTS.some((hint) => name.includes(hint))) score += 16;
   if (/female/.test(name)) score += 10;
+  if (lang.startsWith("en-us") || lang === "en_us") score += 4;
   if (/\bmale\b/.test(name) && !/female/.test(name)) score -= 8;
-  if (NOVELTY_VOICE.test(name)) score -= 10;
+  if (NOVELTY_VOICE.test(name)) score -= 18;
   return score;
 }

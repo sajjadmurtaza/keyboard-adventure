@@ -11,13 +11,13 @@ describe("lesson phase", () => {
     expect(canAcceptTyping("wrong-feedback")).toBe(true);
   });
 
-  it("holds success at least 3 seconds", () => {
-    expect(SUCCESS_HOLD_MS).toBe(3000);
-    expect(successHoldMs(1)).toBe(3000);
-    expect(successHoldMs(1, true)).toBe(1800);
-    expect(successHoldMs(3, true)).toBe(2000);
-    expect(successHoldMs(5, true)).toBe(2200);
-    expect(successHoldMs(3)).toBeGreaterThanOrEqual(3200);
-    expect(successHoldMs(5)).toBeGreaterThanOrEqual(3500);
+  it("holds success about 1.5 seconds", () => {
+    expect(SUCCESS_HOLD_MS).toBe(1500);
+    expect(successHoldMs(1)).toBe(1500);
+    expect(successHoldMs(1, true)).toBe(1100);
+    expect(successHoldMs(3, true)).toBe(1200);
+    expect(successHoldMs(5, true)).toBe(1300);
+    expect(successHoldMs(3)).toBeGreaterThanOrEqual(1600);
+    expect(successHoldMs(5)).toBeGreaterThanOrEqual(1800);
   });
 });

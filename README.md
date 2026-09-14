@@ -1,19 +1,34 @@
 # Keyboard Adventure
 
-A playful typing practice app for children about ages **4–8**. The child sees **one giant letter**, an object that starts with that letter (Fish for F), presses that key on a real keyboard, and only then moves on. Wrong keys never skip ahead. A correct key holds a **success celebration for about 3 seconds** so the child can enjoy “Fantastic! F is for Fish!” before the next letter.
+A playful typing practice app for children about ages **4–8**. The child sees **one giant letter**, an object that starts with that letter (Fish for F), presses that key on a real keyboard, and only then moves on. Wrong keys never skip ahead. A correct key holds a short celebration (**about 1.5 seconds**), then the next letter appears.
 
 No accounts, ads, analytics, or child data collection. Progress stays in the browser (`localStorage`).
 
 ## What it looks like
 
-These captures were taken from a local browser session. They live in `docs/screenshots/` on your machine only. That folder is gitignored so **screenshots are not committed and are not deployed to Vercel**.
+Screenshots live in `docs/screenshots/` for GitHub. They are **not** in `public/`, so the Vercel site does not serve them.
 
-| Screen | File (local) | What you should see |
-| --- | --- | --- |
-| Home | `docs/screenshots/home.png` | Bear mascot, **START**, **Practice** |
-| Lesson map | `docs/screenshots/map.png` | Home Row Land, F and J, **PLAY** |
-| Lesson | `docs/screenshots/lesson-f.png` | Fish + F, toy QWERTY with a long **SPACE** bar, finger under F |
-| Parent settings | `docs/screenshots/parent-settings.png` | Sound, Friendly/Calm voice, preview |
+### Home
+
+![Home screen with Start and Practice](docs/screenshots/home.png)
+
+### Lesson map
+
+![Home Row Land with F and J Play](docs/screenshots/map.png)
+
+### Lesson
+
+Fish appears before typing F. The toy keyboard has a long space bar. The finger hint stays on screen under the target key.
+
+![Lesson with Fish, giant F, and toy keyboard](docs/screenshots/lesson-f.png)
+
+### Parent settings
+
+Friendly or Calm voice, preview, and speaking speed.
+
+![Parent settings including voice choices](docs/screenshots/parent-settings.png)
+
+![Voice list with Samantha and Hear preview](docs/screenshots/parent-voice.png)
 
 ```mermaid
 flowchart TD
@@ -22,7 +37,7 @@ flowchart TD
   ready[Letter plus object SVG]
   type[Child types one key]
   wrong[Stay on same letter]
-  win[Success for 3 seconds]
+  win[Success for 1.5 seconds]
   next[Next prepared letter]
   home --> map --> ready --> type
   type -->|wrong| wrong --> type
@@ -49,17 +64,17 @@ Open [http://localhost:3000](http://localhost:3000). A computer with a physical 
 1. The association picture and word appear **before** typing (Fish / FISH, then F).
 2. Only one target is active. Layout never changes what counts as a correct key.
 3. Wrong keys shake and stay. The picture does not disappear.
-4. Correct keys lock typing, celebrate, keep the same picture, then wait at least **3000ms**.
+4. Correct keys lock typing, celebrate, keep the same picture, then wait about **1.5 seconds**.
 5. The next letter appears with its picture already ready. Voice does not say the next letter until that scene is on screen.
 6. Lesson complete waits for **Next adventure** or **Play again**.
 
-Desktop shows a toy keyboard that still teaches real geography: staggered rows, F/J bumps, and a wide space bar. The finger hint sits under the **target key**, not under Space.
+Desktop shows a toy keyboard that still teaches real geography: staggered rows, F/J bumps, and a wide space bar. The finger hint sits under the **target key**, inside the keyboard card.
 
 ## Voice
 
-Browser speech synthesis cannot request `gender: "female"`. The app ranks English voices on the device and prefers known friendly names (Samantha, Ava, Zira, and similar) when they exist. Parents can preview and pick a voice, choose Friendly or Calm, and set speed from Slow to Cheerful. Pitch stays warm (about 1.12–1.15), not squeaky.
+Browser speech cannot request `gender: "female"`. The app prefers clearer English system voices (Samantha Enhanced over Compact, and similar). Rate stays near normal talking speed. Parents can preview and pick a voice in settings.
 
-Howler still plays success, wrong, star, and celebration sounds. Speech is behind a replaceable provider so a later neural TTS voice can replace the browser fallback.
+Howler still plays success, wrong, star, and celebration sounds.
 
 ## Add lessons
 
@@ -86,7 +101,7 @@ npm run verify
 2. Import the repo in Vercel (Next.js defaults).
 3. Deploy. No environment variables are required.
 
-Vercel only serves the Next.js app (pages, `public/`, built assets). Do **not** put screenshots in `public/`. Local captures in `docs/screenshots/` stay off the live site.
+Do **not** copy screenshots into `public/`. GitHub can show `docs/screenshots/` in this README; Vercel only serves the Next.js app.
 
 ## Local progress
 

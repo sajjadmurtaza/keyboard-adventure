@@ -38,7 +38,9 @@ describe("friendly voice ranking", () => {
     expect(scoreVoice(voice({ name: "Google UK English Female", lang: "en-GB" }), "en-gb", false)).toBeGreaterThan(
       scoreVoice(voice({ name: "Google UK English Male", lang: "en-GB" }), "en-gb", false),
     );
-    expect(preferredEnglishLang("ja-JP")).toBe("en-US");
+    expect(scoreVoice(voice({ name: "Samantha (Enhanced)", lang: "en-US" }), "en-us", true)).toBeGreaterThan(
+      scoreVoice(voice({ name: "Samantha Compact", lang: "en-US" }), "en-us", true),
+    );
     expect(preferredEnglishLang("en-GB")).toBe("en-GB");
   });
 });
