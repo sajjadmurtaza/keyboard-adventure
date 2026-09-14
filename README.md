@@ -8,9 +8,21 @@ No accounts, ads, analytics, or child data collection. The child’s first name 
 
 Screenshots live in `docs/screenshots/` so GitHub can show them in this README. They are excluded from the Vercel upload (`.vercelignore`) and are **not** in `public/`, so they are not part of the live website.
 
+Refresh them after UI changes:
+
+```bash
+CAPTURE_SCREENSHOTS=1 npx playwright test tests/e2e/capture-screenshots.spec.ts --project=desktop-chromium
+```
+
+### First visit
+
+If no name is saved, this screen blocks play. A blank name cannot continue.
+
+![Who is learning today name screen](docs/screenshots/name-setup.png)
+
 ### Home
 
-![Home screen with Start and Practice](docs/screenshots/home.png)
+![Home screen with Start, Practice, and the child’s name](docs/screenshots/home.png)
 
 ### Lesson map
 
@@ -22,13 +34,15 @@ Fish appears before typing F. The toy keyboard has a long space bar. The finger 
 
 ![Lesson with Fish, giant F, and toy keyboard](docs/screenshots/lesson-f.png)
 
+![Toy QWERTY with F highlighted and a left-index finger hint](docs/screenshots/lesson-keyboard.png)
+
 ### Parent settings
 
-Child’s name, Friendly or Calm voice, preview, and speaking speed.
+Child’s name (**▶ Test name**), **Keyboard layout** (Auto, English, German, French), Friendly or Calm voice, preview, and speaking speed.
 
-![Parent settings including voice choices](docs/screenshots/parent-settings.png)
+![Parent settings including name and keyboard layout](docs/screenshots/parent-settings.png)
 
-![Voice list with Samantha and Hear preview](docs/screenshots/parent-voice.png)
+![Voice list with preview buttons](docs/screenshots/parent-voice.png)
 
 ```mermaid
 flowchart TD
@@ -38,7 +52,7 @@ flowchart TD
   prep[Picture plus letter ready]
   type[Child types one key]
   wrong[Stay on same letter]
-  win[Correct: small celebration ~3s]
+  win[Correct: small celebration ~2.8s]
   streak[3 or 5 in a row: bigger burst]
   next[Next prepared letter]
   party[Lesson done: full party then buttons]
@@ -66,7 +80,7 @@ Open [http://localhost:3000](http://localhost:3000). A computer with a physical 
 
 ## First visit
 
-If no name is saved, a blocking screen asks **Who is learning today?** A blank name cannot continue. After **LET’S GO!**, the name is stored on this device only. Parent settings can change it later (**▶ Test name**).
+If no name is saved, a blocking screen asks **Who is learning today?** A blank name cannot continue. After **LET’S GO!**, the name is stored on this device only. Letters, marks, spaces, hyphens, and apostrophes are allowed. Parent settings can change it later (**▶ Test name**).
 
 ## How a lesson works
 
@@ -81,7 +95,9 @@ If no name is saved, a blocking screen asks **Who is learning today?** A blank n
 
 Desktop shows a toy keyboard that still teaches real geography: staggered rows, F/J bumps, and a wide space bar. The finger hint sits under the **target key**, inside the keyboard card.
 
-Parents can pick **English** (default), **German**, or **French** in settings. That only changes the toy keyboard and finger hints. Typing still matches the letter on screen, not the physical key label. A lesson key missing from that layout shows **Find this key**.
+### Keyboard layout
+
+Parents can leave **Keyboard layout** on **Auto (this keyboard)** (the default). Chrome can read the physical layout map; if that is missing, the first distinctive key (Y/Z or A/Q) can still switch the toy board to German or French. Parents can lock **English**, **German**, or **French**. That only changes the toy keyboard and finger hints. Typing still matches the letter on screen, not the physical key label. A lesson key missing from that layout shows **Find this key**.
 
 ### Lessons do not skip letters
 
@@ -121,6 +137,8 @@ npm test
 npm run test:e2e
 npm run verify
 ```
+
+`npm run verify` is lint (no warnings), typecheck, coverage, and production build.
 
 ## Deploy on Vercel
 
