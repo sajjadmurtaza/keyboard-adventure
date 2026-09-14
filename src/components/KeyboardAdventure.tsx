@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { ChildNameSetup } from "@/components/ChildNameSetup";
 import { AdventureMap } from "@/components/AdventureMap";
 import { FeedbackMessage } from "@/components/FeedbackMessage";
 import { LessonComplete } from "@/components/LessonComplete";
@@ -28,7 +29,13 @@ import {
   useSoftwareKeyboardOpen,
   useVisualViewportVar,
 } from "@/hooks/useViewport";
-import { canAcceptTyping, type LessonPhase } from "@/lib/lessonPhase";
+import {
+  canAcceptTyping,
+  targetArriveMs,
+  wrongFeedbackMs,
+  type LessonPhase,
+} from "@/lib/lessonPhase";
+import type { MascotMood } from "@/components/mascot/types";
 import { useAudio } from "@/hooks/useAudio";
 import {
   displayKey,
@@ -44,6 +51,7 @@ import {
   saveSettings,
   type ParentSettings,
 } from "@/utils/settings";
+import { isValidChildName, parseChildName } from "@/utils/childName";
 import {
   isLessonUnlocked,
   loadProgress,
@@ -54,6 +62,13 @@ import {
 
 type View = "home" | "lessons" | "practice" | "play" | "complete" | "parent";
 type Mood = "idle" | "success" | "retry";
+
+function mascotMoodFor(mood: Mood, streak: number): MascotMood {
+  if (mood === "retry") return "encourage";
+  if (mood === "success" && streak >= 3) return "streak";
+  if (mood === "success") return "success";
+  return "idle";
+}
 
 export function KeyboardAdventure() {
   const [view, setView] = useState<View>("home");
@@ -73,9 +88,11 @@ export function KeyboardAdventure() {
   const [practiceKeys, setPracticeKeys] = useState<string[]>(["f", "j", " "]);
   const [showAllLessons, setShowAllLessons] = useState(false);
   const [lessonPhase, setLessonPhase] = useState<LessonPhase>("ready");
+  const [settingsReady, setSettingsReady] = useState(false);
   const lockRef = useRef(false);
   const phaseRef = useRef<LessonPhase>("ready");
   const successTimerRef = useRef<number | null>(null);
+  const arriveTimerRef = useRef<number | null>(null);
   const successTokenRef = useRef(0);
   const lessonGenRef = useRef(0);
   const recentKeyRef = useRef({ key: "", at: 0 });
@@ -107,7 +124,28 @@ export function KeyboardAdventure() {
     }
   }
 
-  useEffect(() => () => clearSuccessTimer(), []);
+  function clearArriveTimer() {
+    if (arriveTimerRef.current != null) {
+      window.clearTimeout(arriveTimerRef.current);
+      arriveTimerRef.current = null;
+    }
+  }
+
+  const scheduleReady = useCallback((gen: number) => {
+    clearArriveTimer();
+    lockRef.current = true;
+    setPhase("preparing");
+    arriveTimerRef.current = window.setTimeout(() => {
+      if (gen !== lessonGenRef.current) return;
+      lockRef.current = false;
+      setPhase("ready");
+    }, targetArriveMs(quiet));
+  }, [quiet]);
+
+  useEffect(() => () => {
+    clearSuccessTimer();
+    clearArriveTimer();
+  }, []);
 
   function focusMobileType() {
     const node = mobileInputRef.current;
@@ -128,9 +166,11 @@ export function KeyboardAdventure() {
 
   useEffect(() => {
     if (view === "play" && lessonPhase === "ready" && mood === "idle") {
-      audio?.notify({ type: "TARGET_SHOWN", key: target });
+      const previous = index > 0 ? sequence[index - 1] : undefined;
+      const shortened = Boolean(previous && keysMatch(previous, target));
+      audio?.notify({ type: "TARGET_SHOWN", key: target, shortened });
     }
-  }, [audio, view, mood, target, index, lessonPhase]);
+  }, [audio, view, mood, target, index, lessonPhase, sequence]);
 
   useEffect(() => {
     if (view === "home" || view === "lessons" || view === "practice" || view === "parent") {
@@ -142,6 +182,7 @@ export function KeyboardAdventure() {
     /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage once */
     setSettings(loadSettings());
     setProgress(loadProgress());
+    setSettingsReady(true);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
@@ -151,10 +192,12 @@ export function KeyboardAdventure() {
   }
 
   function persistSettings(next: ParentSettings) {
-    setSettings(next);
-    saveSettings(next);
+    const name = parseChildName(next.childName) ?? next.childName.trim();
+    const saved = { ...next, childName: name };
+    setSettings(saved);
+    saveSettings(saved);
     if (progress) {
-      persistProgress({ ...progress, childName: next.childName.trim() });
+      persistProgress({ ...progress, childName: name });
     }
   }
 
@@ -168,8 +211,6 @@ export function KeyboardAdventure() {
     clearSuccessTimer();
     lessonGenRef.current += 1;
     successTokenRef.current += 1;
-    lockRef.current = false;
-    setPhase("preparing");
     setLessonId(id);
     setSequence(seq.length ? seq : keys);
     setIndex(0);
@@ -182,9 +223,7 @@ export function KeyboardAdventure() {
     setStreakNote(null);
     setView("play");
     setSeenLetters([]);
-    requestAnimationFrame(() => {
-      setPhase("ready");
-    });
+    scheduleReady(lessonGenRef.current);
     if (progress && progress.newlyUnlocked === id) {
       persistProgress({ ...progress, newlyUnlocked: null });
     }
@@ -260,7 +299,7 @@ export function KeyboardAdventure() {
         setHelpLevel((value) => Math.min(value + 1, 4));
         setMood("retry");
         setMissedKey(pressed);
-        window.setTimeout(() => setMissedKey(null), 320);
+        window.setTimeout(() => setMissedKey(null), wrongFeedbackMs(quiet));
         const shown = displayKey(wanted);
         const retry =
           helpLevel % 2 === 0
@@ -270,7 +309,7 @@ export function KeyboardAdventure() {
         audio?.notify({ type: "TARGET_WRONG", key: wanted, attempts: helpLevel + 1 });
         window.setTimeout(() => {
           if (phaseRef.current === "wrong-feedback") setPhase("ready");
-        }, 180);
+        }, wrongFeedbackMs(quiet));
         return;
       }
 
@@ -279,7 +318,11 @@ export function KeyboardAdventure() {
       setHelpLevel(0);
       const nextStreak = streak + 1;
       const firstLook = !seenLetters.includes(normalizeTarget(wanted));
-      const praise = getSuccessPraise(wanted, { firstLook, streak: nextStreak });
+      const praise = getSuccessPraise(wanted, {
+        firstLook,
+        streak: nextStreak,
+        name: childName,
+      });
       setStreak(nextStreak);
       if (nextStreak === 3) setStreakNote("⭐ 3 IN A ROW! ⭐");
       if (nextStreak === 5) setStreakNote("🔥 SUPER STREAK! ⭐");
@@ -324,19 +367,17 @@ export function KeyboardAdventure() {
         setIndex(nextIndex);
         setMood("idle");
         setFeedback("Find this key!");
-        requestAnimationFrame(() => {
-          if (gen !== lessonGenRef.current) return;
-          lockRef.current = false;
-          setPhase("ready");
-        });
+        scheduleReady(gen);
       }, celebrationMs(settings, quiet, nextStreak));
     },
     [
       audio,
+      childName,
       finishLesson,
       helpLevel,
       index,
       quiet,
+      scheduleReady,
       seenLetters,
       sequence,
       settings,
@@ -353,6 +394,20 @@ export function KeyboardAdventure() {
     if (total === 0) return null;
     return Math.round((progress.correctAttempts / total) * 100);
   }, [progress]);
+
+  if (!settingsReady) {
+    return <div className="min-h-dvh bg-[#F4FBFF]" />;
+  }
+
+  if (!isValidChildName(settings.childName) && view !== "parent") {
+    return (
+      <ChildNameSetup
+        onSave={(name) => {
+          persistSettings({ ...settings, childName: name });
+        }}
+      />
+    );
+  }
 
   return (
     <div className={`relative flex flex-col overflow-hidden px-4 text-[#34364A] ${
@@ -380,6 +435,7 @@ export function KeyboardAdventure() {
             className="shrink-0 font-[family-name:var(--font-display)] text-sm font-semibold text-[#7657E8]"
             onClick={() => {
               clearSuccessTimer();
+              clearArriveTimer();
               lockRef.current = false;
               setPhase("ready");
               blurMobileType();
@@ -524,6 +580,7 @@ export function KeyboardAdventure() {
             voices={voices}
             speechAvailable={speechAvailable}
             onPreviewVoice={(uri) => audio?.preview(uri)}
+            onPreviewName={() => audio?.previewName()}
             onClose={() => setView("home")}
             onOpenLesson={(id) => {
               const data = getLesson(id);
@@ -702,9 +759,7 @@ function Play({
               line={mascotLine}
               compact
               tiny={density === "compact"}
-              mood={
-                mood === "success" ? "success" : mood === "retry" ? "encourage" : "idle"
-              }
+              mood={mascotMoodFor(mood, streak)}
             />
           )}
           <button
@@ -778,6 +833,7 @@ function Play({
               missedKey={missedKey}
               fingerHints={settings.fingerHints}
               compactHint
+              arrive={lessonPhase === "preparing"}
             />
           ) : null}
         </div>

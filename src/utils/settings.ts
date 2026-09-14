@@ -1,3 +1,4 @@
+import { parseChildName } from "@/utils/childName";
 import { successHoldMs } from "@/lib/lessonPhase";
 
 const SETTINGS_KEY = "keyboard-adventure-settings-v1";
@@ -92,7 +93,7 @@ export function loadSettings(): ParentSettings {
       lessonPace,
       masterVolume,
       voiceURI: typeof parsed.voiceURI === "string" ? parsed.voiceURI : "",
-      childName: typeof parsed.childName === "string" ? parsed.childName.trim() : "",
+      childName: parseChildName(parsed.childName) ?? "",
     };
   } catch {
     return defaultSettings;
@@ -130,5 +131,5 @@ export function celebrationMs(
 }
 
 export function nextLetterSpeechDelay(settings: ParentSettings): number {
-  return settings.lessonPace === "steady" ? 900 : 1400;
+  return settings.lessonPace === "steady" ? 200 : 280;
 }

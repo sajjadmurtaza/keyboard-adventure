@@ -13,6 +13,7 @@ type VirtualKeyboardProps = {
   missedKey: string | null;
   fingerHints: boolean;
   compactHint?: boolean;
+  arrive?: boolean;
 };
 
 export function VirtualKeyboard({
@@ -23,6 +24,7 @@ export function VirtualKeyboard({
   missedKey,
   fingerHints,
   compactHint = false,
+  arrive = false,
 }: VirtualKeyboardProps) {
   const wanted = normalizeTarget(target);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -36,7 +38,8 @@ export function VirtualKeyboard({
     if (wanted !== key) return "idle" as const;
     if (mood === "success") return "success" as const;
     if (mood === "retry" || helpLevel >= 2) return "strong" as const;
-    return "target" as const;
+    if (arrive) return "pulse" as const;
+    return "lit" as const;
   }
 
   useLayoutEffect(() => {

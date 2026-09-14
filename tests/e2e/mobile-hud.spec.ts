@@ -1,4 +1,5 @@
 import { expect, test, type Locator } from "@playwright/test";
+import { seedChild } from "./helpers";
 
 function overlap(a: { x: number; y: number; width: number; height: number }, b: typeof a) {
   return !(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);
@@ -13,6 +14,7 @@ async function box(locator: Locator) {
 test.use({ viewport: { width: 390, height: 430 } });
 
 test("keyboard-open HUD does not overlap core lesson pieces", async ({ page }) => {
+  await seedChild(page);
   await page.goto("/");
   await page.getByRole("button", { name: "⭐ START! ⭐" }).click();
   await page.getByRole("button", { name: "PLAY ▶" }).click();

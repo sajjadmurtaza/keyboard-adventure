@@ -180,11 +180,11 @@ html.lesson-play body {
 @keyframes letter-enter {
   0% {
     opacity: 0;
-    transform: scale(0.6);
+    transform: scale(0.8);
   }
-  65% {
+  62% {
     opacity: 1;
-    transform: scale(1.12);
+    transform: scale(1.08);
   }
   100% {
     opacity: 1;
@@ -388,16 +388,20 @@ html.lesson-play body {
   }
 }
 
+.animate-letter-enter {
+  animation: letter-enter 0.52s cubic-bezier(0.22, 1.15, 0.32, 1) both;
+}
+
 .animate-pop {
   animation: pop 0.7s cubic-bezier(0.2, 1.4, 0.3, 1);
 }
 
 .animate-wiggle {
-  animation: wiggle 0.45s ease;
+  animation: wiggle 0.5s ease;
 }
 
 .animate-wiggle-mobile {
-  animation: wiggle-mobile 0.42s ease;
+  animation: wiggle-mobile 0.48s ease;
 }
 
 .association-area {
@@ -567,11 +571,11 @@ html.lesson-play body {
 }
 
 .key-glow {
-  animation: glow 1.1s ease-in-out infinite;
+  animation: glow 0.7s ease-in-out 1;
 }
 
 .key-glow-strong {
-  animation: glow-strong 0.7s ease-in-out infinite;
+  animation: glow-strong 0.55s ease-in-out 2;
 }
 
 .star-pop {
@@ -735,11 +739,11 @@ html.lesson-play body {
 @keyframes letter-enter-hud {
   0% {
     opacity: 0;
-    transform: scale(0.82);
+    transform: scale(0.8);
   }
-  65% {
+  62% {
     opacity: 1;
-    transform: scale(1.06);
+    transform: scale(1.08);
   }
   100% {
     opacity: 1;

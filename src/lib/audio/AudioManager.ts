@@ -6,12 +6,13 @@ import { SoundManager } from "@/lib/audio/SoundManager";
 import { SpeechManager } from "@/lib/audio/SpeechManager";
 import {
   getLessonCompletePhrase,
+  getNameTestPhrase,
   getPreviewPhrase,
   getStreakPhrase,
   getTargetInstruction,
   getWrongInstruction,
-  shouldSayName,
 } from "@/lib/audio/speechPhrases";
+import { parseChildName } from "@/utils/childName";
 import { moodTone, type SpeechMood } from "@/lib/audio/voiceMoods";
 import type { ParentSettings } from "@/utils/settings";
 import { nextLetterSpeechDelay } from "@/utils/settings";
@@ -60,10 +61,18 @@ export class AudioManager {
     this.say(getPreviewPhrase(), "high", "celebration", 0, voiceURI);
   }
 
+  previewName() {
+    const settings = this.settings;
+    if (!settings?.sound || !settings.voiceGuidance) return;
+    this.stopSpeech();
+    this.say(getNameTestPhrase(settings.childName), "high", "instruction", 0);
+  }
+
   repeatTarget(key: string) {
     const settings = this.settings;
     if (!settings?.sound || !settings.voiceGuidance) return;
-    this.say(getTargetInstruction(key), "high", "instruction", 0);
+    const name = parseChildName(settings.childName) ?? undefined;
+    this.say(getTargetInstruction(key, name), "high", "instruction", 0);
   }
 
   notify(event: AudioGameEvent) {
@@ -81,7 +90,7 @@ export class AudioManager {
         this.bump();
         this.lastTargetKey = event.key;
         this.speech.cancel();
-        this.scheduleTargetSpeech(event.key);
+        this.scheduleTargetSpeech(event.key, event.shortened === true);
         return;
       case "TARGET_WRONG":
         this.sounds.play("wrong");
@@ -146,23 +155,22 @@ export class AudioManager {
     return this.speech.available();
   }
 
-  private scheduleTargetSpeech(key: string) {
+  private scheduleTargetSpeech(key: string, shortened: boolean) {
     const settings = this.settings;
     if (!settings?.autoSpeakTarget || !settings.voiceGuidance) return;
     const gen = this.generation;
     this.later(() => {
       if (gen !== this.generation || this.lastTargetKey !== key) return;
-      const name = shouldSayName(settings.nameFrequency, "target", settings.childName.trim())
-        ? settings.childName.trim()
-        : undefined;
-      this.say(getTargetInstruction(key, name), "medium", "instruction", 400);
+      const name = parseChildName(settings.childName) ?? undefined;
+      this.say(getTargetInstruction(key, name, { shortened }), "medium", "instruction", 400);
     }, nextLetterSpeechDelay(settings));
   }
 
   private maybeWrongSpeech(key: string, attempts: number) {
     const settings = this.settings;
     if (!settings?.voiceGuidance || !settings.wrongVoiceHelp) return;
-    const line = getWrongInstruction(key, attempts);
+    const name = parseChildName(settings.childName) ?? undefined;
+    const line = getWrongInstruction(key, attempts, name);
     if (!line) return;
     this.say(line, "medium", "hint", AUDIO_TIMING.wrongSpeechCooldown);
   }
@@ -192,8 +200,7 @@ export class AudioManager {
   private celebrateName(): string | undefined {
     const settings = this.settings;
     if (!settings) return undefined;
-    const name = settings.childName.trim();
-    return shouldSayName(settings.nameFrequency, "celebrate", name) ? name : undefined;
+    return parseChildName(settings.childName) ?? undefined;
   }
 
   private say(

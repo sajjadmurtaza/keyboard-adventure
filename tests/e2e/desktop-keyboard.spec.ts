@@ -1,11 +1,14 @@
 import { expect, test } from "@playwright/test";
+import { seedChild } from "./helpers";
 
 test.use({ viewport: { width: 1440, height: 900 } });
 
 test("desktop lesson keyboard looks like a keyboard", async ({ page }) => {
+  await seedChild(page);
   await page.goto("/");
   await page.getByRole("button", { name: "⭐ START! ⭐" }).click();
   await page.getByRole("button", { name: "PLAY ▶" }).click();
+  await expect(page.getByTestId("play-stage")).toHaveAttribute("data-lesson-phase", "ready");
 
   await expect(page.getByTestId("global-mute")).toHaveCount(1);
   await expect(page.getByTestId("parent-settings")).toHaveCount(1);
@@ -49,13 +52,20 @@ test("finger hint sits under the target key, not under space", async ({ page }) 
   await page.addInitScript(() => {
     window.localStorage.setItem(
       "keyboard-adventure-settings-v1",
-      JSON.stringify({ unlockAll: true, sound: false, fingerHints: true, keyboardHighlight: true }),
+      JSON.stringify({
+        unlockAll: true,
+        sound: false,
+        fingerHints: true,
+        keyboardHighlight: true,
+        childName: "Fatima",
+      }),
     );
   });
   await page.goto("/");
   await page.getByRole("button", { name: "⭐ START! ⭐" }).click();
   await page.getByRole("button", { name: "View all lessons" }).click();
   await page.getByRole("button", { name: "Lesson 3: D and K" }).click();
+  await expect(page.getByTestId("play-stage")).toHaveAttribute("data-lesson-phase", "ready");
   await expect(page.getByTestId("association")).toContainText(/DOG/i);
   await expect(page.getByTestId("finger-guide")).toHaveAttribute("data-hand", "left");
 
@@ -65,8 +75,7 @@ test("finger hint sits under the target key, not under space", async ({ page }) 
   expect(Math.abs(dHint!.x + dHint!.width / 2 - (dKey!.x + dKey!.width / 2))).toBeLessThan(40);
 
   await page.keyboard.press("d");
-  await page.waitForTimeout(1800);
-  await expect(page.getByTestId("association")).toContainText(/KITE/i);
+  await expect(page.getByTestId("association")).toContainText(/KITE/i, { timeout: 8000 });
   await expect(page.getByTestId("finger-guide")).toHaveAttribute("data-hand", "right");
 
   const kKey = await page.getByTestId("key-k").boundingBox();

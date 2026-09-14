@@ -99,7 +99,7 @@ export function TargetLetter({
 }
 
 function StarBurst({ compact, level }: { compact?: boolean; level: 1 | 2 | 3 }) {
-  const count = compact ? 6 : level >= 3 ? 16 : level === 2 ? 14 : 12;
+  const count = compact ? 4 : level >= 3 ? 8 : 6;
   const bits = ["⭐", "✨", "✦"];
   const reach = compact ? 70 : 110;
   return (

@@ -1,5 +1,6 @@
 import { associationFor } from "@/data/letterAssociations";
 import { pickFreshItem } from "@/lib/random";
+import { parseChildName } from "@/utils/childName";
 import { normalizeTarget } from "@/utils/keys";
 
 export const LETTER_PRAISE: Record<string, string[]> = {
@@ -66,14 +67,45 @@ function bannerFrom(spoken: string): string {
   return `${first.toUpperCase()}!`;
 }
 
+function namedPraise(letter: string, name: string): string | null {
+  const lines: Record<string, string> = {
+    a: `Amazing job, ${name}!`,
+    b: `Brilliant, ${name}!`,
+    c: `Cool work, ${name}!`,
+    d: `Doing great, ${name}!`,
+    e: `Excellent, ${name}!`,
+    f: `Fantastic job, ${name}!`,
+    g: `Great work, ${name}!`,
+    h: `Hooray, ${name}!`,
+    i: `Impressive, ${name}!`,
+    j: `Just right, ${name}!`,
+    k: `Keep it up, ${name}!`,
+    l: `Lovely work, ${name}!`,
+    m: `Marvelous, ${name}!`,
+    n: `Nice work, ${name}!`,
+    o: `Outstanding, ${name}!`,
+    p: `Perfect, ${name}!`,
+    r: `Remarkable, ${name}!`,
+    s: `Super, ${name}!`,
+    t: `Terrific, ${name}!`,
+    v: `Very good, ${name}!`,
+    w: `Wonderful, ${name}!`,
+    y: `Yes! You got it, ${name}!`,
+  };
+  return lines[letter] ?? `You got it, ${name}!`;
+}
+
 export function getSuccessPraise(
   key: string,
-  options: { firstLook: boolean; streak: number; random?: Rng },
+  options: { firstLook: boolean; streak: number; random?: Rng; name?: string },
 ): SuccessPraise {
   const rng = options.random ?? Math.random;
   const letter = normalizeTarget(key);
+  const who = parseChildName(options.name ?? "") ?? "";
   if (letter === " ") {
-    const spoken = pickFresh(["Great! That's the space bar!", "You found the space bar!"], rng);
+    const spoken = who
+      ? `Great work, ${who}!`
+      : pickFresh(["Great! That's the space bar!", "You found the space bar!"], rng);
     const milestone = options.streak === 3 || options.streak === 5;
     return {
       banner: "SUPER!",
@@ -85,16 +117,17 @@ export function getSuccessPraise(
   }
 
   const short = shortPraise(letter, rng);
+  const spoken = who ? namedPraise(letter, who) ?? short : short;
   const milestone = options.streak === 3 || options.streak === 5;
   const assoc = associationFor(letter);
   const teachLine = assoc ? `${letter.toUpperCase()} is for ${assoc.word}!` : undefined;
   const speakTeach = Boolean(
-    teachLine && !milestone && (options.firstLook || rng() < 0.35),
+    !who && teachLine && !milestone && (options.firstLook || rng() < 0.35),
   );
 
   return {
     banner: bannerFrom(short),
-    spoken: short,
+    spoken,
     speak: !milestone,
     showObject: Boolean(assoc),
     teachLine,

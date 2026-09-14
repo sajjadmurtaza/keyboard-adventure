@@ -2,7 +2,7 @@
 
 import { forwardRef } from "react";
 
-type KeyTone = "idle" | "target" | "strong" | "success" | "miss";
+type KeyTone = "idle" | "lit" | "pulse" | "strong" | "success" | "miss";
 
 type KeyboardKeyProps = {
   label: string;
@@ -22,9 +22,11 @@ export const KeyboardKey = forwardRef<HTMLDivElement, KeyboardKeyProps>(
           ? "keycap-miss key-miss"
           : tone === "strong"
             ? "keycap-target key-glow-strong"
-            : tone === "target"
+            : tone === "pulse"
               ? "keycap-target key-glow"
-              : "keycap-idle";
+              : tone === "lit"
+                ? "keycap-target"
+                : "keycap-idle";
 
     return (
       <div

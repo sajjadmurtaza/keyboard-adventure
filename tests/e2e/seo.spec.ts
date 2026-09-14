@@ -1,6 +1,8 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { seedChild } from "./helpers";
 
 test("home is indexable and playable", async ({ page }) => {
+  await seedChild(page);
   await page.goto("/");
   await expect(page).toHaveTitle(/Keyboard Adventure/);
   const description = page.locator('meta[name="description"]');

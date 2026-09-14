@@ -15,13 +15,16 @@ describe("speech phrases", () => {
     expect(getTargetInstruction(" ")).toMatch(/space bar/);
     expect(getTargetInstruction(" ", "Ada")).toContain("Ada");
     expect(getTargetInstruction("j")).toMatch(/J/i);
-    expect(getTargetInstruction("j", "Ada")).toMatch(/Ada|J/i);
+    expect(getTargetInstruction("f", "Ada")).toBe(
+      "F is for Fish! Ada, type F for Fish.",
+    );
+    expect(getTargetInstruction("f", "Ada", { shortened: true })).toBe("F, F, Fish!");
   });
 
   it("paces wrong-key help", () => {
     expect(getWrongInstruction("j", 1)).toBeNull();
-    expect(getWrongInstruction("j", 2)).toBe("Almost! Find J.");
-    expect(getWrongInstruction("j", 3)).toBe("You can do it! Find J.");
+    expect(getWrongInstruction("j", 2, "Ada")).toBe("Almost, Ada. Find J.");
+    expect(getWrongInstruction("j", 3, "Ada")).toBe("You can do it, Ada. Find J.");
     expect(getWrongInstruction("j", 6)).toBe("Try J again.");
     expect(getWrongInstruction("j", 4)).toBeNull();
     expect(spokenKey(";")).toBe("semicolon");

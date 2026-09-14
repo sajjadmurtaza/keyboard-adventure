@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { lessons } from "@/data/lessons";
+import { CHILD_NAME_MAX } from "@/utils/childName";
 import type { ParentSettings } from "@/utils/settings";
 
 type ParentSettingsPanelProps = {
@@ -15,6 +16,7 @@ type ParentSettingsPanelProps = {
   onResetProgress: () => void;
   onResetAll: () => void;
   onPreviewVoice: (voiceURI?: string) => void;
+  onPreviewName: () => void;
 };
 
 export function ParentSettingsPanel({
@@ -28,6 +30,7 @@ export function ParentSettingsPanel({
   onResetProgress,
   onResetAll,
   onPreviewVoice,
+  onPreviewName,
 }: ParentSettingsPanelProps) {
   const [confirm, setConfirm] = useState<"progress" | "all" | null>(null);
   return (
@@ -42,16 +45,27 @@ export function ParentSettingsPanel({
       ) : null}
 
       <label className="flex flex-col gap-1 font-[family-name:var(--font-nunito)] text-lg">
-        Child first name (optional)
+        Child&apos;s name
         <input
           value={settings.childName}
           onChange={(event) =>
-            onChange({ ...settings, childName: event.target.value.slice(0, 24) })
+            onChange({ ...settings, childName: event.target.value.slice(0, CHILD_NAME_MAX) })
           }
           className="rounded-2xl border-2 border-[#E8E4F8] px-4 py-2"
           placeholder="Fatima"
+          maxLength={40}
+          autoComplete="nickname"
+          spellCheck={false}
         />
       </label>
+      <p className="text-sm text-[#9AA0B8]">Saved only on this device.</p>
+      <button
+        type="button"
+        onClick={onPreviewName}
+        className="min-h-12 rounded-full bg-white font-[family-name:var(--font-display)] text-lg font-bold shadow"
+      >
+        ▶ Test name
+      </button>
 
       <label className="flex items-center justify-between text-lg">
         Practice length

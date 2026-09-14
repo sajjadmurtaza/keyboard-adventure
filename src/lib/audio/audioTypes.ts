@@ -20,7 +20,7 @@ export type EffectName =
   | "button";
 
 export type AudioGameEvent =
-  | { type: "TARGET_SHOWN"; key: string }
+  | { type: "TARGET_SHOWN"; key: string; shortened?: boolean }
   | {
       type: "TARGET_CORRECT";
       key: string;
