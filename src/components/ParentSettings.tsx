@@ -93,6 +93,22 @@ export function ParentSettingsPanel({
         />
       </label>
       <label className="flex items-center justify-between text-lg">
+        Time between letters
+        <select
+          value={settings.lessonPace}
+          onChange={(event) =>
+            onChange({
+              ...settings,
+              lessonPace: event.target.value as ParentSettings["lessonPace"],
+            })
+          }
+          className="rounded-xl border px-3 py-2"
+        >
+          <option value="relaxed">Relaxed</option>
+          <option value="steady">A bit quicker</option>
+        </select>
+      </label>
+      <label className="flex items-center justify-between text-lg">
         Celebrations
         <select
           value={settings.celebrationLevel}
@@ -192,7 +208,7 @@ export function ParentSettingsPanel({
             }
             className="rounded-xl border px-3 py-2"
           >
-            <option value="">Default English voice</option>
+          <option value="">Recommended English voice</option>
             {voices.map((voice) => (
               <option key={voice.uri} value={voice.uri}>
                 {voice.name}
@@ -205,6 +221,22 @@ export function ParentSettingsPanel({
           Voice guidance isn&apos;t available in this browser.
         </p>
       )}
+      <label className="flex items-center justify-between text-lg">
+        Voice personality
+        <select
+          value={settings.voicePersonality}
+          onChange={(event) =>
+            onChange({
+              ...settings,
+              voicePersonality: event.target.value as ParentSettings["voicePersonality"],
+            })
+          }
+          className="rounded-xl border px-3 py-2"
+        >
+          <option value="playful">Playful</option>
+          <option value="calm">Calm</option>
+        </select>
+      </label>
       <label className="flex items-center justify-between text-lg">
         Speaking speed
         <select
@@ -274,7 +306,7 @@ export function ParentSettingsPanel({
         onClick={onPreviewVoice}
         className="min-h-11 rounded-full bg-[#FFF6C8] font-bold"
       >
-        ▶ Test voice
+        ▶ Hear this voice
       </button>
 
       <p className="font-[family-name:var(--font-nunito)] font-semibold">All lessons</p>

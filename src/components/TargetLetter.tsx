@@ -24,6 +24,7 @@ export function TargetLetter({
   const label = displayKey(target);
   const hint = tinyHint(target);
   const compact = size !== "desktop";
+  const hud = size === "compact";
   const motion = reducedMotion
     ? ""
     : mood === "idle"
@@ -36,10 +37,10 @@ export function TargetLetter({
 
   const fontSize =
     size === "compact"
-      ? "clamp(110px, 28vw, 130px)"
+      ? "clamp(100px, 27vw, 135px)"
       : size === "mobile"
-        ? "clamp(110px, 35vw, 190px)"
-        : "clamp(180px, 22vw, 300px)";
+        ? "clamp(130px, 38vw, 185px)"
+        : "var(--target-size)";
 
   const letterColor =
     mood === "success"
@@ -57,16 +58,15 @@ export function TargetLetter({
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-center ${
-        size === "desktop" ? "min-h-[28vh]" : "min-h-0"
-      }`}
+      className="target-wrapper relative flex min-h-0 flex-col items-center justify-center"
+      data-testid="target-letter"
     >
       {mood === "retry" ? <div className="target-halo-miss" /> : null}
       {mood === "success" ? <div className="target-halo-win" /> : null}
       {burst && !reducedMotion ? (
-        <StarBurst compact={compact} level={burstLevel} />
+        <StarBurst compact={compact} level={hud ? 1 : burstLevel} />
       ) : null}
-      {burst && !reducedMotion ? (
+      {burst && !reducedMotion && !hud ? (
         <span className="star-fly absolute top-6 left-1/2 text-4xl" aria-hidden>
           ⭐
         </span>
@@ -78,28 +78,30 @@ export function TargetLetter({
       >
         {label}
       </p>
-      {hint ? (
-        <p className="mt-1 text-lg font-semibold text-[#7657E8]">{hint}</p>
-      ) : null}
-      {banner ? (
+      {hud ? null : hint ? (
+        <p className="mt-1 h-6 text-lg font-semibold text-[#7657E8]">{hint}</p>
+      ) : (
+        <p className="mt-1 h-6" />
+      )}
+      {hud ? null : (
         <p
-          className={`mt-2 whitespace-pre-line text-center font-[family-name:var(--font-display)] font-bold leading-tight ${
+          className={`mt-1 min-h-10 text-center font-[family-name:var(--font-display)] font-bold leading-tight ${
             mood === "success"
-              ? "text-[#2AA85A]"
+              ? "success-headline text-[#2AA85A]"
               : mood === "retry"
                 ? "text-[#FF4D5E]"
-                : "text-[#34364A]"
-          } ${compact ? "text-2xl" : "text-3xl sm:text-4xl"}`}
+                : "text-transparent"
+          } ${compact ? "text-xl" : "text-2xl sm:text-3xl"}`}
         >
-          {banner}
+          {banner ?? "\u00a0"}
         </p>
-      ) : null}
+      )}
     </div>
   );
 }
 
 function StarBurst({ compact, level }: { compact?: boolean; level: 1 | 2 | 3 }) {
-  const count = compact ? (level >= 3 ? 10 : 8) : level >= 3 ? 16 : level === 2 ? 14 : 12;
+  const count = compact ? 6 : level >= 3 ? 16 : level === 2 ? 14 : 12;
   const bits = ["⭐", "✨", "✦"];
   const reach = compact ? 70 : 110;
   return (

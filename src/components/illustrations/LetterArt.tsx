@@ -380,6 +380,9 @@ const ART: Record<LetterArtId, () => ReactNode> = {
   zebra: Zebra,
 };
 
+export const ILLUSTRATIONS = ART;
+export const LETTER_ART_IDS = Object.keys(ART) as LetterArtId[];
+
 export function LetterArt({
   id,
   className,
@@ -388,5 +391,17 @@ export function LetterArt({
   className?: string;
 }) {
   const Picture = ART[id];
+  if (!Picture) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error(`Missing association illustration for target "${id}"`);
+    }
+    return (
+      <div
+        className={`grid place-items-center rounded-2xl bg-[#EEF3FF] font-[family-name:var(--font-display)] text-2xl font-bold text-[#7657E8] ${className ?? "h-full w-full"}`}
+      >
+        ?
+      </div>
+    );
+  }
   return <div className={className ?? "h-full w-full"}>{Picture()}</div>;
 }

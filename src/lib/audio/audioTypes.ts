@@ -1,9 +1,10 @@
 export const AUDIO_TIMING = {
-  targetSpeechDelay: 320,
+  targetSpeechDelay: 900,
   wrongSpeechCooldown: 1400,
-  streakSpeechDelay: 200,
-  lessonCompleteSpeechDelay: 720,
-  encouragementDelay: 280,
+  streakSpeechDelay: 280,
+  lessonCompleteSpeechDelay: 800,
+  encouragementDelay: 300,
+  associationSpeechDelay: 1100,
 } as const;
 
 export type SpeechPriority = "high" | "medium" | "low";
@@ -20,7 +21,15 @@ export type EffectName =
 
 export type AudioGameEvent =
   | { type: "TARGET_SHOWN"; key: string }
-  | { type: "TARGET_CORRECT"; key: string; streak: number }
+  | {
+      type: "TARGET_CORRECT";
+      key: string;
+      streak: number;
+      phrase: string;
+      speakPraise: boolean;
+      teachLine?: string;
+      speakTeach?: boolean;
+    }
   | { type: "TARGET_WRONG"; key: string; attempts: number }
   | { type: "STREAK_3" }
   | { type: "STREAK_5" }

@@ -17,6 +17,10 @@ const AudioContext = createContext<{
   speechAvailable: boolean;
 }>({ audio: null, voices: [], speechAvailable: false });
 
+/**
+ * Browser speech + Howler SFX. Lesson code talks only to AudioManager.notify.
+ * SpeechManager can later sit behind a neural TTS backend without changing game events.
+ */
 export function AudioProvider({ children }: { children: React.ReactNode }) {
   const audio = useSyncExternalStore(
     () => () => undefined,

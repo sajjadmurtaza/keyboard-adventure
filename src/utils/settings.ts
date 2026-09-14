@@ -1,9 +1,13 @@
+import { successHoldMs } from "@/lib/lessonPhase";
+
 const SETTINGS_KEY = "keyboard-adventure-settings-v1";
 
 export type Difficulty = "beginner" | "growing" | "practice";
 export type CelebrationLevel = "gentle" | "fun" | "big";
 
 export type NameFrequency = "never" | "sometimes" | "celebrations" | "often";
+export type VoicePersonality = "playful" | "calm";
+export type LessonPace = "relaxed" | "steady";
 
 export type ParentSettings = {
   sound: boolean;
@@ -14,10 +18,12 @@ export type ParentSettings = {
   nameFrequency: NameFrequency;
   voiceURI: string;
   speechRate: number;
+  voicePersonality: VoicePersonality;
   wrongVoiceHelp: boolean;
   preferLocalVoice: boolean;
   celebrations: boolean;
   celebrationLevel: CelebrationLevel;
+  lessonPace: LessonPace;
   reducedAnimations: boolean;
   allowReplay: boolean;
   unlockAll: boolean;
@@ -37,10 +43,12 @@ export const defaultSettings: ParentSettings = {
   nameFrequency: "sometimes",
   voiceURI: "",
   speechRate: 0.9,
+  voicePersonality: "playful",
   wrongVoiceHelp: true,
   preferLocalVoice: true,
   celebrations: true,
   celebrationLevel: "fun",
+  lessonPace: "relaxed",
   reducedAnimations: false,
   allowReplay: true,
   unlockAll: false,
@@ -64,6 +72,9 @@ export function loadSettings(): ParentSettings {
       (parsed.celebrations === false ? "gentle" : "fun");
     const nameFrequency = parseNameFrequency(parsed.nameFrequency);
     const speechRate = clamp(Number(parsed.speechRate ?? 0.9), 0.7, 1.1);
+    const voicePersonality: VoicePersonality =
+      parsed.voicePersonality === "calm" ? "calm" : "playful";
+    const lessonPace: LessonPace = parsed.lessonPace === "steady" ? "steady" : "relaxed";
     const masterVolume = clamp(Number(parsed.masterVolume ?? 0.75), 0, 1);
     return {
       ...defaultSettings,
@@ -71,6 +82,8 @@ export function loadSettings(): ParentSettings {
       celebrationLevel,
       nameFrequency,
       speechRate,
+      voicePersonality,
+      lessonPace,
       masterVolume,
       voiceURI: typeof parsed.voiceURI === "string" ? parsed.voiceURI : "",
       childName: typeof parsed.childName === "string" ? parsed.childName.trim() : "",
@@ -107,13 +120,9 @@ export function celebrationMs(
   reducedMotion: boolean,
   streak = 0,
 ): number {
-  if (reducedMotion || settings.reducedAnimations) return 400;
-  const base =
-    settings.celebrationLevel === "gentle"
-      ? 800
-      : settings.celebrationLevel === "big"
-        ? 1200
-        : 1050;
-  if (streak >= 5) return Math.max(base, 1100);
-  return base;
+  return successHoldMs(streak, reducedMotion || settings.reducedAnimations);
+}
+
+export function nextLetterSpeechDelay(settings: ParentSettings): number {
+  return settings.lessonPace === "steady" ? 480 : 900;
 }

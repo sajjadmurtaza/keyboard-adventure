@@ -1,54 +1,49 @@
 "use client";
 
+import { forwardRef } from "react";
+
 type KeyTone = "idle" | "target" | "strong" | "success" | "miss";
 
 type KeyboardKeyProps = {
   label: string;
+  keyId: string;
   wide?: boolean;
   bump?: boolean;
   tone: KeyTone;
   point?: boolean;
 };
 
-export function KeyboardKey({
-  label,
-  wide,
-  bump,
-  tone,
-  point,
-}: KeyboardKeyProps) {
-  const toneClass =
-    tone === "success"
-      ? "key-hit border-[#38D978] bg-[#38D978] text-[#14532D] shadow-[0_0_18px_rgba(56,217,120,0.55)]"
-      : tone === "miss"
-        ? "key-miss border-[#FF4D5E] bg-[#FF4D5E] text-white shadow-[0_0_16px_rgba(255,77,94,0.45)]"
-        : tone === "strong"
-          ? "key-glow-strong border-[#7657E8] bg-[#FFD85A] text-[#34364A]"
-          : tone === "target"
-            ? "key-glow border-[#7657E8] bg-[#FFD85A] text-[#34364A] scale-110"
-            : "border-[#E8E4F8] bg-[#FFFEFF] text-[#34364A] shadow-[0_4px_0_#E4DFF6]";
+export const KeyboardKey = forwardRef<HTMLDivElement, KeyboardKeyProps>(
+  function KeyboardKey({ label, keyId, wide, bump, tone, point }, ref) {
+    const toneClass =
+      tone === "success"
+        ? "keycap-success key-hit"
+        : tone === "miss"
+          ? "keycap-miss key-miss"
+          : tone === "strong"
+            ? "keycap-target key-glow-strong"
+            : tone === "target"
+              ? "keycap-target key-glow"
+              : "keycap-idle";
 
-  return (
-    <div className="relative">
-      {point ? (
-        <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-2xl" aria-hidden>
-          👇
-        </span>
-      ) : null}
+    return (
       <div
-        className={`flex items-center justify-center rounded-[18px] border-[3px] font-bold shadow-[0_5px_0_rgba(118,87,232,0.12)] ${
-          wide
-            ? "h-14 w-[min(100%,36rem)] max-w-xl px-8 text-2xl md:h-16"
-            : "h-12 w-10 text-lg sm:h-14 sm:w-12 sm:text-xl md:h-16 md:w-14 md:text-2xl"
-        } ${toneClass}`}
+        ref={ref}
+        className={`relative ${wide ? "keyboard-space-wrap" : "keyboard-key-wrap"}`}
+        data-testid={`key-${keyId === " " ? "space" : keyId}`}
+        data-key={keyId === " " ? "space" : keyId}
+        data-tone={tone}
       >
-        <span className="flex flex-col items-center leading-none">
-          {label}
-          {bump ? (
-            <span className="mt-1 h-1 w-5 rounded-full bg-[#7657E8]" />
-          ) : null}
-        </span>
+        {point ? (
+          <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 text-xl" aria-hidden>
+            👇
+          </span>
+        ) : null}
+        <div className={`keycap ${toneClass} ${wide ? "keycap-space" : ""}`}>
+          <span className="relative z-10 leading-none">{label}</span>
+          {bump ? <span className="key-bump" aria-hidden /> : null}
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  },
+);

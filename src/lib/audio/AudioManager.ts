@@ -5,7 +5,6 @@ import type { AudioGameEvent, VoiceOption } from "@/lib/audio/audioTypes";
 import { SoundManager } from "@/lib/audio/SoundManager";
 import { SpeechManager } from "@/lib/audio/SpeechManager";
 import {
-  getCorrectPhrase,
   getLessonCompletePhrase,
   getPreviewPhrase,
   getStreakPhrase,
@@ -13,8 +12,14 @@ import {
   getWrongInstruction,
   shouldSayName,
 } from "@/lib/audio/speechPhrases";
+import { moodTone, type SpeechMood } from "@/lib/audio/voiceMoods";
 import type { ParentSettings } from "@/utils/settings";
+import { nextLetterSpeechDelay } from "@/utils/settings";
 
+/**
+ * Lesson audio facade. Browser SpeechSynthesis is the current speech backend.
+ * A later neural TTS provider can replace SpeechManager without changing notify().
+ */
 export class AudioManager {
   readonly speech = new SpeechManager();
   readonly sounds = new SoundManager();
@@ -51,13 +56,13 @@ export class AudioManager {
     const settings = this.settings;
     if (!settings?.sound || !settings.voiceGuidance) return;
     this.stopSpeech();
-    this.say(getPreviewPhrase(settings.childName.trim() || undefined), "high", 0);
+    this.say(getPreviewPhrase(), "high", "celebration", 0);
   }
 
   repeatTarget(key: string) {
     const settings = this.settings;
     if (!settings?.sound || !settings.voiceGuidance) return;
-    this.say(getTargetInstruction(key), "high", 0);
+    this.say(getTargetInstruction(key), "high", "instruction", 0);
   }
 
   notify(event: AudioGameEvent) {
@@ -85,7 +90,13 @@ export class AudioManager {
         if (event.streak !== 3 && event.streak !== 5) {
           this.sounds.play("correct");
           window.setTimeout(() => this.sounds.play("star"), 160);
-          this.maybeCorrectSpeech(event.streak);
+          this.maybeCorrectSpeech(
+            event.phrase,
+            event.speakPraise,
+            event.streak,
+            event.teachLine,
+            event.speakTeach,
+          );
         }
         return;
       case "STREAK_3":
@@ -94,6 +105,7 @@ export class AudioManager {
           this.say(
             getStreakPhrase(3, this.celebrateName()),
             "medium",
+            "streak",
             AUDIO_TIMING.streakSpeechDelay,
           );
         }, AUDIO_TIMING.streakSpeechDelay);
@@ -104,6 +116,7 @@ export class AudioManager {
           this.say(
             getStreakPhrase(5, this.celebrateName()),
             "medium",
+            "streak",
             AUDIO_TIMING.streakSpeechDelay,
           );
         }, AUDIO_TIMING.streakSpeechDelay);
@@ -112,7 +125,7 @@ export class AudioManager {
         this.stopSpeech();
         this.sounds.play("lessonComplete");
         this.later(() => {
-          this.say(getLessonCompletePhrase(this.celebrateName()), "high", 0);
+          this.say(getLessonCompletePhrase(this.celebrateName()), "high", "celebration", 0);
         }, AUDIO_TIMING.lessonCompleteSpeechDelay);
         return;
       default:
@@ -138,8 +151,8 @@ export class AudioManager {
       const name = shouldSayName(settings.nameFrequency, "target", settings.childName.trim())
         ? settings.childName.trim()
         : undefined;
-      this.say(getTargetInstruction(key, name), "medium", 400);
-    }, AUDIO_TIMING.targetSpeechDelay);
+      this.say(getTargetInstruction(key, name), "medium", "instruction", 400);
+    }, nextLetterSpeechDelay(settings));
   }
 
   private maybeWrongSpeech(key: string, attempts: number) {
@@ -147,17 +160,29 @@ export class AudioManager {
     if (!settings?.voiceGuidance || !settings.wrongVoiceHelp) return;
     const line = getWrongInstruction(key, attempts);
     if (!line) return;
-    this.say(line, "medium", AUDIO_TIMING.wrongSpeechCooldown);
+    this.say(line, "medium", "hint", AUDIO_TIMING.wrongSpeechCooldown);
   }
 
-  private maybeCorrectSpeech(streak: number) {
+  private maybeCorrectSpeech(
+    phrase: string,
+    speakPraise: boolean,
+    streak: number,
+    teachLine?: string,
+    speakTeach?: boolean,
+  ) {
     const settings = this.settings;
     if (!settings?.voiceGuidance) return;
     if (streak === 3 || streak === 5) return;
-    if (Math.random() > 0.28) return;
-    this.later(() => {
-      this.say(getCorrectPhrase(this.celebrateName()), "low", 900);
-    }, AUDIO_TIMING.encouragementDelay);
+    if (speakPraise && phrase) {
+      this.later(() => {
+        this.say(phrase, "low", "success", 900);
+      }, AUDIO_TIMING.encouragementDelay);
+    }
+    if (speakTeach && teachLine) {
+      this.later(() => {
+        this.say(teachLine, "low", "success", 900);
+      }, AUDIO_TIMING.associationSpeechDelay);
+    }
   }
 
   private celebrateName(): string | undefined {
@@ -170,16 +195,18 @@ export class AudioManager {
   private say(
     text: string,
     priority: "high" | "medium" | "low",
+    mood: SpeechMood,
     cooldown: number,
   ) {
     const settings = this.settings;
     if (!settings?.sound || !settings.voiceGuidance) return;
+    const tone = moodTone(mood, settings.voicePersonality, settings.speechRate);
     this.sounds.setDuck(0.5);
     const ok = this.speech.speak(text, {
       priority,
-      rate: settings.speechRate,
-      pitch: 1,
-      volume: settings.masterVolume,
+      rate: tone.rate,
+      pitch: tone.pitch,
+      volume: tone.volume * settings.masterVolume,
       voiceURI: settings.voiceURI,
       preferLocal: settings.preferLocalVoice,
       generation: this.generation,

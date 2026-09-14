@@ -9,6 +9,16 @@ const SPOKEN_KEYS: Record<string, string> = {
   "/": "slash",
 };
 
+const BIG_SUCCESS_PHRASES = [
+  "Wow! You're on a roll!",
+  "Woohoo! Super typing!",
+  "Fantastic job!",
+  "That was awesome!",
+  "Amazing work!",
+];
+
+let lastPhrase = "";
+
 export function spokenKey(key: string): string {
   const normalized = normalizeTarget(key);
   return SPOKEN_KEYS[normalized] ?? displayKey(normalized);
@@ -16,6 +26,14 @@ export function spokenKey(key: string): string {
 
 function chance(percent: number) {
   return Math.random() < percent;
+}
+
+export function pickFresh(options: string[]): string {
+  const unique = options.filter((line) => line !== lastPhrase);
+  const pool = unique.length ? unique : options;
+  const chosen = pool[Math.floor(Math.random() * pool.length)] ?? options[0] ?? "";
+  lastPhrase = chosen;
+  return chosen;
 }
 
 export function shouldSayName(
@@ -34,65 +52,58 @@ export function shouldSayName(
 export function getTargetInstruction(key: string, name?: string): string {
   const label = spokenKey(key);
   if (label === "space bar") {
-    return name ? `${name}, press the space bar.` : "Press the space bar.";
+    return name ? `${name}, can you find the space bar?` : "Can you find the space bar?";
   }
-  const options = name
-    ? [
-        `${name}, can you find ${label}?`,
-        `Find ${label}, ${name}.`,
-        `Can you find the letter ${label}?`,
-      ]
-    : [
-        `Find ${label}.`,
-        `Press ${label}.`,
-        `Can you find the letter ${label}?`,
-        `Type the letter ${label}.`,
-      ];
-  return options[Math.floor(Math.random() * options.length)] ?? `Find ${label}.`;
+  const named = name
+    ? [`${name}, can you find ${label}?`, `Let's find ${label}, ${name}!`]
+    : [];
+  return pickFresh([
+    ...named,
+    `Can you find ${label}?`,
+    `Find ${label}!`,
+    `Let's find ${label}!`,
+    `Where's ${label}?`,
+    `Find the letter ${label}!`,
+  ]);
 }
 
-export function getWrongInstruction(
-  key: string,
-  attempts: number,
-  name?: string,
-): string | null {
+export function getWrongInstruction(key: string, attempts: number): string | null {
   const label = spokenKey(key);
   if (attempts <= 1) return null;
-  if (attempts === 2) return `Try ${label} again.`;
-  if (attempts === 3) return `Find ${label}.`;
-  if (attempts % 2 === 0) {
-    return name
-      ? `You can do it, ${name}. Find ${label}.`
-      : `You can do it. Find ${label}.`;
-  }
+  if (attempts === 2) return `Almost! Find ${label}.`;
+  if (attempts === 3) return `You can do it! Find ${label}.`;
+  if (attempts % 3 === 0) return `Try ${label} again.`;
   return null;
-}
-
-export function getCorrectPhrase(name?: string): string {
-  const options = name
-    ? [
-        `Great job, ${name}!`,
-        `Nice work, ${name}!`,
-        "You got it!",
-        "Amazing!",
-      ]
-    : ["Great job!", "Amazing!", "Nice work!", "You got it!", "Fantastic!", "Super!", "Great typing!"];
-  return options[Math.floor(Math.random() * options.length)] ?? "Great job!";
 }
 
 export function getStreakPhrase(streak: number, name?: string): string {
   if (streak >= 5) {
-    return name ? `Super streak, ${name}!` : "Super streak!";
+    return pickFresh(
+      name
+        ? [`Woohoo, ${name}! Super streak!`, "Wow! You're on a roll!", "Super typing!"]
+        : ["Woohoo! Super streak!", "Wow! You're on a roll!", "Super typing!"],
+    );
   }
-  return name ? `Three in a row, ${name}!` : "Three in a row!";
+  return pickFresh(
+    name
+      ? [`Woohoo, ${name}! Three in a row!`, ...BIG_SUCCESS_PHRASES]
+      : ["Woohoo! Three in a row!", ...BIG_SUCCESS_PHRASES],
+  );
 }
 
 export function getLessonCompletePhrase(name?: string): string {
-  return name ? `Amazing work, ${name}!` : "You did it!";
+  return pickFresh(
+    name
+      ? [
+          `Woohoo, ${name}! You did it!`,
+          `Amazing work, ${name}!`,
+          "Woohoo! You did it!",
+          "Fantastic job! Adventure complete!",
+        ]
+      : ["Woohoo! You did it!", "Fantastic job! Adventure complete!", "Amazing typing!"],
+  );
 }
 
-export function getPreviewPhrase(name?: string): string {
-  return name
-    ? `Hello, ${name}! Let's go on a keyboard adventure!`
-    : "Hello! Let's go on a keyboard adventure!";
+export function getPreviewPhrase(): string {
+  return "Just right! You found J!";
 }

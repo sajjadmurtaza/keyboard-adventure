@@ -43,7 +43,7 @@ export class SpeechManager {
   }
 
   list(): VoiceOption[] {
-    return this.voices.map((voice) => ({
+    return rankVoices(this.voices, true).map((voice) => ({
       uri: voice.voiceURI,
       name: voice.name,
       lang: voice.lang,
@@ -63,17 +63,13 @@ export class SpeechManager {
       return false;
     }
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(stripForSpeech(text));
     utterance.rate = options.rate;
-    utterance.pitch = options.pitch;
+    utterance.pitch = Math.min(1.25, Math.max(1, options.pitch));
     utterance.volume = Math.max(0, Math.min(1, options.volume));
     const voice = this.pickVoice(options.voiceURI, options.preferLocal);
     if (voice) utterance.voice = voice;
-    utterance.lang = voice?.lang ?? "en-US";
-    const generation = options.generation;
-    utterance.onend = () => {
-      if (generation !== options.generation) return;
-    };
+    utterance.lang = voice?.lang ?? preferredEnglishLang();
     this.lastSpokeAt = now;
     window.speechSynthesis.speak(utterance);
     return true;
@@ -88,14 +84,37 @@ export class SpeechManager {
 
   private pickVoice(uri: string, preferLocal: boolean): SpeechSynthesisVoice | null {
     if (!this.voices.length) return null;
-    const english = this.voices.filter((voice) => /^en(-|$)/i.test(voice.lang));
-    const pool = english.length ? english : this.voices;
     const selected = uri ? this.voices.find((voice) => voice.voiceURI === uri) : null;
     if (selected) return selected;
-    if (preferLocal) {
-      const local = pool.find((voice) => voice.localService);
-      if (local) return local;
-    }
-    return pool[0] ?? null;
+    return rankVoices(this.voices, preferLocal)[0] ?? null;
   }
+}
+
+function preferredEnglishLang() {
+  const locale = typeof navigator !== "undefined" ? navigator.language : "en-US";
+  return /^en/i.test(locale) ? locale : "en-US";
+}
+
+function stripForSpeech(text: string) {
+  return text.replace(/\p{Extended_Pictographic}/gu, "").replace(/\s+/g, " ").trim();
+}
+
+function rankVoices(voices: SpeechSynthesisVoice[], preferLocal: boolean) {
+  const locale = preferredEnglishLang().toLowerCase();
+  return [...voices].sort((a, b) => scoreVoice(b, locale, preferLocal) - scoreVoice(a, locale, preferLocal));
+}
+
+function scoreVoice(voice: SpeechSynthesisVoice, locale: string, preferLocal: boolean) {
+  let score = 0;
+  const lang = voice.lang.toLowerCase();
+  const name = voice.name.toLowerCase();
+  if (lang.startsWith("en")) score += 12;
+  if (lang === locale || lang.startsWith(locale.split("-")[0] ?? "en")) score += 6;
+  if (lang === locale) score += 4;
+  if (preferLocal && voice.localService) score += 8;
+  if (/enhanced|premium|neural|natural|online \(natural\)|google/.test(name)) score += 4;
+  if (/compact|eloquence|novelty|whisper|zarvox|bad news|good news|boing|bubbles|cellos/.test(name)) {
+    score -= 10;
+  }
+  return score;
 }
