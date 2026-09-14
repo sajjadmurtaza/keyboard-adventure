@@ -1,4 +1,4 @@
-export const SUCCESS_HOLD_MS = 4500;
+export const SUCCESS_HOLD_MS = 2800;
 export const TARGET_ARRIVE_MS = 520;
 export const WRONG_FEEDBACK_MS = 500;
 
@@ -24,11 +24,11 @@ export function wrongFeedbackMs(reducedMotion = false): number {
 
 export function successHoldMs(streak: number, reducedMotion = false): number {
   if (reducedMotion) {
-    if (streak >= 5) return 2800;
-    if (streak >= 3) return 2600;
-    return 2400;
+    if (streak >= 5) return 1800;
+    if (streak >= 3) return 1700;
+    return 1600;
   }
-  if (streak >= 5) return 5200;
-  if (streak >= 3) return 4800;
+  if (streak >= 5) return 3200;
+  if (streak >= 3) return 3000;
   return SUCCESS_HOLD_MS;
 }

@@ -18,13 +18,13 @@ describe("lesson phase", () => {
     expect(wrongFeedbackMs(true)).toBe(280);
   });
 
-  it("holds success about 4.5 seconds", () => {
-    expect(SUCCESS_HOLD_MS).toBe(4500);
-    expect(successHoldMs(1)).toBe(4500);
-    expect(successHoldMs(1, true)).toBe(2400);
-    expect(successHoldMs(3, true)).toBe(2600);
-    expect(successHoldMs(5, true)).toBe(2800);
-    expect(successHoldMs(3)).toBeGreaterThanOrEqual(4800);
-    expect(successHoldMs(5)).toBeGreaterThanOrEqual(5200);
+  it("holds success about 2.8 seconds", () => {
+    expect(SUCCESS_HOLD_MS).toBe(2800);
+    expect(successHoldMs(1)).toBe(2800);
+    expect(successHoldMs(1, true)).toBe(1600);
+    expect(successHoldMs(3, true)).toBe(1700);
+    expect(successHoldMs(5, true)).toBe(1800);
+    expect(successHoldMs(3)).toBeGreaterThanOrEqual(3000);
+    expect(successHoldMs(5)).toBeGreaterThanOrEqual(3200);
   });
 });

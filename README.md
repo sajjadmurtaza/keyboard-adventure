@@ -75,7 +75,7 @@ If no name is saved, a blocking screen asks **Who is learning today?** A blank n
 3. Voice then says something like: **F is for Fish! Fatima, type F for Fish.** If the same letter comes right after itself: **F, F, Fish!**
 4. Only one target is active. Layout never changes what counts as a correct key.
 5. First wrong key: sound and shake only. Second: **Almost, Fatima. Find F.** Third: **You can do it, Fatima. Find F.** The picture stays.
-6. A correct key locks typing, keeps the picture, and celebrates about **4.5 seconds** so the green letter and sparkles stay on screen.
+6. A correct key locks typing, keeps the picture, and celebrates about **2.8 seconds**.
 7. The next letter appears with its picture already ready. Voice does not talk about the next letter until that scene is on screen.
 8. Lesson complete is a **full-screen party**. **Next adventure** and **Play again** appear after a few seconds. The app does not leave that screen by itself.
 

@@ -57,12 +57,12 @@ describe("settings", () => {
   it("paces celebration from the shared success hold", () => {
     const quiet = celebrationMs({ ...defaultSettings, sound: false }, false, 1);
     const voiced = celebrationMs(defaultSettings, false, 1);
-    expect(voiced).toBe(4500);
-    expect(quiet).toBe(4500);
-    expect(celebrationMs(defaultSettings, false, 3)).toBeGreaterThanOrEqual(4800);
-    expect(celebrationMs(defaultSettings, false, 5)).toBeGreaterThanOrEqual(5200);
-    expect(celebrationMs({ ...defaultSettings, reducedAnimations: true }, false, 1)).toBe(2400);
-    expect(celebrationMs({ ...defaultSettings, sound: false }, true, 1)).toBe(2400);
+    expect(voiced).toBe(2800);
+    expect(quiet).toBe(2800);
+    expect(celebrationMs(defaultSettings, false, 3)).toBeGreaterThanOrEqual(3000);
+    expect(celebrationMs(defaultSettings, false, 5)).toBeGreaterThanOrEqual(3200);
+    expect(celebrationMs({ ...defaultSettings, reducedAnimations: true }, false, 1)).toBe(1600);
+    expect(celebrationMs({ ...defaultSettings, sound: false }, true, 1)).toBe(1600);
     expect(nextLetterSpeechDelay(defaultSettings)).toBe(280);
     expect(nextLetterSpeechDelay({ ...defaultSettings, lessonPace: "steady" })).toBe(200);
   });

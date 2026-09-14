@@ -162,13 +162,22 @@ function floatUntil(delay: number, settleAt: number): number {
   return Number((settleAt - delay).toFixed(2));
 }
 
-function ringPoint(angleDeg: number, compact: boolean, rng: Rng): { left: number; top: number } {
+function ringPoint(
+  angleDeg: number,
+  compact: boolean,
+  rng: Rng,
+  near = true,
+): { left: number; top: number } {
   const rad = (angleDeg * Math.PI) / 180;
-  const rx = range(rng, compact ? 16 : 18, compact ? 26 : 32);
-  const ry = range(rng, compact ? 14 : 16, compact ? 24 : 28);
+  const rx = near
+    ? range(rng, compact ? 8 : 10, compact ? 14 : 16)
+    : range(rng, compact ? 22 : 28, compact ? 32 : 38);
+  const ry = near
+    ? range(rng, compact ? 7 : 9, compact ? 13 : 15)
+    : range(rng, compact ? 20 : 24, compact ? 30 : 36);
   return {
-    left: clamp(50 + Math.cos(rad) * rx, 8, 92),
-    top: clamp(50 + Math.sin(rad) * ry, 24, 78),
+    left: clamp(50 + Math.cos(rad) * rx, 10, 90),
+    top: clamp(50 + Math.sin(rad) * ry, 30, 72),
   };
 }
 
@@ -214,14 +223,15 @@ export function celebrationPlan(
   }
 
   if (level === "correct") {
-    const count = compact ? 8 : 10;
-    const settle = 4.15;
+    const count = compact ? 10 : 12;
+    const settle = 2.5;
     const angles = shuffle(compass(count), rng);
     return Array.from({ length: count }, (_, index) => {
       const emoji = cycle(MIX, index);
       const angle = angles[index] ?? -90;
-      const slot = ringPoint(angle, compact, rng);
-      const delay = entranceDelay(index, 0.15, 0.15, rng);
+      const near = index < count - 2;
+      const slot = ringPoint(angle, compact, rng, near);
+      const delay = entranceDelay(index, 0.08, 0.08, rng);
       const move = vector(angle, distanceFor(emoji, compact, rng), rng);
       const curve = range(rng, -22, 22);
       return particle(
@@ -243,7 +253,7 @@ export function celebrationPlan(
 
   if (level === "streak" || level === "streak5") {
     const count = level === "streak5" ? (compact ? 18 : 22) : compact ? 14 : 18;
-    const settle = level === "streak5" ? 4.75 : 4.45;
+    const settle = level === "streak5" ? 2.9 : 2.7;
     const waveSplit = Math.ceil(count / 2);
     const boost = compact ? 1.15 : 1.35;
     return Array.from({ length: count }, (_, index) => {
@@ -251,18 +261,25 @@ export function celebrationPlan(
       const inSecond = level === "streak5" && index >= waveSplit;
       const local = inSecond ? index - waveSplit : index;
       const delay = inSecond
-        ? entranceDelay(local, 1.5, 0.12, rng)
-        : entranceDelay(local, level === "streak5" ? 0.2 : 0.15, 0.12, rng);
+        ? entranceDelay(local, 0.9, 0.08, rng)
+        : entranceDelay(local, level === "streak5" ? 0.1 : 0.08, 0.08, rng);
       const emoji = cycle(STREAK_MIX, index);
       const angle = (index * 47) % 360 - 180;
       const move = vector(angle, distanceFor(emoji, compact, rng) * boost, rng);
       const jitterL = range(rng, -4, 4);
       const jitterT = range(rng, -5, 5);
+      const nearLetter = index % 3 !== 0;
+      const slot = nearLetter
+        ? ringPoint(angle, compact, rng, true)
+        : {
+            left: clamp(region.left + jitterL, 4, 94),
+            top: clamp(region.top + jitterT, 4, 90),
+          };
       return particle(
         `s-${index}`,
         emoji,
-        clamp(region.left + jitterL, 4, 94),
-        clamp(region.top + jitterT, 4, 90),
+        slot.left,
+        slot.top,
         compact ? 18 + (index % 3) * 2 : 22 + (index % 4) * 3,
         delay,
         floatUntil(delay, settle),

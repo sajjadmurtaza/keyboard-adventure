@@ -559,7 +559,7 @@ html.lesson-play body {
 
 .target-halo-win {
   background: radial-gradient(circle, var(--success-glow), rgba(255, 216, 77, 0.25) 40%, transparent 72%);
-  animation: halo-win 3.6s ease forwards;
+  animation: halo-win 2.2s ease forwards;
 }
 
 .star-fly {
@@ -575,7 +575,7 @@ html.lesson-play body {
 }
 
 .mascot-clap-emoji {
-  animation: clap-pop 0.68s ease-in-out 5;
+  animation: clap-pop 0.5s ease-in-out 4;
 }
 
 .mascot-clap-emoji-delay {
@@ -630,11 +630,11 @@ html.lesson-play body {
 }
 
 .celebration-particle {
-  animation: celebration-float 3.6s ease-out both;
+  animation: ka-celebration-float 3.6s ease-out both;
 }
 
 .celebration-pop {
-  animation: celebration-pop 3.6s ease-out both;
+  animation: ka-celebration-pop 3.6s ease-out both;
 }
 
 .party-confetti {
@@ -646,7 +646,7 @@ html.lesson-play body {
   z-index: 0;
 }
 
-@keyframes celebration-float {
+@keyframes ka-celebration-float {
   0% {
     opacity: 0;
     transform: translate(0, 0) scale(0.65) rotate(var(--rotate-start));
@@ -669,7 +669,7 @@ html.lesson-play body {
   }
 }
 
-@keyframes celebration-pop {
+@keyframes ka-celebration-pop {
   0% {
     opacity: 0;
     transform: translate(0, 0) scale(0.55);

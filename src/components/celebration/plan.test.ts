@@ -9,19 +9,19 @@ describe("celebration plan", () => {
   it("keeps a normal correct key mixed around the letter", () => {
     const bits = celebrationPlan("correct");
     expect(bits.length).toBeGreaterThanOrEqual(8);
-    expect(bits.length).toBeLessThanOrEqual(12);
+    expect(bits.length).toBeLessThanOrEqual(14);
     expect(bits.every((bit) => bit.kind === "sparkle")).toBe(true);
     expect(bits.some((bit) => bit.kind === "balloon")).toBe(false);
     expect(new Set(bits.map((bit) => bit.emoji)).size).toBeGreaterThanOrEqual(8);
     expect(bits.map((bit) => bit.emoji).join("")).toMatch(/[🌸🌼🌺]/);
     expect(bits.map((bit) => bit.emoji).join("")).toContain("👍");
     expect(bits.map((bit) => bit.emoji).join("")).toContain("👏");
-    expect(bits[0]?.delay).toBeGreaterThanOrEqual(0.14);
-    expect(bits[0]?.delay).toBeLessThan(0.25);
+    expect(bits[0]?.delay).toBeGreaterThanOrEqual(0.07);
+    expect(bits[0]?.delay).toBeLessThan(0.2);
     const last = bits[bits.length - 1];
-    expect(last?.delay).toBeGreaterThanOrEqual(1.2);
-    expect(Math.max(...bits.map(endsAt))).toBeGreaterThanOrEqual(4);
-    expect(Math.max(...bits.map(endsAt))).toBeLessThanOrEqual(4.25);
+    expect(last?.delay).toBeGreaterThanOrEqual(0.55);
+    expect(Math.max(...bits.map(endsAt))).toBeGreaterThanOrEqual(2.4);
+    expect(Math.max(...bits.map(endsAt))).toBeLessThanOrEqual(2.6);
     expect(new Set(bits.map((bit) => bit.motion)).size).toBeGreaterThan(1);
     expect(bits.some((bit) => bit.moveY < 0)).toBe(true);
     expect(bits.some((bit) => bit.moveY > 0)).toBe(true);
@@ -46,8 +46,8 @@ describe("celebration plan", () => {
 
   it("uses fewer mixed pieces on compact correct", () => {
     const bits = celebrationPlan("correct", true);
-    expect(bits.length).toBeGreaterThanOrEqual(7);
-    expect(bits.length).toBeLessThanOrEqual(10);
+    expect(bits.length).toBeGreaterThanOrEqual(8);
+    expect(bits.length).toBeLessThanOrEqual(12);
     expect(new Set(bits.map((bit) => bit.emoji)).size).toBeGreaterThan(5);
   });
 
@@ -59,17 +59,17 @@ describe("celebration plan", () => {
     expect(bits.map((bit) => bit.emoji).join("")).toContain("💖");
     const lefts = new Set(bits.map((bit) => bit.left));
     expect(lefts.size).toBeGreaterThan(4);
-    expect(Math.max(...bits.map(endsAt))).toBeGreaterThanOrEqual(4.3);
-    expect(Math.max(...bits.map(endsAt))).toBeLessThanOrEqual(4.55);
+    expect(Math.max(...bits.map(endsAt))).toBeGreaterThanOrEqual(2.55);
+    expect(Math.max(...bits.map(endsAt))).toBeLessThanOrEqual(2.8);
   });
 
   it("makes a 5-streak larger with a second wave", () => {
     const bits = celebrationPlan("streak5");
     expect(bits.length).toBeGreaterThanOrEqual(18);
     expect(bits.length).toBeLessThanOrEqual(24);
-    expect(bits.some((bit) => bit.delay >= 1.5)).toBe(true);
-    expect(Math.max(...bits.map(endsAt))).toBeGreaterThanOrEqual(4.5);
-    expect(Math.max(...bits.map(endsAt))).toBeLessThanOrEqual(4.9);
+    expect(bits.some((bit) => bit.delay >= 0.85)).toBe(true);
+    expect(Math.max(...bits.map(endsAt))).toBeGreaterThanOrEqual(2.7);
+    expect(Math.max(...bits.map(endsAt))).toBeLessThanOrEqual(3.05);
     expect(celebrationLevelFor(1)).toBe("correct");
     expect(celebrationLevelFor(3)).toBe("streak");
     expect(celebrationLevelFor(5)).toBe("streak5");
