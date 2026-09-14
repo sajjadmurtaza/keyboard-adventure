@@ -17,9 +17,11 @@ describe("speech phrases", () => {
     expect(getTargetInstruction(" ", "Ada")).toContain("Ada");
     expect(getTargetInstruction("j")).toMatch(/J/i);
     expect(getTargetInstruction("f", "Ada")).toBe(
-      "F is for Fish! Ada, type F for Fish.",
+      "eff is for Fish! Ada, type eff for Fish.",
     );
-    expect(getTargetInstruction("f")).toBe("F is for Fish! Type F for Fish.");
+    expect(getTargetInstruction("f")).toBe("eff is for Fish! Type eff for Fish.");
+    expect(getTargetInstruction("e")).toBe("ee is for Egg! Type ee for Egg.");
+    expect(spokenKey("e")).toBe("ee");
     expect(getTargetInstruction(",", "Ada")).toBe("Ada, type the comma.");
     expect(getTargetInstruction(",")).toBe("Type the comma.");
     expect(getTargetInstruction("1", "Ada")).toBe("Ada, type 1.");
@@ -28,9 +30,9 @@ describe("speech phrases", () => {
 
   it("paces wrong-key help", () => {
     expect(getWrongInstruction("j", 1)).toBeNull();
-    expect(getWrongInstruction("j", 2, "Ada")).toBe("Almost, Ada. Find J.");
-    expect(getWrongInstruction("j", 3, "Ada")).toBe("You can do it, Ada. Find J.");
-    expect(getWrongInstruction("j", 6)).toBe("Try J again.");
+    expect(getWrongInstruction("j", 2, "Ada")).toBe("Almost, Ada. Find jay.");
+    expect(getWrongInstruction("j", 3, "Ada")).toBe("You can do it, Ada. Find jay.");
+    expect(getWrongInstruction("j", 6)).toBe("Try jay again.");
     expect(getWrongInstruction("j", 4)).toBeNull();
     expect(spokenKey(";")).toBe("semicolon");
   });

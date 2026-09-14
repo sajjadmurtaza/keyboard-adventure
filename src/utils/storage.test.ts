@@ -23,6 +23,30 @@ describe("progress storage", () => {
       JSON.stringify({ completedLessons: "nope", lessonBestResults: 3, newlyUnlocked: undefined }),
     );
     expect(loadProgress().completedLessons).toEqual([]);
+    window.localStorage.setItem(
+      "keyboard-adventure-progress-v1",
+      JSON.stringify({
+        childName: "<script>alert(1)</script>",
+        completedLessons: [1, "nope", 99, 1],
+        starsEarned: -8,
+      }),
+    );
+    expect(loadProgress().childName).toBe("");
+    expect(loadProgress().completedLessons).toEqual([1]);
+    expect(loadProgress().starsEarned).toBe(0);
+    window.localStorage.setItem("keyboard-adventure-progress-v1", "[]");
+    expect(loadProgress().currentLesson).toBe(1);
+    window.localStorage.setItem(
+      "keyboard-adventure-progress-v1",
+      JSON.stringify({
+        currentLesson: 0,
+        newlyUnlocked: 7,
+        lessonBestResults: { "1": 4, xx: 9, "2": -1 },
+      }),
+    );
+    expect(loadProgress().currentLesson).toBe(1);
+    expect(loadProgress().newlyUnlocked).toBe(7);
+    expect(loadProgress().lessonBestResults).toEqual({ "1": 4 });
   });
 
   it("saves and resets", () => {

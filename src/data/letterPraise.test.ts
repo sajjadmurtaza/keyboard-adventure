@@ -13,14 +13,14 @@ describe("letter-matched praise", () => {
     const f = getSuccessPraise("F", { firstLook: false, streak: 1, random: () => 0 });
     expect(f.spoken.split("!")[0] + "!").toMatch(/Fantastic/);
     expect(f.showObject).toBe(true);
-    expect(f.teachLine).toBe("F is for Fish!");
+    expect(f.teachLine).toBe("eff is for Fish!");
     const g = getSuccessPraise("g", { firstLook: false, streak: 1, random: () => 0 });
     expect(g.spoken.startsWith("Great")).toBe(true);
   });
 
   it("combines Fish on first look", () => {
     const praise = getSuccessPraise("f", { firstLook: true, streak: 1, random: () => 0 });
-    expect(praise.teachLine).toContain("F is for Fish");
+    expect(praise.teachLine).toContain("eff is for Fish");
     expect(praise.showObject).toBe(true);
     expect(praise.speak).toBe(true);
     expect(praise.speakTeach).toBe(true);

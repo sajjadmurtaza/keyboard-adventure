@@ -1,4 +1,5 @@
 import { associationFor } from "@/data/letterAssociations";
+import { spokenKey } from "@/lib/audio/speechPhrases";
 import { pickFreshItem } from "@/lib/random";
 import { parseChildName } from "@/utils/childName";
 import { normalizeTarget } from "@/utils/keys";
@@ -85,12 +86,16 @@ function namedPraise(letter: string, name: string): string | null {
     n: `Nice work, ${name}!`,
     o: `Outstanding, ${name}!`,
     p: `Perfect, ${name}!`,
+    q: `Quick thinking, ${name}!`,
     r: `Remarkable, ${name}!`,
     s: `Super, ${name}!`,
     t: `Terrific, ${name}!`,
+    u: `Unbelievable, ${name}!`,
     v: `Very good, ${name}!`,
     w: `Wonderful, ${name}!`,
+    x: `Extra awesome, ${name}!`,
     y: `Yes! You got it, ${name}!`,
+    z: `Zoom, ${name}!`,
   };
   return lines[letter] ?? `You got it, ${name}!`;
 }
@@ -120,7 +125,7 @@ export function getSuccessPraise(
   const spoken = who ? namedPraise(letter, who) ?? short : short;
   const milestone = options.streak === 3 || options.streak === 5;
   const assoc = associationFor(letter);
-  const teachLine = assoc ? `${letter.toUpperCase()} is for ${assoc.word}!` : undefined;
+  const teachLine = assoc ? `${spokenKey(letter)} is for ${assoc.word}!` : undefined;
   const speakTeach = Boolean(
     !who && teachLine && !milestone && (options.firstLook || rng() < 0.35),
   );

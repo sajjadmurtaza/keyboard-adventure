@@ -7,6 +7,10 @@ describe("child name", () => {
     expect(parseChildName("José")).toBe("José");
     expect(parseChildName("あかり")).toBe("あかり");
     expect(parseChildName("Mary-Jane O'Neil")).toBe("Mary-Jane O'Neil");
+    expect(parseChildName("www.scam.example")).toBeNull();
+    expect(parseChildName("<img src=x>")).toBeNull();
+    expect(parseChildName("Ada@scam.com")).toBeNull();
+    expect(parseChildName("javascript:alert(1)")).toBeNull();
     expect(parseChildName("")).toBeNull();
     expect(parseChildName("   ")).toBeNull();
     expect(parseChildName("a".repeat(CHILD_NAME_MAX + 1))).toBeNull();

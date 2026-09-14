@@ -60,6 +60,33 @@ export const defaultSettings: ParentSettings = {
   difficulty: "beginner",
 };
 
+function asBool(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function parseVoiceURI(value: unknown): string {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim().slice(0, 240);
+  if (!trimmed) return "";
+  if (/[<>\n\r]|javascript:|data:|https?:/i.test(trimmed)) return "";
+  return trimmed;
+}
+
+function parseCelebrationLevel(value: unknown, celebrations?: boolean): CelebrationLevel {
+  if (value === "gentle" || value === "fun" || value === "big") return value;
+  return celebrations === false ? "gentle" : "fun";
+}
+
+function parseQuestionCount(value: unknown): ParentSettings["questionCount"] {
+  if (value === 5 || value === 10 || value === 15 || value === 20) return value;
+  return 10;
+}
+
+function parseDifficulty(value: unknown): Difficulty {
+  if (value === "beginner" || value === "growing" || value === "practice") return value;
+  return "beginner";
+}
+
 export function loadSettings(): ParentSettings {
   if (typeof window === "undefined") return defaultSettings;
   try {
@@ -68,32 +95,41 @@ export function loadSettings(): ParentSettings {
     const parsed = JSON.parse(raw) as Partial<ParentSettings> & {
       celebrations?: boolean;
     };
-    const celebrationLevel =
-      parsed.celebrationLevel ??
-      (parsed.celebrations === false ? "gentle" : "fun");
-    const nameFrequency = parseNameFrequency(parsed.nameFrequency);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return defaultSettings;
+    }
     const speechRateRaw = clamp(Number(parsed.speechRate ?? 0.95), 0.7, 1.1);
     const speechRate =
       Number.isFinite(Number(parsed.speechRate)) &&
       Number(parsed.speechRate) >= 0.8 &&
       Number(parsed.speechRate) <= 0.86
         ? 0.95
-        : speechRateRaw;
-    const voicePersonality: VoicePersonality =
-      parsed.voicePersonality === "calm" ? "calm" : "playful";
-    const lessonPace: LessonPace = parsed.lessonPace === "steady" ? "steady" : "relaxed";
-    const masterVolume = clamp(Number(parsed.masterVolume ?? 0.75), 0, 1);
+        : Number.isFinite(speechRateRaw)
+          ? speechRateRaw
+          : 0.95;
     return {
-      ...defaultSettings,
-      ...parsed,
-      celebrationLevel,
-      nameFrequency,
+      sound: asBool(parsed.sound, defaultSettings.sound),
+      masterVolume: clamp(Number(parsed.masterVolume ?? 0.75), 0, 1),
+      gameSounds: asBool(parsed.gameSounds, defaultSettings.gameSounds),
+      voiceGuidance: asBool(parsed.voiceGuidance, defaultSettings.voiceGuidance),
+      autoSpeakTarget: asBool(parsed.autoSpeakTarget, defaultSettings.autoSpeakTarget),
+      nameFrequency: parseNameFrequency(parsed.nameFrequency),
+      voiceURI: parseVoiceURI(parsed.voiceURI),
       speechRate,
-      voicePersonality,
-      lessonPace,
-      masterVolume,
-      voiceURI: typeof parsed.voiceURI === "string" ? parsed.voiceURI : "",
+      voicePersonality: parsed.voicePersonality === "calm" ? "calm" : "playful",
+      wrongVoiceHelp: asBool(parsed.wrongVoiceHelp, defaultSettings.wrongVoiceHelp),
+      preferLocalVoice: asBool(parsed.preferLocalVoice, defaultSettings.preferLocalVoice),
+      celebrations: asBool(parsed.celebrations, defaultSettings.celebrations),
+      celebrationLevel: parseCelebrationLevel(parsed.celebrationLevel, parsed.celebrations),
+      lessonPace: parsed.lessonPace === "steady" ? "steady" : "relaxed",
+      reducedAnimations: asBool(parsed.reducedAnimations, defaultSettings.reducedAnimations),
+      allowReplay: asBool(parsed.allowReplay, defaultSettings.allowReplay),
+      unlockAll: asBool(parsed.unlockAll, defaultSettings.unlockAll),
       childName: parseChildName(parsed.childName) ?? "",
+      questionCount: parseQuestionCount(parsed.questionCount),
+      fingerHints: asBool(parsed.fingerHints, defaultSettings.fingerHints),
+      keyboardHighlight: asBool(parsed.keyboardHighlight, defaultSettings.keyboardHighlight),
+      difficulty: parseDifficulty(parsed.difficulty),
     };
   } catch {
     return defaultSettings;
@@ -102,7 +138,7 @@ export function loadSettings(): ParentSettings {
 
 export function saveSettings(settings: ParentSettings) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  window.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings, childName: parseChildName(settings.childName) ?? "" }));
 }
 
 export function resetSettings(): ParentSettings {

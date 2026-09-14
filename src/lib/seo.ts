@@ -1,6 +1,15 @@
 export function siteUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_SITE_URL ?? "https://keyboard-adventure.app";
-  return raw.replace(/\/$/, "");
+  const fallback = "https://keyboard-adventure.app";
+  const raw = (process.env.NEXT_PUBLIC_SITE_URL ?? fallback).trim().replace(/\/$/, "");
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return fallback;
+    if (url.username || url.password) return fallback;
+    const path = url.pathname === "/" ? "" : url.pathname.replace(/\/$/, "");
+    return `${url.origin}${path}`;
+  } catch {
+    return fallback;
+  }
 }
 
 export const SITE_TITLE = "Keyboard Adventure – Fun Typing Practice for Kids";

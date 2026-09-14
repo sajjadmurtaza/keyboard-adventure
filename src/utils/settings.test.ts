@@ -54,6 +54,22 @@ describe("settings", () => {
     expect(loaded.childName).toBe("");
   });
 
+  it("drops scam-like settings payloads", () => {
+    window.localStorage.setItem(
+      "keyboard-adventure-settings-v1",
+      JSON.stringify({
+        childName: "https://phish.test",
+        voiceURI: "javascript:alert(1)",
+        unlockAll: "yes",
+      }),
+    );
+    expect(loadSettings().childName).toBe("");
+    expect(loadSettings().voiceURI).toBe("");
+    expect(loadSettings().unlockAll).toBe(false);
+    window.localStorage.setItem("keyboard-adventure-settings-v1", "[]");
+    expect(loadSettings().sound).toBe(true);
+  });
+
   it("paces celebration from the shared success hold", () => {
     const quiet = celebrationMs({ ...defaultSettings, sound: false }, false, 1);
     const voiced = celebrationMs(defaultSettings, false, 1);

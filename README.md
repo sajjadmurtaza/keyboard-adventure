@@ -72,7 +72,7 @@ If no name is saved, a blocking screen asks **Who is learning today?** A blank n
 
 1. The association picture and word appear **before** typing (Fish / FISH, then F).
 2. Typing stays locked for about **0.5 seconds** while the letter zooms in.
-3. Voice then says something like: **F is for Fish! Fatima, type F for Fish.** If the same letter comes right after itself: **F, F, Fish!**
+3. Voice then says something like: **eff is for Fish! Fatima, type eff for Fish.** The big letter on screen stays **F**. If the same letter comes right after itself: **eff, eff, Fish!** **E** is spoken as **ee**, not “and”.
 4. Only one target is active. Layout never changes what counts as a correct key.
 5. First wrong key: sound and shake only. Second: **Almost, Fatima. Find F.** Third: **You can do it, Fatima. Find F.** The picture stays.
 6. A correct key locks typing, keeps the picture, and celebrates about **2.8 seconds**.

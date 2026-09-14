@@ -9,6 +9,32 @@ const SPOKEN_KEYS: Record<string, string> = {
   ",": "comma",
   ".": "period",
   "/": "slash",
+  a: "ay",
+  b: "bee",
+  c: "see",
+  d: "dee",
+  e: "ee",
+  f: "eff",
+  g: "gee",
+  h: "aitch",
+  i: "eye",
+  j: "jay",
+  k: "kay",
+  l: "ell",
+  m: "em",
+  n: "en",
+  o: "oh",
+  p: "pee",
+  q: "cue",
+  r: "ar",
+  s: "ess",
+  t: "tee",
+  u: "you",
+  v: "vee",
+  w: "double-you",
+  x: "ex",
+  y: "why",
+  z: "zee",
 };
 
 const BIG_SUCCESS_PHRASES = [
@@ -59,7 +85,6 @@ export function getTargetInstruction(
 ): string {
   const who = parseChildName(name ?? "") ?? "";
   const label = spokenKey(key);
-  const letter = displayKey(key);
   const assoc = associationFor(key);
 
   if (normalizeTarget(key) === " ") {
@@ -73,14 +98,14 @@ export function getTargetInstruction(
   if (assoc) {
     const word = assoc.word;
     if (options?.shortened) {
-      return `${letter}, ${letter}, ${word}!`;
+      return `${label}, ${label}, ${word}!`;
     }
     return who
-      ? `${letter} is for ${word}! ${who}, type ${letter} for ${word}.`
-      : `${letter} is for ${word}! Type ${letter} for ${word}.`;
+      ? `${label} is for ${word}! ${who}, type ${label} for ${word}.`
+      : `${label} is for ${word}! Type ${label} for ${word}.`;
   }
 
-  return who ? `${who}, type ${letter}.` : `Type ${letter}.`;
+  return who ? `${who}, type ${label}.` : `Type ${label}.`;
 }
 
 export function getWrongInstruction(
@@ -134,7 +159,7 @@ export function getLessonCompletePhrase(name?: string): string {
 }
 
 export function getPreviewPhrase(): string {
-  return "Woohoo! Fantastic! You found F!";
+  return "Woohoo! Fantastic! You found eff!";
 }
 
 export function getNameTestPhrase(name: string): string {
