@@ -15,13 +15,16 @@ export const MobileTypingField = forwardRef<HTMLInputElement, MobileTypingFieldP
       <input
         ref={ref}
         type="text"
-        name="keyboard-adventure-typing"
+        name="lesson-key"
         inputMode="text"
         enterKeyHint="done"
-        autoComplete="off"
+        autoComplete="one-time-code"
         autoCorrect="off"
-        autoCapitalize="off"
+        autoCapitalize="none"
         spellCheck={false}
+        data-lpignore="true"
+        data-1p-ignore="true"
+        data-form-type="other"
         aria-label="Type the letter shown on screen"
         disabled={false}
         onFocus={onFocus}
@@ -37,8 +40,8 @@ export const MobileTypingField = forwardRef<HTMLInputElement, MobileTypingFieldP
         }}
         className="pointer-events-none fixed z-50 border-0 bg-transparent p-0 text-base opacity-[0.01] outline-none"
         style={{
-          left: "50%",
-          bottom: 8,
+          top: 0,
+          left: 0,
           width: 1,
           height: 1,
           fontSize: 16,

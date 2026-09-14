@@ -23,18 +23,16 @@ test("keyboard-open HUD does not overlap core lesson pieces", async ({ page }) =
   const association = page.locator("[data-testid=association]");
   const target = page.locator("[data-testid=target-letter]");
   const instruction = page.locator("[data-testid=lesson-instruction]");
-  const mini = page.locator("[data-testid=mini-key]");
 
   await expect(association).toBeVisible();
-  await expect(instruction).toHaveText(/Find F/i);
+  await expect(instruction).toHaveText(/Type F/i);
+  await expect(page.locator("[data-testid=mini-key]")).toHaveCount(0);
 
   const a = await box(association);
   const t = await box(target);
   const i = await box(instruction);
-  const m = await box(mini);
 
   expect(overlap(t, a)).toBe(false);
   expect(overlap(t, i)).toBe(false);
-  expect(overlap(i, m)).toBe(false);
   expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 8)).toBe(true);
 });

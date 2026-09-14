@@ -634,7 +634,9 @@ function Play({
   const assoc = associationFor(target);
   const teachLine =
     mood === "success" && assoc ? `${target.toUpperCase()} is for ${assoc.word}!` : null;
-  const findLine = `Find ${target === " " ? "SPACE" : target.toUpperCase()} 👇`;
+  const findLine = tightKb
+    ? `Type ${target === " " ? "SPACE" : target.toUpperCase()}`
+    : `Find ${target === " " ? "SPACE" : target.toUpperCase()} 👇`;
   const mascotLine = mood === "retry"
     ? `Try ${target === " " ? "SPACE" : target.toUpperCase()} again!`
     : mood === "success"
@@ -673,10 +675,10 @@ function Play({
   return (
     <div
       ref={stageRef}
-      className={`play-board grid min-h-0 flex-1 justify-items-center overflow-hidden content-center ${
+      className={`play-board grid min-h-0 flex-1 justify-items-center overflow-hidden ${
         tightKb
-          ? "mobile-keyboard-open grid-rows-[auto_auto_auto_auto]"
-          : "grid-rows-[auto_auto_auto_auto]"
+          ? "mobile-keyboard-open content-start grid-rows-[auto_1fr_auto]"
+          : "content-center grid-rows-[auto_auto_auto_auto]"
       }`}
       style={{ gap: "var(--lesson-gap)" }}
       data-testid="play-stage"
@@ -757,14 +759,15 @@ function Play({
       ) : (
         <FeedbackMessage text={instruction} kind="idle" />
       )}
-      {compact ? (
+      {compact && !tightKb ? (
         <div className="flex shrink-0 flex-col items-center" data-testid="mini-key">
-          <MiniKeyHint target={target} pulse={helpLevel >= 1} compact={tightKb} />
+          <MiniKeyHint target={target} pulse={helpLevel >= 1} />
           {showTypeButton ? (
             <StartTypingButton miss={mood === "retry"} onPress={onStartTyping} />
           ) : null}
         </div>
-      ) : (
+      ) : null}
+      {!compact ? (
         <div className="flex w-full shrink-0 flex-col items-center">
           {settings.keyboardHighlight ? (
             <VirtualKeyboard
@@ -778,7 +781,7 @@ function Play({
             />
           ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -774,24 +774,30 @@ html.lesson-play body {
 }
 
 .mobile-keyboard-open {
-  --lesson-gap: 6px;
-  --target-size: 120px;
+  --lesson-gap: 4px;
+  --target-size: 88px;
 }
 
 .mobile-keyboard-open .target-group {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 8px;
   min-height: 0;
 }
 
 .mobile-keyboard-open .target-wrapper {
-  min-height: 150px;
+  min-height: 0;
   display: grid;
   place-items: center;
   overflow: visible;
+}
+
+.mobile-keyboard-open .association-inline {
+  height: 44px;
+  max-width: 8.5rem;
 }
 
 .mobile-keyboard-open .animate-letter-enter {

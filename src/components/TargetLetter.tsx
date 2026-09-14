@@ -37,7 +37,7 @@ export function TargetLetter({
 
   const fontSize =
     size === "compact"
-      ? "clamp(100px, 27vw, 135px)"
+      ? "clamp(72px, 22vw, 96px)"
       : size === "mobile"
         ? "clamp(130px, 38vw, 185px)"
         : "var(--target-size)";
