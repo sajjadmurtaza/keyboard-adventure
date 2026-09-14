@@ -259,13 +259,17 @@ html.lesson-play body {
     opacity: 0;
     transform: scale(0.75);
   }
-  40% {
+  18% {
     opacity: 1;
     transform: scale(1.08);
   }
+  78% {
+    opacity: 0.85;
+    transform: scale(1.12);
+  }
   100% {
     opacity: 0;
-    transform: scale(1.25);
+    transform: scale(1.18);
   }
 }
 
@@ -393,7 +397,7 @@ html.lesson-play body {
 }
 
 .animate-pop {
-  animation: pop 0.7s cubic-bezier(0.2, 1.4, 0.3, 1);
+  animation: pop 1.6s cubic-bezier(0.2, 1.4, 0.3, 1);
 }
 
 .animate-wiggle {
@@ -434,11 +438,11 @@ html.lesson-play body {
 }
 
 .success-headline {
-  animation: success-copy-in 0.25s ease 0.2s both;
+  animation: success-copy-in 0.4s ease 0.15s both;
 }
 
 .success-teach {
-  animation: success-copy-in 0.25s ease 0.7s both;
+  animation: success-copy-in 0.4s ease 0.45s both;
 }
 
 @keyframes assoc-in {
@@ -529,7 +533,7 @@ html.lesson-play body {
 }
 
 .key-hit {
-  animation: key-hit 0.4s ease;
+  animation: key-hit 0.9s ease;
 }
 
 .scene-miss {
@@ -537,7 +541,7 @@ html.lesson-play body {
 }
 
 .scene-win {
-  animation: scene-win 0.5s ease;
+  animation: scene-win 1.4s ease;
 }
 
 .target-halo-miss,
@@ -555,11 +559,11 @@ html.lesson-play body {
 
 .target-halo-win {
   background: radial-gradient(circle, var(--success-glow), rgba(255, 216, 77, 0.25) 40%, transparent 72%);
-  animation: halo-win 0.6s ease forwards;
+  animation: halo-win 3.6s ease forwards;
 }
 
 .star-fly {
-  animation: star-fly 0.7s ease-out forwards;
+  animation: star-fly 1.6s ease-out forwards;
 }
 
 .mascot-bob {
@@ -567,7 +571,15 @@ html.lesson-play body {
 }
 
 .mascot-jump {
-  animation: jump 0.7s ease;
+  animation: jump 1.2s ease;
+}
+
+.mascot-clap-emoji {
+  animation: clap-pop 0.68s ease-in-out 5;
+}
+
+.mascot-clap-emoji-delay {
+  animation-delay: 0.35s;
 }
 
 @keyframes clap-pop {
@@ -580,14 +592,6 @@ html.lesson-play body {
     transform: scale(1.25) translateY(-6px);
     opacity: 1;
   }
-}
-
-.mascot-clap-emoji {
-  animation: clap-pop 0.38s ease-in-out 4;
-}
-
-.mascot-clap-emoji-delay {
-  animation-delay: 0.18s;
 }
 
 .key-glow {
@@ -603,24 +607,34 @@ html.lesson-play body {
 }
 
 .particle {
-  animation: burst 0.7s ease-out forwards;
+  animation: burst 1.6s ease-out forwards;
 }
 
 .confetti-piece {
   animation: fall 2.2s linear forwards;
 }
 
-.party-sparkle,
+.celebration-particle,
+.celebration-pop,
 .party-confetti,
-.party-balloon {
+.party-balloon,
+.party-still {
   position: absolute;
   pointer-events: none;
   will-change: transform, opacity;
   line-height: 1;
 }
 
-.party-sparkle {
-  animation: party-sparkle 1.2s ease-out both;
+.party-still {
+  opacity: 0.92;
+}
+
+.celebration-particle {
+  animation: celebration-float 3.6s ease-out both;
+}
+
+.celebration-pop {
+  animation: celebration-pop 3.6s ease-out both;
 }
 
 .party-confetti {
@@ -632,18 +646,49 @@ html.lesson-play body {
   z-index: 0;
 }
 
-@keyframes party-sparkle {
+@keyframes celebration-float {
   0% {
-    transform: scale(0.5) rotate(0deg);
     opacity: 0;
+    transform: translate(0, 0) scale(0.65) rotate(var(--rotate-start));
   }
-  25% {
-    transform: scale(1.15) rotate(var(--spin));
+  12% {
     opacity: 1;
+    transform: translate(var(--x12), var(--y12)) scale(var(--scale-peak)) rotate(var(--rotate-start));
+  }
+  55% {
+    opacity: 1;
+    transform: translate(var(--x55), var(--y55)) scale(1) rotate(var(--rotate-end));
+  }
+  78% {
+    opacity: 1;
+    transform: translate(var(--x100), var(--y100)) scale(0.96) rotate(var(--rotate-end));
   }
   100% {
-    transform: scale(0.9) translateY(-18px) rotate(var(--spin));
     opacity: 0;
+    transform: translate(var(--x100), var(--y100)) scale(0.9) rotate(var(--rotate-end));
+  }
+}
+
+@keyframes celebration-pop {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.55);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(var(--x12), var(--y12)) scale(var(--scale-peak));
+  }
+  40% {
+    opacity: 1;
+    transform: translate(var(--x55), var(--y55)) scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(var(--x100), var(--y100)) scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x100), var(--y100)) scale(0.92);
   }
 }
 
@@ -927,6 +972,8 @@ html.lesson-play body {
   .party-sparkle,
   .party-confetti,
   .party-balloon,
+  .celebration-particle,
+  .celebration-pop,
   .new-pulse,
   .title-bounce,
   .target-halo-miss,

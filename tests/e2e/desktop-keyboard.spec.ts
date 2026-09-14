@@ -75,7 +75,7 @@ test("finger hint sits under the target key, not under space", async ({ page }) 
   expect(Math.abs(dHint!.x + dHint!.width / 2 - (dKey!.x + dKey!.width / 2))).toBeLessThan(40);
 
   await page.keyboard.press("d");
-  await expect(page.getByTestId("association")).toContainText(/KITE/i, { timeout: 8000 });
+  await expect(page.getByTestId("association")).toContainText(/KITE/i, { timeout: 12000 });
   await expect(page.getByTestId("finger-guide")).toHaveAttribute("data-hand", "right");
 
   const kKey = await page.getByTestId("key-k").boundingBox();

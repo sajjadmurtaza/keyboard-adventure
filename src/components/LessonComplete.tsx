@@ -41,7 +41,7 @@ export function LessonComplete({
 
   return (
     <div className="relative flex h-full flex-col items-center justify-center gap-6 overflow-hidden px-6 text-center">
-      <Celebration level="complete" reducedMotion={reducedMotion} />
+      <Celebration level="complete" reducedMotion={reducedMotion} seed={1} />
       <div className="relative z-[3] flex flex-col items-center gap-6">
         <Mascot line={childName ? `You did it, ${childName}!` : "You did it!"} mood="complete" />
         <h1 className="title-bounce font-[family-name:var(--font-display)] text-4xl font-bold text-[#7657E8] max-[500px]:px-2 sm:text-7xl">

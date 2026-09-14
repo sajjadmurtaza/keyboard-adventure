@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Celebration } from "@/components/celebration/Celebration";
+import { celebrationLevelFor } from "@/components/celebration/plan";
 import { ChildNameSetup } from "@/components/ChildNameSetup";
 import { AdventureMap } from "@/components/AdventureMap";
 import { FeedbackMessage } from "@/components/FeedbackMessage";
@@ -85,6 +86,7 @@ export function KeyboardAdventure() {
   const [helpLevel, setHelpLevel] = useState(0);
   const [streak, setStreak] = useState(0);
   const [streakNote, setStreakNote] = useState<string | null>(null);
+  const [celebrationSeed, setCelebrationSeed] = useState(1);
   const [missedKey, setMissedKey] = useState<string | null>(null);
   const [practiceKeys, setPracticeKeys] = useState<string[]>(["f", "j", " "]);
   const [showAllLessons, setShowAllLessons] = useState(false);
@@ -328,7 +330,7 @@ export function KeyboardAdventure() {
       if (nextStreak === 3) setStreakNote("⭐ 3 IN A ROW! ⭐");
       if (nextStreak === 5) setStreakNote("🔥 SUPER STREAK! ⭐");
       if (nextStreak === 3 || nextStreak === 5) {
-        window.setTimeout(() => setStreakNote(null), 1800);
+        window.setTimeout(() => setStreakNote(null), celebrationMs(settings, quiet, nextStreak));
       }
       setCorrect((value) => value + 1);
       setMood("success");
@@ -353,6 +355,7 @@ export function KeyboardAdventure() {
       const capturedIndex = index;
       const gen = lessonGenRef.current;
       const token = ++successTokenRef.current;
+      setCelebrationSeed(token);
       clearSuccessTimer();
       successTimerRef.current = window.setTimeout(() => {
         if (token !== successTokenRef.current) return;
@@ -545,6 +548,7 @@ export function KeyboardAdventure() {
             settings={settings}
             reducedMotion={quiet}
             streakNote={streakNote}
+            celebrationSeed={celebrationSeed}
             streak={streak}
             helpLevel={helpLevel}
             missedKey={missedKey}
@@ -653,6 +657,7 @@ function Play({
   settings,
   reducedMotion,
   streakNote,
+  celebrationSeed,
   streak,
   helpLevel,
   missedKey,
@@ -675,6 +680,7 @@ function Play({
   settings: ParentSettings;
   reducedMotion: boolean;
   streakNote: string | null;
+  celebrationSeed: number;
   streak: number;
   helpLevel: number;
   missedKey: string | null;
@@ -744,9 +750,10 @@ function Play({
     >
       {mood === "success" ? (
         <Celebration
-          level={streak >= 3 ? "streak" : "correct"}
+          level={celebrationLevelFor(streak)}
           compact={compact || tightKb}
           reducedMotion={reducedMotion}
+          seed={celebrationSeed}
         />
       ) : null}
       <PreloadLessonArt keys={sequence} />
@@ -781,7 +788,7 @@ function Play({
           </button>
         </div>
       </div>
-      <div className="target-group min-h-0 w-full">
+      <div className="target-group relative z-[3] min-h-0 w-full">
         {association}
         <TargetLetter
           key={`${step}-${target}`}
