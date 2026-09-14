@@ -14,7 +14,7 @@ type ParentSettingsPanelProps = {
   onOpenLesson: (id: number) => void;
   onResetProgress: () => void;
   onResetAll: () => void;
-  onPreviewVoice: () => void;
+  onPreviewVoice: (voiceURI?: string) => void;
 };
 
 export function ParentSettingsPanel({
@@ -199,60 +199,78 @@ export function ParentSettingsPanel({
         />
       </label>
       {speechAvailable ? (
-        <label className="flex flex-col gap-1 text-lg">
-          Voice
-          <select
-            value={settings.voiceURI}
-            onChange={(event) =>
-              onChange({ ...settings, voiceURI: event.target.value })
-            }
-            className="rounded-xl border px-3 py-2"
-          >
-          <option value="">Recommended English voice</option>
-            {voices.map((voice) => (
-              <option key={voice.uri} value={voice.uri}>
-                {voice.name}
-              </option>
+        <section className="flex flex-col gap-3 rounded-3xl bg-[#F7F5FF] p-4">
+          <h2 className="font-[family-name:var(--font-nunito)] text-xl font-bold">Voice</h2>
+          <p className="text-sm text-[#5A5C72]">Voice style</p>
+          <div className="flex gap-2">
+            {(["playful", "calm"] as const).map((style) => (
+              <button
+                key={style}
+                type="button"
+                className={`min-h-11 flex-1 rounded-full font-semibold ${
+                  settings.voicePersonality === style
+                    ? "bg-[#7657E8] text-white"
+                    : "bg-white text-[#34364A]"
+                }`}
+                onClick={() => onChange({ ...settings, voicePersonality: style })}
+              >
+                {style === "playful" ? "Friendly" : "Calm"}
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+          <p className="text-sm text-[#5A5C72]">Choose voice</p>
+          <div className="flex flex-col gap-2">
+            <VoiceChoice
+              selected={settings.voiceURI === ""}
+              label="Recommended friendly English"
+              onSelect={() => onChange({ ...settings, voiceURI: "" })}
+              onPreview={onPreviewVoice}
+            />
+            {voices.slice(0, 8).map((voice) => (
+              <VoiceChoice
+                key={voice.uri}
+                selected={settings.voiceURI === voice.uri}
+                label={voice.name}
+                onSelect={() => onChange({ ...settings, voiceURI: voice.uri })}
+                onPreview={() => {
+                  onChange({ ...settings, voiceURI: voice.uri });
+                  onPreviewVoice(voice.uri);
+                }}
+              />
+            ))}
+          </div>
+          <label className="flex flex-col gap-1 text-lg">
+            Speaking speed
+            <span className="flex justify-between text-sm text-[#5A5C72]">
+              <span>Slow</span>
+              <span>Cheerful</span>
+            </span>
+            <input
+              type="range"
+              min={75}
+              max={100}
+              value={Math.round(settings.speechRate * 100)}
+              onChange={(event) =>
+                onChange({
+                  ...settings,
+                  speechRate: Number(event.target.value) / 100,
+                })
+              }
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => onPreviewVoice()}
+            className="min-h-12 rounded-full bg-[#FFD85A] font-[family-name:var(--font-display)] text-lg font-bold"
+          >
+            ▶ Hear preview
+          </button>
+        </section>
       ) : (
         <p className="text-sm text-[#9AA0B8]">
           Voice guidance isn&apos;t available in this browser.
         </p>
       )}
-      <label className="flex items-center justify-between text-lg">
-        Voice personality
-        <select
-          value={settings.voicePersonality}
-          onChange={(event) =>
-            onChange({
-              ...settings,
-              voicePersonality: event.target.value as ParentSettings["voicePersonality"],
-            })
-          }
-          className="rounded-xl border px-3 py-2"
-        >
-          <option value="playful">Playful</option>
-          <option value="calm">Calm</option>
-        </select>
-      </label>
-      <label className="flex items-center justify-between text-lg">
-        Speaking speed
-        <select
-          value={settings.speechRate <= 0.82 ? "slow" : "normal"}
-          onChange={(event) =>
-            onChange({
-              ...settings,
-              speechRate: event.target.value === "slow" ? 0.78 : 0.9,
-            })
-          }
-          className="rounded-xl border px-3 py-2"
-        >
-          <option value="slow">Slow</option>
-          <option value="normal">Normal</option>
-        </select>
-      </label>
       <label className="flex items-center justify-between text-lg">
         Speak instructions automatically
         <input
@@ -301,13 +319,6 @@ export function ParentSettingsPanel({
           }
         />
       </label>
-      <button
-        type="button"
-        onClick={onPreviewVoice}
-        className="min-h-11 rounded-full bg-[#FFF6C8] font-bold"
-      >
-        ▶ Hear this voice
-      </button>
 
       <p className="font-[family-name:var(--font-nunito)] font-semibold">All lessons</p>
       <div className="grid grid-cols-2 gap-2">
@@ -384,6 +395,41 @@ export function ParentSettingsPanel({
         className="min-h-12 rounded-full bg-[#7657E8] text-lg font-bold text-white"
       >
         Done
+      </button>
+    </div>
+  );
+}
+
+function VoiceChoice({
+  selected,
+  label,
+  onSelect,
+  onPreview,
+}: {
+  selected: boolean;
+  label: string;
+  onSelect: () => void;
+  onPreview: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={onSelect}
+        className={`min-h-11 flex-1 rounded-2xl px-3 text-left font-semibold ${
+          selected ? "bg-[#7657E8] text-white" : "bg-white text-[#34364A]"
+        }`}
+      >
+        {selected ? "● " : "○ "}
+        {label}
+      </button>
+      <button
+        type="button"
+        className="pressable min-h-11 min-w-11 rounded-full bg-white text-lg shadow"
+        aria-label={`Preview ${label}`}
+        onClick={onPreview}
+      >
+        ▶
       </button>
     </div>
   );

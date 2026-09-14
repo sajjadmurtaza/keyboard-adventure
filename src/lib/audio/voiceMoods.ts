@@ -9,11 +9,11 @@ type MoodTone = {
 };
 
 const PLAYFUL_MOODS: Record<SpeechMood, MoodTone> = {
-  instruction: { rate: 0.92, pitch: 1.08, volume: 1 },
-  hint: { rate: 0.88, pitch: 1.08, volume: 0.95 },
-  success: { rate: 1.06, pitch: 1.18, volume: 1 },
-  streak: { rate: 1.1, pitch: 1.22, volume: 1 },
-  celebration: { rate: 1.04, pitch: 1.17, volume: 1 },
+  instruction: { rate: 1, pitch: 1.12, volume: 1 },
+  hint: { rate: 0.95, pitch: 1.1, volume: 0.95 },
+  success: { rate: 1.05, pitch: 1.15, volume: 1 },
+  streak: { rate: 1.08, pitch: 1.18, volume: 1 },
+  celebration: { rate: 1.02, pitch: 1.15, volume: 1 },
 };
 
 const CALM_MOODS: Record<SpeechMood, MoodTone> = {
@@ -30,10 +30,10 @@ export function moodTone(
   speechRate: number,
 ): MoodTone {
   const base = personality === "calm" ? CALM_MOODS[mood] : PLAYFUL_MOODS[mood];
-  const slow = speechRate <= 0.82 ? 0.88 : 1;
+  const slow = speechRate <= 0.82 ? 0.9 : speechRate >= 0.98 ? 1.04 : 1;
   return {
-    rate: clamp(base.rate * slow, 0.75, 1.2),
-    pitch: clamp(base.pitch, 1, 1.25),
+    rate: clamp(base.rate * slow, 0.75, 1.15),
+    pitch: clamp(base.pitch, 1, 1.22),
     volume: base.volume,
   };
 }

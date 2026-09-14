@@ -523,7 +523,7 @@ export function KeyboardAdventure() {
             onChange={persistSettings}
             voices={voices}
             speechAvailable={speechAvailable}
-            onPreviewVoice={() => audio?.preview()}
+            onPreviewVoice={(uri) => audio?.preview(uri)}
             onClose={() => setView("home")}
             onOpenLesson={(id) => {
               const data = getLesson(id);

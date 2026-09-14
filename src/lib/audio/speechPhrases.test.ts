@@ -44,7 +44,8 @@ describe("speech phrases", () => {
     expect(getStreakPhrase(3, "Ada")).toMatch(/Ada|Three|Awesome|Fantastic|Amazing|Super|roll|Wow/i);
     expect(getLessonCompletePhrase()).toMatch(/did it|Adventure|Amazing/i);
     expect(getLessonCompletePhrase("Ada")).toMatch(/Ada|did it|Adventure/i);
-    expect(getPreviewPhrase()).toContain("J");
+    expect(getPreviewPhrase()).toContain("Fantastic");
+    expect(getPreviewPhrase()).toContain("F");
     expect(pickFresh(["only"])).toBe("only");
     expect(pickFresh(["only"])).toBe("only");
     expect(pickFresh([])).toBe("");

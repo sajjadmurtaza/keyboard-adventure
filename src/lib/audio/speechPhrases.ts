@@ -105,5 +105,5 @@ export function getLessonCompletePhrase(name?: string): string {
 }
 
 export function getPreviewPhrase(): string {
-  return "Just right! You found J!";
+  return "Woohoo! Fantastic! You found F!";
 }

@@ -9,8 +9,9 @@ describe("voice moods", () => {
     const calm = moodTone("instruction", "calm", 0.78);
     expect(success.pitch).toBeGreaterThan(hint.pitch);
     expect(streak.rate).toBeGreaterThan(success.rate);
-    expect(success.pitch).toBeLessThanOrEqual(1.25);
+    expect(success.pitch).toBeLessThanOrEqual(1.22);
     expect(calm.rate).toBeLessThan(0.9);
     expect(moodTone("celebration", "playful", 0.9).pitch).toBeGreaterThan(1);
+    expect(moodTone("success", "playful", 1).pitch).toBeLessThan(1.3);
   });
 });

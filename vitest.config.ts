@@ -17,6 +17,7 @@ export default defineConfig({
         "src/lib/seo.ts",
         "src/lib/audio/voiceMoods.ts",
         "src/lib/audio/speechPhrases.ts",
+        "src/lib/audio/voiceSelect.ts",
         "src/lib/lessonPhase.ts",
       ],
       exclude: ["**/*.test.ts", "src/utils/audio.ts"],

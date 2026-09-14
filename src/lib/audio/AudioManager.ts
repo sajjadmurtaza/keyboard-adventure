@@ -17,8 +17,9 @@ import type { ParentSettings } from "@/utils/settings";
 import { nextLetterSpeechDelay } from "@/utils/settings";
 
 /**
- * Lesson audio facade. Browser SpeechSynthesis is the current speech backend.
- * A later neural TTS provider can replace SpeechManager without changing notify().
+ * Lesson audio facade. `speech` is the current SpeechProvider (browser TTS).
+ * A neural TTS backend can replace SpeechManager without changing notify().
+ * Howler remains responsible for success/wrong/star/celebration effects.
  */
 export class AudioManager {
   readonly speech = new SpeechManager();
@@ -52,11 +53,11 @@ export class AudioManager {
     this.sounds.stopLong();
   }
 
-  preview() {
+  preview(voiceURI?: string) {
     const settings = this.settings;
     if (!settings?.sound || !settings.voiceGuidance) return;
     this.stopSpeech();
-    this.say(getPreviewPhrase(), "high", "celebration", 0);
+    this.say(getPreviewPhrase(), "high", "celebration", 0, voiceURI);
   }
 
   repeatTarget(key: string) {
@@ -197,6 +198,7 @@ export class AudioManager {
     priority: "high" | "medium" | "low",
     mood: SpeechMood,
     cooldown: number,
+    voiceURI?: string,
   ) {
     const settings = this.settings;
     if (!settings?.sound || !settings.voiceGuidance) return;
@@ -207,7 +209,7 @@ export class AudioManager {
       rate: tone.rate,
       pitch: tone.pitch,
       volume: tone.volume * settings.masterVolume,
-      voiceURI: settings.voiceURI,
+      voiceURI: voiceURI ?? settings.voiceURI,
       preferLocal: settings.preferLocalVoice,
       generation: this.generation,
     }, cooldown);

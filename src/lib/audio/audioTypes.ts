@@ -43,3 +43,21 @@ export type VoiceOption = {
   lang: string;
   local: boolean;
 };
+
+export type SpeechProvider = {
+  speak: (
+    text: string,
+    options: {
+      priority: SpeechPriority;
+      rate: number;
+      pitch: number;
+      volume: number;
+      voiceURI: string;
+      preferLocal: boolean;
+      generation: number;
+    },
+    cooldownMs?: number,
+  ) => boolean;
+  cancel: () => void;
+  list: () => VoiceOption[];
+};

@@ -1,6 +1,7 @@
 "use client";
 
 import type { SpeechPriority, VoiceOption } from "@/lib/audio/audioTypes";
+import { pickFriendlyVoice, preferredEnglishLang, rankVoices } from "@/lib/audio/voiceSelect";
 
 type SpeakOptions = {
   priority: SpeechPriority;
@@ -12,6 +13,7 @@ type SpeakOptions = {
   generation: number;
 };
 
+/** Browser SpeechSynthesis backend. A neural TTS provider can implement the same speak/cancel/list surface. */
 export class SpeechManager {
   private voices: SpeechSynthesisVoice[] = [];
   private lastSpokeAt = 0;
@@ -65,7 +67,7 @@ export class SpeechManager {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(stripForSpeech(text));
     utterance.rate = options.rate;
-    utterance.pitch = Math.min(1.25, Math.max(1, options.pitch));
+    utterance.pitch = Math.min(1.22, Math.max(1, options.pitch));
     utterance.volume = Math.max(0, Math.min(1, options.volume));
     const voice = this.pickVoice(options.voiceURI, options.preferLocal);
     if (voice) utterance.voice = voice;
@@ -83,38 +85,12 @@ export class SpeechManager {
   }
 
   private pickVoice(uri: string, preferLocal: boolean): SpeechSynthesisVoice | null {
-    if (!this.voices.length) return null;
-    const selected = uri ? this.voices.find((voice) => voice.voiceURI === uri) : null;
-    if (selected) return selected;
-    return rankVoices(this.voices, preferLocal)[0] ?? null;
+    const chosen = pickFriendlyVoice(this.voices, uri, preferLocal);
+    if (!chosen) return null;
+    return this.voices.find((voice) => voice.voiceURI === chosen.voiceURI) ?? null;
   }
-}
-
-function preferredEnglishLang() {
-  const locale = typeof navigator !== "undefined" ? navigator.language : "en-US";
-  return /^en/i.test(locale) ? locale : "en-US";
 }
 
 function stripForSpeech(text: string) {
   return text.replace(/\p{Extended_Pictographic}/gu, "").replace(/\s+/g, " ").trim();
-}
-
-function rankVoices(voices: SpeechSynthesisVoice[], preferLocal: boolean) {
-  const locale = preferredEnglishLang().toLowerCase();
-  return [...voices].sort((a, b) => scoreVoice(b, locale, preferLocal) - scoreVoice(a, locale, preferLocal));
-}
-
-function scoreVoice(voice: SpeechSynthesisVoice, locale: string, preferLocal: boolean) {
-  let score = 0;
-  const lang = voice.lang.toLowerCase();
-  const name = voice.name.toLowerCase();
-  if (lang.startsWith("en")) score += 12;
-  if (lang === locale || lang.startsWith(locale.split("-")[0] ?? "en")) score += 6;
-  if (lang === locale) score += 4;
-  if (preferLocal && voice.localService) score += 8;
-  if (/enhanced|premium|neural|natural|online \(natural\)|google/.test(name)) score += 4;
-  if (/compact|eloquence|novelty|whisper|zarvox|bad news|good news|boing|bubbles|cellos/.test(name)) {
-    score -= 10;
-  }
-  return score;
 }
