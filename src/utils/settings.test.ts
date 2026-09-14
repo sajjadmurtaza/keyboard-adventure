@@ -57,7 +57,7 @@ describe("settings", () => {
     expect(loaded.lessonPace).toBe("steady");
     expect(loaded.voiceURI).toBe("");
     expect(loaded.childName).toBe("");
-    expect(loaded.keyboardLayout).toBe("en-us");
+    expect(loaded.keyboardLayout).toBe("auto");
   });
 
   it("drops scam-like settings payloads", () => {

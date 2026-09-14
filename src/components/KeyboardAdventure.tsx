@@ -55,6 +55,11 @@ import {
 } from "@/utils/settings";
 import { isValidChildName, parseChildName } from "@/utils/childName";
 import {
+  detectKeyboardLayout,
+  layoutFromTypedKey,
+  type KeyboardLayoutId,
+} from "@/utils/keyboardLayouts";
+import {
   isLessonUnlocked,
   loadProgress,
   resetProgress,
@@ -92,6 +97,9 @@ export function KeyboardAdventure() {
   const [showAllLessons, setShowAllLessons] = useState(false);
   const [lessonPhase, setLessonPhase] = useState<LessonPhase>("ready");
   const [settingsReady, setSettingsReady] = useState(false);
+  const [detectedLayout, setDetectedLayout] = useState<KeyboardLayoutId>("en-us");
+  const resolvedLayout =
+    settings.keyboardLayout === "auto" ? detectedLayout : settings.keyboardLayout;
   const lockRef = useRef(false);
   const phaseRef = useRef<LessonPhase>("ready");
   const successTimerRef = useRef<number | null>(null);
@@ -188,6 +196,27 @@ export function KeyboardAdventure() {
     setSettingsReady(true);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
+
+  useEffect(() => {
+    if (settings.keyboardLayout !== "auto") return;
+    let cancelled = false;
+    void detectKeyboardLayout().then((id) => {
+      if (!cancelled) setDetectedLayout(id);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [settings.keyboardLayout]);
+
+  useEffect(() => {
+    if (settings.keyboardLayout !== "auto") return;
+    function onKey(event: KeyboardEvent) {
+      const hinted = layoutFromTypedKey(event.code, event.key);
+      if (hinted) setDetectedLayout(hinted);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [settings.keyboardLayout]);
 
   function persistProgress(next: Progress) {
     setProgress(next);
@@ -560,6 +589,7 @@ export function KeyboardAdventure() {
             onRepeat={() => audio?.repeatTarget(target)}
             progressTotal={sequence.length}
             progressFilled={index + (mood === "success" ? 1 : 0)}
+            layout={resolvedLayout}
           />
         ) : null}
 
@@ -669,6 +699,7 @@ function Play({
   onRepeat,
   progressTotal,
   progressFilled,
+  layout,
 }: {
   step: number;
   target: string;
@@ -692,6 +723,7 @@ function Play({
   onRepeat: () => void;
   progressTotal: number;
   progressFilled: number;
+  layout: KeyboardLayoutId;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const tightKb = compact && keyboardOpen;
@@ -847,7 +879,7 @@ function Play({
               helpLevel={helpLevel}
               missedKey={missedKey}
               fingerHints={settings.fingerHints}
-              layout={settings.keyboardLayout}
+              layout={layout}
               compactHint
               arrive={lessonPhase === "preparing"}
             />

@@ -1,4 +1,5 @@
 export type KeyboardLayoutId = "en-us" | "de-de" | "fr-fr";
+export type KeyboardLayoutPreference = "auto" | KeyboardLayoutId;
 export type LayoutHand = "left" | "right" | "thumbs";
 
 export type KeyboardLayout = {
@@ -50,9 +51,45 @@ export const KEYBOARD_LAYOUTS: KeyboardLayout[] = [
   },
 ];
 
-export function parseKeyboardLayout(value: unknown): KeyboardLayoutId {
-  if (value === "en-us" || value === "de-de" || value === "fr-fr") return value;
+export function parseKeyboardLayout(value: unknown): KeyboardLayoutPreference {
+  if (value === "auto" || value === "en-us" || value === "de-de" || value === "fr-fr") {
+    return value;
+  }
+  return "auto";
+}
+
+export function detectLayoutFromMap(map: { get(code: string): string | undefined }): KeyboardLayoutId {
+  const q = (map.get("KeyQ") ?? "").toLowerCase();
+  const a = (map.get("KeyA") ?? "").toLowerCase();
+  const y = (map.get("KeyY") ?? "").toLowerCase();
+  const z = (map.get("KeyZ") ?? "").toLowerCase();
+  if (q === "a" || a === "q" || z === "w") return "fr-fr";
+  if (y === "z" || z === "y") return "de-de";
   return "en-us";
+}
+
+export function layoutFromTypedKey(code: string, key: string): KeyboardLayoutId | null {
+  const k = key.toLowerCase();
+  if (code === "KeyQ" && k === "a") return "fr-fr";
+  if (code === "KeyA" && k === "q") return "fr-fr";
+  if (code === "KeyZ" && k === "w") return "fr-fr";
+  if (code === "KeyY" && k === "z") return "de-de";
+  if (code === "KeyZ" && k === "y") return "de-de";
+  return null;
+}
+
+export async function detectKeyboardLayout(): Promise<KeyboardLayoutId> {
+  const keyboard = (
+    navigator as Navigator & {
+      keyboard?: { getLayoutMap?: () => Promise<{ get(code: string): string | undefined }> };
+    }
+  ).keyboard;
+  if (!keyboard?.getLayoutMap) return "en-us";
+  try {
+    return detectLayoutFromMap(await keyboard.getLayoutMap());
+  } catch {
+    return "en-us";
+  }
 }
 
 export function keyboardLayout(id: KeyboardLayoutId): KeyboardLayout {
