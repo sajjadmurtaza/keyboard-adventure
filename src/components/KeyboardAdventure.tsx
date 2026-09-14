@@ -847,6 +847,7 @@ function Play({
               helpLevel={helpLevel}
               missedKey={missedKey}
               fingerHints={settings.fingerHints}
+              layout={settings.keyboardLayout}
               compactHint
               arrive={lessonPhase === "preparing"}
             />

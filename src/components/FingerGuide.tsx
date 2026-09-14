@@ -1,10 +1,11 @@
 "use client";
 
-import { fingerHint } from "@/utils/keys";
+import { fingerHint, type KeyboardLayoutId } from "@/utils/keyboardLayouts";
 
 type FingerGuideProps = {
   target: string;
   enabled: boolean;
+  layout?: KeyboardLayoutId;
   compact?: boolean;
   centerX?: number | null;
 };
@@ -12,11 +13,12 @@ type FingerGuideProps = {
 export function FingerGuide({
   target,
   enabled,
+  layout = "en-us",
   compact = false,
   centerX = null,
 }: FingerGuideProps) {
   if (!enabled) return null;
-  const hint = fingerHint(target);
+  const hint = fingerHint(target, layout);
   const aligned = centerX != null;
 
   return (

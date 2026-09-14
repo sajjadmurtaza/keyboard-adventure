@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { lessons } from "@/data/lessons";
 import { CHILD_NAME_MAX } from "@/utils/childName";
+import { KEYBOARD_LAYOUTS } from "@/utils/keyboardLayouts";
 import type { ParentSettings } from "@/utils/settings";
 
 type ParentSettingsPanelProps = {
@@ -86,6 +87,26 @@ export function ParentSettingsPanel({
         </select>
       </label>
 
+      <label className="flex items-center justify-between text-lg">
+        Keyboard layout
+        <select
+          data-testid="keyboard-layout"
+          value={settings.keyboardLayout}
+          onChange={(event) =>
+            onChange({
+              ...settings,
+              keyboardLayout: event.target.value as ParentSettings["keyboardLayout"],
+            })
+          }
+          className="rounded-xl border px-3 py-2"
+        >
+          {KEYBOARD_LAYOUTS.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="flex items-center justify-between text-lg">
         Show visual keyboard
         <input

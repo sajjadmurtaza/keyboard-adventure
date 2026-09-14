@@ -1,5 +1,9 @@
 import { parseChildName } from "@/utils/childName";
 import { successHoldMs } from "@/lib/lessonPhase";
+import {
+  parseKeyboardLayout,
+  type KeyboardLayoutId,
+} from "@/utils/keyboardLayouts";
 
 const SETTINGS_KEY = "keyboard-adventure-settings-v1";
 
@@ -32,6 +36,7 @@ export type ParentSettings = {
   questionCount: 5 | 10 | 15 | 20;
   fingerHints: boolean;
   keyboardHighlight: boolean;
+  keyboardLayout: KeyboardLayoutId;
   difficulty: Difficulty;
 };
 
@@ -57,6 +62,7 @@ export const defaultSettings: ParentSettings = {
   questionCount: 10,
   fingerHints: true,
   keyboardHighlight: true,
+  keyboardLayout: "en-us",
   difficulty: "beginner",
 };
 
@@ -129,6 +135,7 @@ export function loadSettings(): ParentSettings {
       questionCount: parseQuestionCount(parsed.questionCount),
       fingerHints: asBool(parsed.fingerHints, defaultSettings.fingerHints),
       keyboardHighlight: asBool(parsed.keyboardHighlight, defaultSettings.keyboardHighlight),
+      keyboardLayout: parseKeyboardLayout(parsed.keyboardLayout),
       difficulty: parseDifficulty(parsed.difficulty),
     };
   } catch {

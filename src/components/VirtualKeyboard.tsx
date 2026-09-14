@@ -3,7 +3,8 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { FingerGuide } from "@/components/FingerGuide";
 import { KeyboardKey } from "@/components/KeyboardKey";
-import { displayKey, KEYBOARD_ROWS, normalizeTarget } from "@/utils/keys";
+import { keyboardRows, type KeyboardLayoutId } from "@/utils/keyboardLayouts";
+import { displayKey, normalizeTarget } from "@/utils/keys";
 
 type VirtualKeyboardProps = {
   target: string;
@@ -12,6 +13,7 @@ type VirtualKeyboardProps = {
   helpLevel: number;
   missedKey: string | null;
   fingerHints: boolean;
+  layout?: KeyboardLayoutId;
   compactHint?: boolean;
   arrive?: boolean;
 };
@@ -23,10 +25,12 @@ export function VirtualKeyboard({
   helpLevel,
   missedKey,
   fingerHints,
+  layout = "en-us",
   compactHint = false,
   arrive = false,
 }: VirtualKeyboardProps) {
   const wanted = normalizeTarget(target);
+  const rows = keyboardRows(layout);
   const stageRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLDivElement>(null);
@@ -52,16 +56,17 @@ export function VirtualKeyboard({
     const originBox = origin.getBoundingClientRect();
     const keyBox = key.getBoundingClientRect();
     setHintCenter(keyBox.left + keyBox.width / 2 - originBox.left);
-  }, [wanted, mood, helpLevel, missedKey]);
+  }, [wanted, mood, helpLevel, missedKey, layout]);
 
   return (
     <div
       ref={stageRef}
       className="keyboard-stage relative w-full max-w-[52rem]"
       data-testid="visual-keyboard"
+      data-layout={layout}
     >
       <div className="keyboard-shell">
-        {KEYBOARD_ROWS.map((row, index) => (
+        {rows.map((row, index) => (
           <div
             key={row.join("")}
             className="keyboard-row"
@@ -104,6 +109,7 @@ export function VirtualKeyboard({
             <FingerGuide
               target={target}
               enabled
+              layout={layout}
               compact={compactHint}
               centerX={hintCenter}
             />

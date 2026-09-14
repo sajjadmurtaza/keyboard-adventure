@@ -81,6 +81,8 @@ If no name is saved, a blocking screen asks **Who is learning today?** A blank n
 
 Desktop shows a toy keyboard that still teaches real geography: staggered rows, F/J bumps, and a wide space bar. The finger hint sits under the **target key**, inside the keyboard card.
 
+Parents can pick **English** (default), **German**, or **French** in settings. That only changes the toy keyboard and finger hints. Typing still matches the letter on screen, not the physical key label. A lesson key missing from that layout shows **Find this key**.
+
 ### Lessons do not skip letters
 
 Lesson 1 is F and J, repeated so the child can practice. Lesson 2 is still F, J, and Space. D and K are lesson 3. **Play again** repeats the same lesson. **Next adventure** then **PLAY** starts the next unlocked lesson.
@@ -135,7 +137,7 @@ Do **not** copy screenshots into `public/`. GitHub shows `docs/screenshots/` in 
 These keys are stored only on this device:
 
 - `keyboard-adventure-progress-v1` — completed lessons, stars, attempt counts
-- `keyboard-adventure-settings-v1` — child name, sound, voice, volume, animations, hints, question count
+- `keyboard-adventure-settings-v1` — child name, sound, voice, volume, animations, hints, keyboard layout, question count
 
 Parent settings (gear) → **Reset progress** (lessons, stars, stats) or **Reset everything** (also sound, name, and other options). You can also clear this site’s data in the browser. Nothing is sent to a server.
 

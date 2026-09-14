@@ -28,6 +28,11 @@ describe("settings", () => {
       JSON.stringify({ speechRate: 0.82 }),
     );
     expect(loadSettings().speechRate).toBe(0.95);
+    window.localStorage.setItem(
+      "keyboard-adventure-settings-v1",
+      JSON.stringify({ keyboardLayout: "de-de" }),
+    );
+    expect(loadSettings().keyboardLayout).toBe("de-de");
   });
 
   it("migrates missing fields", () => {
@@ -52,6 +57,7 @@ describe("settings", () => {
     expect(loaded.lessonPace).toBe("steady");
     expect(loaded.voiceURI).toBe("");
     expect(loaded.childName).toBe("");
+    expect(loaded.keyboardLayout).toBe("en-us");
   });
 
   it("drops scam-like settings payloads", () => {
