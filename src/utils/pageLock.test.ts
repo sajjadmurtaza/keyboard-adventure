@@ -1,10 +1,9 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import {
   isEditableTarget,
   isInspectShortcut,
   isLocalHostName,
+  isSelectAllShortcut,
+  NO_SELECT_CSS,
   shouldBlockSelection,
   shouldLockPageTools,
 } from "@/utils/pageLock";
@@ -45,6 +44,9 @@ describe("page lock", () => {
     ).toBe(true);
     expect(isEditableTarget(document.createElement("textarea"))).toBe(true);
     expect(isEditableTarget(document.createElement("div"))).toBe(false);
+    const line = document.createElement("p");
+    line.append(document.createTextNode("F"));
+    expect(isEditableTarget(line.firstChild)).toBe(false);
   });
 
   it("blocks selecting labels and pictures, not name fields", () => {
@@ -53,15 +55,16 @@ describe("page lock", () => {
     expect(shouldBlockSelection(document.createElement("img"))).toBe(true);
     expect(shouldBlockSelection(document.createElement("input"))).toBe(false);
     expect(shouldBlockSelection(document.createElement("textarea"))).toBe(false);
+    expect(isSelectAllShortcut({ key: "a", ctrlKey: true, metaKey: false })).toBe(true);
+    expect(isSelectAllShortcut({ key: "a", ctrlKey: false, metaKey: true })).toBe(true);
+    expect(isSelectAllShortcut({ key: "f", ctrlKey: true, metaKey: false })).toBe(false);
   });
 
   it("keeps page CSS from selecting body text", () => {
-    const css = readFileSync(
-      join(dirname(fileURLToPath(import.meta.url)), "../app/globals.css"),
-      "utf8",
-    );
-    expect(css).toMatch(/body\s*\{[^}]*user-select:\s*none/s);
-    expect(css).toMatch(/-webkit-touch-callout:\s*none/);
-    expect(css).toMatch(/input,\s*textarea\s*\{[^}]*user-select:\s*text/s);
+    expect(NO_SELECT_CSS).toMatch(/html,body,\*\{[^}]*user-select:none!important/);
+    expect(NO_SELECT_CSS).toMatch(/input,textarea\{[^}]*user-select:text!important/);
+    expect(NO_SELECT_CSS).toMatch(/-webkit-touch-callout:none/);
+    expect(NO_SELECT_CSS).toMatch(/button:not\(:disabled\)[^}]*cursor:pointer/);
+    expect(NO_SELECT_CSS).toMatch(/input,textarea\{[^}]*cursor:text/);
   });
 });

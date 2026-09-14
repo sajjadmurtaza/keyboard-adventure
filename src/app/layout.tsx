@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
 import { Fredoka, Nunito } from "next/font/google";
 import { ProductionGuards } from "@/components/ProductionGuards";
+import { NO_SELECT_CSS } from "@/utils/pageLock";
 import { SITE_DESCRIPTION, SITE_TITLE, jsonLd, siteUrl } from "@/lib/seo";
 import "./globals.css";
 
@@ -55,13 +57,18 @@ export const viewport: Viewport = {
   themeColor: "#7657E8",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: ReactNode;
+}>) {
   return (
     <html
       lang="en"
       className={`${fredoka.variable} ${nunito.variable} h-full antialiased`}
     >
       <body className="min-h-full font-sans">
+        <style dangerouslySetInnerHTML={{ __html: NO_SELECT_CSS }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd()) }}

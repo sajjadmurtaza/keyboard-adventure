@@ -233,6 +233,17 @@ export function KeyboardAdventure() {
     }
   }
 
+  function goHome() {
+    if (view === "home") return;
+    clearSuccessTimer();
+    clearArriveTimer();
+    lockRef.current = false;
+    setPhase("ready");
+    blurMobileType();
+    audio?.leaveScreen();
+    setView("home");
+  }
+
   function startSequence(keys: string[], id: number) {
     let seq = keys;
     if (id > 0 && settings.difficulty === "growing") {
@@ -465,28 +476,33 @@ export function KeyboardAdventure() {
         {view === "play" ? (
           <button
             type="button"
-            className="shrink-0 font-[family-name:var(--font-display)] text-sm font-semibold text-[#7657E8]"
-            onClick={() => {
-              clearSuccessTimer();
-              clearArriveTimer();
-              lockRef.current = false;
-              setPhase("ready");
-              blurMobileType();
-              setView("home");
-            }}
+            className="pressable shrink-0 font-[family-name:var(--font-display)] text-sm font-semibold text-[#7657E8]"
+            onClick={goHome}
           >
             ← Back
           </button>
         ) : (
-          <p className="shrink-0 font-[family-name:var(--font-display)] text-lg font-bold text-[#7657E8] max-[500px]:text-base sm:text-2xl">
+          <button
+            type="button"
+            data-testid="go-home"
+            className="pressable shrink-0 font-[family-name:var(--font-display)] text-lg font-bold text-[#7657E8] max-[500px]:text-base sm:text-2xl"
+            aria-label="Go home"
+            onClick={goHome}
+          >
             <span className="max-[500px]:hidden">⭐ Keyboard Adventure</span>
             <span className="hidden max-[500px]:inline">⭐ Adventure</span>
-          </p>
+          </button>
         )}
         {view === "play" ? (
-          <p className="hidden min-[501px]:block font-[family-name:var(--font-display)] text-lg font-bold text-[#7657E8]">
+          <button
+            type="button"
+            data-testid="go-home"
+            className="pressable hidden font-[family-name:var(--font-display)] text-lg font-bold text-[#7657E8] min-[501px]:block"
+            aria-label="Go home"
+            onClick={goHome}
+          >
             ⭐ Keyboard Adventure
-          </p>
+          </button>
         ) : null}
         <div className="flex shrink-0 items-center gap-1.5">
           <button
@@ -504,7 +520,7 @@ export function KeyboardAdventure() {
           </button>
           <button
             type="button"
-            className="min-h-10 min-w-10 rounded-full text-lg text-[#9AA0B8]"
+            className="pressable min-h-10 min-w-10 rounded-full text-lg text-[#9AA0B8]"
             data-testid="parent-settings"
             aria-label="Open parent settings"
             onClick={() => {
@@ -542,10 +558,7 @@ export function KeyboardAdventure() {
             allowReplay={settings.allowReplay}
             showAll={showAllLessons}
             onPlay={startLesson}
-            onHome={() => {
-              blurMobileType();
-              setView("home");
-            }}
+            onHome={goHome}
             onToggleAll={() => setShowAllLessons((value) => !value)}
           />
         ) : null}
@@ -561,7 +574,7 @@ export function KeyboardAdventure() {
               )
             }
             onStart={startPractice}
-            onBack={() => setView("home")}
+            onBack={goHome}
           />
         ) : null}
 
@@ -616,7 +629,7 @@ export function KeyboardAdventure() {
             speechAvailable={speechAvailable}
             onPreviewVoice={(uri) => audio?.preview(uri)}
             onPreviewName={() => audio?.previewName()}
-            onClose={() => setView("home")}
+            onClose={goHome}
             onOpenLesson={(id) => {
               const data = getLesson(id);
               if (data) {

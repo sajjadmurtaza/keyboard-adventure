@@ -99,21 +99,6 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-fredoka), var(--font-nunito), sans-serif;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-
-img,
-svg,
-canvas {
-  -webkit-user-drag: none;
-}
-
-input,
-textarea {
-  user-select: text;
-  -webkit-user-select: text;
 }
 
 :focus-visible {
@@ -865,6 +850,10 @@ html.lesson-play body {
 .keycap-target .key-bump,
 .keycap-success .key-bump {
   background: #7657e8;
+}
+
+.pressable {
+  cursor: pointer;
 }
 
 .pressable:hover {
