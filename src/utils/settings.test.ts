@@ -58,8 +58,8 @@ describe("settings", () => {
     expect(celebrationMs(defaultSettings, false, 5)).toBeGreaterThanOrEqual(3500);
     expect(celebrationMs({ ...defaultSettings, reducedAnimations: true }, false, 1)).toBe(1800);
     expect(celebrationMs({ ...defaultSettings, sound: false }, true, 1)).toBe(1800);
-    expect(nextLetterSpeechDelay(defaultSettings)).toBe(900);
-    expect(nextLetterSpeechDelay({ ...defaultSettings, lessonPace: "steady" })).toBe(480);
+    expect(nextLetterSpeechDelay(defaultSettings)).toBe(1400);
+    expect(nextLetterSpeechDelay({ ...defaultSettings, lessonPace: "steady" })).toBe(900);
   });
 
   it("saves and resets", () => {

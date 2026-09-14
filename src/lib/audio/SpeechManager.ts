@@ -67,7 +67,7 @@ export class SpeechManager {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(stripForSpeech(text));
     utterance.rate = options.rate;
-    utterance.pitch = Math.min(1.22, Math.max(1, options.pitch));
+    utterance.pitch = Math.min(1.18, Math.max(1, options.pitch));
     utterance.volume = Math.max(0, Math.min(1, options.volume));
     const voice = this.pickVoice(options.voiceURI, options.preferLocal);
     if (voice) utterance.voice = voice;

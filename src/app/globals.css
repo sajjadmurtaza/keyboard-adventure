@@ -620,11 +620,18 @@ html.lesson-play body {
   align-items: stretch;
   gap: var(--key-gap);
   width: 100%;
-  padding: 14px 16px 16px;
+  padding: 10px 14px 8px;
   border-radius: 28px;
   border: 2px solid #e8e1ff;
   background: #f7f5ff;
   box-shadow: 0 10px 24px rgba(118, 87, 232, 0.1);
+}
+
+.finger-guide-track {
+  position: relative;
+  height: 2rem;
+  width: 100%;
+  overflow: visible;
 }
 
 .keyboard-row {

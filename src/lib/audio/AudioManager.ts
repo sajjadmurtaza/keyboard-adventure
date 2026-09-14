@@ -88,6 +88,9 @@ export class AudioManager {
         this.maybeWrongSpeech(event.key, event.attempts);
         return;
       case "TARGET_CORRECT":
+        this.bump();
+        this.speech.cancel();
+        this.lastTargetKey = "";
         if (event.streak !== 3 && event.streak !== 5) {
           this.sounds.play("correct");
           window.setTimeout(() => this.sounds.play("star"), 160);

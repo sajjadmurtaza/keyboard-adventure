@@ -42,7 +42,7 @@ export const defaultSettings: ParentSettings = {
   autoSpeakTarget: true,
   nameFrequency: "sometimes",
   voiceURI: "",
-  speechRate: 0.9,
+  speechRate: 0.82,
   voicePersonality: "playful",
   wrongVoiceHelp: true,
   preferLocalVoice: true,
@@ -124,5 +124,5 @@ export function celebrationMs(
 }
 
 export function nextLetterSpeechDelay(settings: ParentSettings): number {
-  return settings.lessonPace === "steady" ? 480 : 900;
+  return settings.lessonPace === "steady" ? 900 : 1400;
 }

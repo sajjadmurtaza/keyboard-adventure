@@ -79,13 +79,11 @@ export function TargetLetter({
         {label}
       </p>
       {hud ? null : hint ? (
-        <p className="mt-1 h-6 text-lg font-semibold text-[#7657E8]">{hint}</p>
-      ) : (
-        <p className="mt-1 h-6" />
-      )}
-      {hud ? null : (
+        <p className="mt-0.5 text-sm font-semibold text-[#7657E8]">{hint}</p>
+      ) : null}
+      {hud || !banner ? null : (
         <p
-          className={`mt-1 min-h-10 text-center font-[family-name:var(--font-display)] font-bold leading-tight ${
+          className={`mt-1 text-center font-[family-name:var(--font-display)] font-bold leading-tight ${
             mood === "success"
               ? "success-headline text-[#2AA85A]"
               : mood === "retry"
@@ -93,7 +91,7 @@ export function TargetLetter({
                 : "text-transparent"
           } ${compact ? "text-xl" : "text-2xl sm:text-3xl"}`}
         >
-          {banner ?? "\u00a0"}
+          {banner}
         </p>
       )}
     </div>

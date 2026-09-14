@@ -15,7 +15,7 @@ export function FeedbackMessage({ text, kind }: FeedbackMessageProps) {
 
   return (
     <p
-      className={`min-h-8 text-center font-[family-name:var(--font-display)] text-2xl font-bold ${color}`}
+      className={`min-h-0 text-center font-[family-name:var(--font-display)] text-xl font-bold ${color}`}
     >
       {text}
     </p>

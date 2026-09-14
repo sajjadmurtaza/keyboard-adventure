@@ -26,6 +26,7 @@ export function VirtualKeyboard({
 }: VirtualKeyboardProps) {
   const wanted = normalizeTarget(target);
   const stageRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLDivElement>(null);
   const [hintCenter, setHintCenter] = useState<number | null>(null);
 
@@ -39,15 +40,15 @@ export function VirtualKeyboard({
   }
 
   useLayoutEffect(() => {
-    const stage = stageRef.current;
+    const origin = trackRef.current ?? stageRef.current;
     const key = targetRef.current;
-    if (!stage || !key) {
+    if (!origin || !key) {
       setHintCenter(null);
       return;
     }
-    const stageBox = stage.getBoundingClientRect();
+    const originBox = origin.getBoundingClientRect();
     const keyBox = key.getBoundingClientRect();
-    setHintCenter(keyBox.left + keyBox.width / 2 - stageBox.left);
+    setHintCenter(keyBox.left + keyBox.width / 2 - originBox.left);
   }, [wanted, mood, helpLevel, missedKey]);
 
   return (
@@ -95,17 +96,17 @@ export function VirtualKeyboard({
             point={wanted === " " && helpLevel >= 3}
           />
         </div>
+        {fingerHints ? (
+          <div ref={trackRef} className="finger-guide-track" data-testid="finger-guide-track">
+            <FingerGuide
+              target={target}
+              enabled
+              compact={compactHint}
+              centerX={hintCenter}
+            />
+          </div>
+        ) : null}
       </div>
-      {fingerHints ? (
-        <div className="relative mt-1 h-16 w-full overflow-visible" data-testid="finger-guide-track">
-          <FingerGuide
-            target={target}
-            enabled
-            compact={compactHint}
-            centerX={hintCenter}
-          />
-        </div>
-      ) : null}
     </div>
   );
 }

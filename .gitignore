@@ -39,6 +39,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Local browser captures for README authoring — never ship to Vercel
+/docs/screenshots/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

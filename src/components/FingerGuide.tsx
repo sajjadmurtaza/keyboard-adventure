@@ -21,7 +21,7 @@ export function FingerGuide({
 
   return (
     <div
-      className="finger-guide pointer-events-none mt-1 flex flex-col items-center"
+      className="finger-guide pointer-events-none flex max-w-[11rem] items-center justify-center gap-1 whitespace-nowrap"
       data-testid="finger-guide"
       data-hand={hint.hand}
       style={
@@ -30,13 +30,13 @@ export function FingerGuide({
           : undefined
       }
     >
-      <p className="text-lg leading-none text-[#7657E8]" aria-hidden>
+      <span className="text-sm leading-none text-[#7657E8]" aria-hidden>
         ↑
-      </p>
+      </span>
       <HandIcon hand={hint.hand} compact={compact} />
       <p
-        className={`font-[family-name:var(--font-display)] font-semibold text-[#7657E8] ${
-          compact ? "text-xs" : "text-sm"
+        className={`font-[family-name:var(--font-display)] font-semibold leading-none text-[#7657E8] ${
+          compact ? "text-[11px]" : "text-xs"
         }`}
       >
         {hint.label}
@@ -46,15 +46,12 @@ export function FingerGuide({
 }
 
 function HandIcon({ hand, compact }: { hand: "left" | "right" | "thumbs"; compact: boolean }) {
-  const size = compact ? 28 : 36;
+  const size = compact ? 22 : 26;
   if (hand === "thumbs") {
     return (
       <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden>
         <circle cx="24" cy="24" r="22" fill="#FFE8A3" />
-        <path
-          d="M18 28c0-8 4-14 6-14s6 6 6 14v8H18z"
-          fill="#F4C27A"
-        />
+        <path d="M18 28c0-8 4-14 6-14s6 6 6 14v8H18z" fill="#F4C27A" />
         <circle cx="24" cy="16" r="5" fill="#F4C27A" />
       </svg>
     );

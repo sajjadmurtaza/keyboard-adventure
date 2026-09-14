@@ -355,13 +355,13 @@ export function KeyboardAdventure() {
   }, [progress]);
 
   return (
-    <div className={`relative flex flex-col overflow-hidden px-4 pb-3 text-[#34364A] ${
+    <div className={`relative flex flex-col overflow-hidden px-4 text-[#34364A] ${
       view === "play" && mood === "retry"
         ? "scene-miss bg-[#F4FBFF]"
         : view === "play" && mood === "success"
           ? "scene-win bg-[#F4FBFF]"
           : "bg-[#F4FBFF]"
-    } ${view === "play" ? "h-[var(--visual-viewport-height,100dvh)] overflow-hidden" : "min-h-dvh"}`}
+    } ${view === "play" ? "h-[var(--visual-viewport-height,100dvh)] overflow-hidden pb-[max(0.4rem,env(safe-area-inset-bottom))]" : "min-h-dvh pb-3"}`}
     style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
     >
       <Decor dim={narrow && keyboardOpen} hidden={narrow && keyboardOpen} />
@@ -774,7 +774,7 @@ function Play({
               helpLevel={helpLevel}
               missedKey={missedKey}
               fingerHints={settings.fingerHints}
-              compactHint={density !== "tall"}
+              compactHint
             />
           ) : null}
         </div>
