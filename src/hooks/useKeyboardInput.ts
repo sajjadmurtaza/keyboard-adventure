@@ -10,7 +10,8 @@ export function useKeyboardInput(onKey: (key: string) => void, enabled: boolean)
     function handle(event: KeyboardEvent) {
       const key = eventToKey(event);
       if (!key) return;
-      event.preventDefault();
+      const fromField = event.target instanceof HTMLInputElement;
+      if (!fromField) event.preventDefault();
       onKey(key);
     }
 

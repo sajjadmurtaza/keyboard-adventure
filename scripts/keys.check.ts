@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { eventToKey, keysMatch, normalizeTarget } from "../src/utils/keys";
+import { eventToKey, keysMatch, normalizeTarget, typedCharFromText } from "../src/utils/keys";
 
 assert.equal(normalizeTarget("F"), "f");
 assert.equal(normalizeTarget(" "), " ");
@@ -22,5 +22,10 @@ assert.equal(eventToKey(fake("f", { repeat: true })), null);
 assert.equal(eventToKey(fake("Shift")), null);
 assert.equal(eventToKey(fake(" ")), " ");
 assert.equal(eventToKey(fake("ArrowLeft")), null);
+
+assert.equal(typedCharFromText("J"), "j");
+assert.equal(typedCharFromText("jk"), "k");
+assert.equal(typedCharFromText(" "), " ");
+assert.equal(typedCharFromText(""), null);
 
 console.log("keys tests passed");

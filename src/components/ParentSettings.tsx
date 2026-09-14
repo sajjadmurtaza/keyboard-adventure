@@ -1,5 +1,6 @@
 "use client";
 
+import { lessons } from "@/data/lessons";
 import type { ParentSettings } from "@/utils/settings";
 
 type ParentSettingsPanelProps = {
@@ -7,6 +8,7 @@ type ParentSettingsPanelProps = {
   accuracy: number | null;
   onChange: (next: ParentSettings) => void;
   onClose: () => void;
+  onOpenLesson: (id: number) => void;
 };
 
 export function ParentSettingsPanel({
@@ -14,56 +16,33 @@ export function ParentSettingsPanel({
   accuracy,
   onChange,
   onClose,
+  onOpenLesson,
 }: ParentSettingsPanelProps) {
   return (
-    <div className="mx-auto flex max-w-xl flex-col gap-5 rounded-[32px] bg-white p-8 shadow-lg">
-      <h1 className="text-3xl font-bold text-[#34364A]">Parent settings</h1>
+    <div className="mx-auto my-4 flex max-h-[88dvh] max-w-xl flex-col gap-4 overflow-y-auto rounded-[32px] bg-white p-8 shadow-lg">
+      <h1 className="font-[family-name:var(--font-nunito)] text-3xl font-bold text-[#34364A]">
+        Parent settings
+      </h1>
       {accuracy !== null ? (
-        <p className="text-[#5A5C72]">Accuracy: {accuracy}%</p>
+        <p className="font-[family-name:var(--font-nunito)] text-[#5A5C72]">
+          Accuracy: {accuracy}%
+        </p>
       ) : null}
 
-      <label className="flex items-center justify-between text-lg">
-        Sound
+      <label className="flex flex-col gap-1 font-[family-name:var(--font-nunito)] text-lg">
+        Child first name (optional)
         <input
-          type="checkbox"
-          checked={settings.sound}
+          value={settings.childName}
           onChange={(event) =>
-            onChange({ ...settings, sound: event.target.checked })
+            onChange({ ...settings, childName: event.target.value.slice(0, 24) })
           }
+          className="rounded-2xl border-2 border-[#E8E4F8] px-4 py-2"
+          placeholder="Fatima"
         />
       </label>
+
       <label className="flex items-center justify-between text-lg">
-        Celebration animations
-        <input
-          type="checkbox"
-          checked={settings.celebrations}
-          onChange={(event) =>
-            onChange({ ...settings, celebrations: event.target.checked })
-          }
-        />
-      </label>
-      <label className="flex items-center justify-between text-lg">
-        Finger hints
-        <input
-          type="checkbox"
-          checked={settings.fingerHints}
-          onChange={(event) =>
-            onChange({ ...settings, fingerHints: event.target.checked })
-          }
-        />
-      </label>
-      <label className="flex items-center justify-between text-lg">
-        Keyboard highlight
-        <input
-          type="checkbox"
-          checked={settings.keyboardHighlight}
-          onChange={(event) =>
-            onChange({ ...settings, keyboardHighlight: event.target.checked })
-          }
-        />
-      </label>
-      <label className="flex items-center justify-between text-lg">
-        Number of questions
+        Practice length
         <select
           value={settings.questionCount}
           onChange={(event) =>
@@ -80,23 +59,99 @@ export function ParentSettingsPanel({
           <option value={20}>20</option>
         </select>
       </label>
+
       <label className="flex items-center justify-between text-lg">
-        Difficulty
+        Show visual keyboard
+        <input
+          type="checkbox"
+          checked={settings.keyboardHighlight}
+          onChange={(event) =>
+            onChange({ ...settings, keyboardHighlight: event.target.checked })
+          }
+        />
+      </label>
+      <label className="flex items-center justify-between text-lg">
+        Show finger hints
+        <input
+          type="checkbox"
+          checked={settings.fingerHints}
+          onChange={(event) =>
+            onChange({ ...settings, fingerHints: event.target.checked })
+          }
+        />
+      </label>
+      <label className="flex items-center justify-between text-lg">
+        Celebrations
         <select
-          value={settings.difficulty}
+          value={settings.celebrationLevel}
           onChange={(event) =>
             onChange({
               ...settings,
-              difficulty: event.target.value as ParentSettings["difficulty"],
+              celebrationLevel: event.target.value as ParentSettings["celebrationLevel"],
             })
           }
           className="rounded-xl border px-3 py-2"
         >
-          <option value="beginner">Beginner</option>
-          <option value="growing">Growing</option>
-          <option value="practice">Practice</option>
+          <option value="gentle">Gentle</option>
+          <option value="fun">Fun</option>
+          <option value="big">Big</option>
         </select>
       </label>
+      <label className="flex items-center justify-between text-lg">
+        Reduced animations
+        <input
+          type="checkbox"
+          checked={settings.reducedAnimations}
+          onChange={(event) =>
+            onChange({ ...settings, reducedAnimations: event.target.checked })
+          }
+        />
+      </label>
+      <label className="flex items-center justify-between text-lg">
+        Allow lesson replay
+        <input
+          type="checkbox"
+          checked={settings.allowReplay}
+          onChange={(event) =>
+            onChange({ ...settings, allowReplay: event.target.checked })
+          }
+        />
+      </label>
+      <label className="flex items-center justify-between text-lg">
+        Unlock all lessons (testing)
+        <input
+          type="checkbox"
+          checked={settings.unlockAll}
+          onChange={(event) =>
+            onChange({ ...settings, unlockAll: event.target.checked })
+          }
+        />
+      </label>
+      <label className="flex items-center justify-between text-lg">
+        Sound
+        <input
+          type="checkbox"
+          checked={settings.sound}
+          onChange={(event) =>
+            onChange({ ...settings, sound: event.target.checked })
+          }
+        />
+      </label>
+
+      <p className="font-[family-name:var(--font-nunito)] font-semibold">All lessons</p>
+      <div className="grid grid-cols-2 gap-2">
+        {lessons.map((lesson) => (
+          <button
+            key={lesson.id}
+            type="button"
+            onClick={() => onOpenLesson(lesson.id)}
+            className="rounded-2xl bg-[#F4FBFF] px-3 py-2 text-left text-sm"
+          >
+            {lesson.id}. {lesson.title}
+          </button>
+        ))}
+      </div>
+
       <button
         type="button"
         onClick={onClose}

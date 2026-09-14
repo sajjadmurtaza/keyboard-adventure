@@ -45,6 +45,13 @@ export function eventToKey(event: KeyboardEvent): string | null {
   return event.key.toLowerCase();
 }
 
+export function typedCharFromText(value: string): string | null {
+  if (!value) return null;
+  const last = [...value].at(-1);
+  if (!last || last === "\n" || last === "\r") return null;
+  return normalizeTarget(last);
+}
+
 export function keysMatch(pressed: string, target: string): boolean {
   return normalizeTarget(pressed) === normalizeTarget(target);
 }
@@ -55,9 +62,18 @@ export function displayKey(key: string): string {
   return normalized.toUpperCase();
 }
 
+export function tinyHint(key: string): string | null {
+  const k = normalizeTarget(key);
+  if (k === ";") return "Semicolon";
+  if (k === ",") return "Comma";
+  if (k === ".") return "Period";
+  if (k === "/") return "Slash";
+  return null;
+}
+
 export function instructionFor(key: string): string {
   const normalized = normalizeTarget(key);
-  if (normalized === " ") return "Press the SPACE BAR";
+  if (normalized === " ") return "Press the space bar";
   return `Press the ${displayKey(normalized)} key`;
 }
 

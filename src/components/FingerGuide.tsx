@@ -12,19 +12,30 @@ export function FingerGuide({ target, enabled }: FingerGuideProps) {
   const hint = fingerHint(target);
 
   return (
-    <div className="mt-2 flex flex-col items-center gap-1">
-      <div className="flex gap-10 text-4xl" aria-hidden>
-        <span className={hint.hand === "left" ? "scale-125" : "opacity-40"}>
-          👆
-        </span>
-        <span className={hint.hand === "thumbs" ? "scale-125" : "opacity-30"}>
-          🖐️
-        </span>
-        <span className={hint.hand === "right" ? "scale-125" : "opacity-40"}>
-          👆
-        </span>
+    <div className="mt-1 flex flex-col items-center gap-0.5">
+      <p className="text-xl" aria-hidden>
+        ↑
+      </p>
+      <div className="flex items-end gap-16 text-4xl" aria-hidden>
+        {hint.hand === "thumbs" ? (
+          <>
+            <span>👍</span>
+            <span>👍</span>
+          </>
+        ) : (
+          <>
+            <span className={hint.hand === "left" ? "scale-125" : "opacity-30"}>
+              👆
+            </span>
+            <span className={hint.hand === "right" ? "scale-125" : "opacity-30"}>
+              👆
+            </span>
+          </>
+        )}
       </div>
-      <p className="text-base font-semibold text-[#7657E8]">{hint.label}</p>
+      <p className="font-[family-name:var(--font-display)] text-lg font-semibold text-[#7657E8]">
+        {hint.label.toUpperCase()}
+      </p>
     </div>
   );
 }

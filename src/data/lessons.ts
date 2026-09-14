@@ -151,3 +151,53 @@ export const PRACTICE_KEY_OPTIONS = [
   "r",
   "u",
 ];
+
+export type World = {
+  id: number;
+  emoji: string;
+  name: string;
+  blurb: string;
+  lessonIds: number[];
+};
+
+export const worlds: World[] = [
+  {
+    id: 1,
+    emoji: "🏡",
+    name: "Home Row Land",
+    blurb: "Learn the middle row",
+    lessonIds: [1, 2, 3, 4, 5, 6],
+  },
+  {
+    id: 2,
+    emoji: "☁️",
+    name: "Top Row Sky",
+    blurb: "Reach the top row",
+    lessonIds: [7, 8, 9, 10],
+  },
+  {
+    id: 3,
+    emoji: "🌳",
+    name: "Bottom Row Forest",
+    blurb: "Visit the bottom row",
+    lessonIds: [11, 12, 13, 14],
+  },
+  {
+    id: 4,
+    emoji: "🌈",
+    name: "Keyboard Mix",
+    blurb: "Mix it up",
+    lessonIds: [15, 16],
+  },
+];
+
+export function worldForLesson(lessonId: number): World {
+  return (
+    worlds.find((world) => world.lessonIds.includes(lessonId)) ?? worlds[0]!
+  );
+}
+
+export function nextAdventureId(completed: number[]): number {
+  const next = lessons.find((lesson) => !completed.includes(lesson.id));
+  return next?.id ?? lessons[lessons.length - 1]!.id;
+}

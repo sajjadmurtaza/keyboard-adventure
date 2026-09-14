@@ -1,19 +1,25 @@
 const STORAGE_KEY = "keyboard-adventure-progress-v1";
 
 export type Progress = {
+  childName: string;
   completedLessons: number[];
   starsEarned: number;
   currentLesson: number;
   correctAttempts: number;
   incorrectAttempts: number;
+  lessonBestResults: Record<string, number>;
+  newlyUnlocked: number | null;
 };
 
 const emptyProgress = (): Progress => ({
+  childName: "",
   completedLessons: [],
   starsEarned: 0,
   currentLesson: 1,
   correctAttempts: 0,
   incorrectAttempts: 0,
+  lessonBestResults: {},
+  newlyUnlocked: null,
 });
 
 export function loadProgress(): Progress {
@@ -28,6 +34,11 @@ export function loadProgress(): Progress {
       completedLessons: Array.isArray(parsed.completedLessons)
         ? parsed.completedLessons
         : [],
+      lessonBestResults:
+        parsed.lessonBestResults && typeof parsed.lessonBestResults === "object"
+          ? parsed.lessonBestResults
+          : {},
+      newlyUnlocked: parsed.newlyUnlocked ?? null,
     };
   } catch {
     return emptyProgress();
@@ -39,7 +50,11 @@ export function saveProgress(progress: Progress) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
 }
 
-export function isLessonUnlocked(lessonId: number, completed: number[]) {
-  if (lessonId <= 1) return true;
+export function isLessonUnlocked(
+  lessonId: number,
+  completed: number[],
+  unlockAll = false,
+) {
+  if (unlockAll || lessonId <= 1) return true;
   return completed.includes(lessonId - 1);
 }
