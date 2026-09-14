@@ -11,6 +11,10 @@ export function isEditableTarget(target: EventTarget | null): boolean {
   return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
 }
 
+export function shouldBlockSelection(target: EventTarget | null): boolean {
+  return !isEditableTarget(target);
+}
+
 export function isInspectShortcut(event: {
   key: string;
   ctrlKey: boolean;

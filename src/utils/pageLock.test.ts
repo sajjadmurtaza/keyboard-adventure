@@ -1,7 +1,11 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   isEditableTarget,
   isInspectShortcut,
   isLocalHostName,
+  shouldBlockSelection,
   shouldLockPageTools,
 } from "@/utils/pageLock";
 import { describe, expect, it } from "vitest";
@@ -41,5 +45,23 @@ describe("page lock", () => {
     ).toBe(true);
     expect(isEditableTarget(document.createElement("textarea"))).toBe(true);
     expect(isEditableTarget(document.createElement("div"))).toBe(false);
+  });
+
+  it("blocks selecting labels and pictures, not name fields", () => {
+    expect(shouldBlockSelection(null)).toBe(true);
+    expect(shouldBlockSelection(document.createElement("p"))).toBe(true);
+    expect(shouldBlockSelection(document.createElement("img"))).toBe(true);
+    expect(shouldBlockSelection(document.createElement("input"))).toBe(false);
+    expect(shouldBlockSelection(document.createElement("textarea"))).toBe(false);
+  });
+
+  it("keeps page CSS from selecting body text", () => {
+    const css = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), "../app/globals.css"),
+      "utf8",
+    );
+    expect(css).toMatch(/body\s*\{[^}]*user-select:\s*none/s);
+    expect(css).toMatch(/-webkit-touch-callout:\s*none/);
+    expect(css).toMatch(/input,\s*textarea\s*\{[^}]*user-select:\s*text/s);
   });
 });
