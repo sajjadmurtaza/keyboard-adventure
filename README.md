@@ -6,7 +6,7 @@ No accounts, ads, analytics, or child data collection. Progress stays in the bro
 
 ## What it looks like
 
-Screenshots live in `docs/screenshots/` for GitHub. They are **not** in `public/`, so the Vercel site does not serve them.
+Screenshots live in `docs/screenshots/` so GitHub can show them in this README. They are excluded from the Vercel upload (`.vercelignore`) and are **not** in `public/`, so they are not part of the live website.
 
 ### Home
 
@@ -101,7 +101,7 @@ npm run verify
 2. Import the repo in Vercel (Next.js defaults).
 3. Deploy. No environment variables are required.
 
-Do **not** copy screenshots into `public/`. GitHub can show `docs/screenshots/` in this README; Vercel only serves the Next.js app.
+Do **not** copy screenshots into `public/`. GitHub shows `docs/screenshots/` in this README. `.vercelignore` keeps those PNGs out of the Vercel deployment.
 
 ## Local progress
 
