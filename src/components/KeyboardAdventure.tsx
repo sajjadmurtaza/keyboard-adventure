@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Celebration } from "@/components/celebration/Celebration";
 import { ChildNameSetup } from "@/components/ChildNameSetup";
 import { AdventureMap } from "@/components/AdventureMap";
 import { FeedbackMessage } from "@/components/FeedbackMessage";
@@ -732,7 +733,7 @@ function Play({
   return (
     <div
       ref={stageRef}
-      className={`play-board grid min-h-0 flex-1 justify-items-center overflow-hidden ${
+      className={`play-board relative grid min-h-0 flex-1 justify-items-center overflow-hidden ${
         tightKb
           ? "mobile-keyboard-open content-start grid-rows-[auto_1fr_auto]"
           : "content-center grid-rows-[auto_auto_auto_auto]"
@@ -741,6 +742,13 @@ function Play({
       data-testid="play-stage"
       data-lesson-phase={lessonPhase}
     >
+      {mood === "success" ? (
+        <Celebration
+          level={streak >= 3 ? "streak" : "correct"}
+          compact={compact || tightKb}
+          reducedMotion={reducedMotion}
+        />
+      ) : null}
       <PreloadLessonArt keys={sequence} />
       <div className="flex w-full shrink-0 flex-col items-center gap-1 min-[501px]:flex-row min-[501px]:justify-center min-[501px]:gap-6">
         <ProgressStars

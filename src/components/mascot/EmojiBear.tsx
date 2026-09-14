@@ -3,12 +3,7 @@
 import type { MascotViewProps } from "@/components/mascot/types";
 
 export function EmojiBear({ mood, tiny = false }: MascotViewProps) {
-  const badge =
-    mood === "complete" || mood === "success" || mood === "streak"
-      ? "🎉"
-      : mood === "encourage"
-        ? "😮"
-        : null;
+  const clapping = mood === "complete" || mood === "success" || mood === "streak";
 
   return (
     <div
@@ -24,10 +19,17 @@ export function EmojiBear({ mood, tiny = false }: MascotViewProps) {
       aria-hidden
     >
       🐻
-      {badge ? (
-        <span className="absolute -right-1 -bottom-1 text-lg leading-none">
-          {badge}
-        </span>
+      {clapping ? (
+        <>
+          <span className="mascot-clap-emoji absolute -right-2 -top-1 text-lg leading-none">
+            👏
+          </span>
+          <span className="mascot-clap-emoji mascot-clap-emoji-delay absolute -bottom-1 -left-2 text-base leading-none">
+            👏
+          </span>
+        </>
+      ) : mood === "encourage" ? (
+        <span className="absolute -right-1 -bottom-1 text-lg leading-none">😮</span>
       ) : null}
     </div>
   );

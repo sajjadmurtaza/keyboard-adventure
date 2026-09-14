@@ -1,8 +1,8 @@
 # Keyboard Adventure
 
-A playful typing practice app for children about ages **4–8**. The child sees **one giant letter**, an object that starts with that letter (Fish for F), presses that key on a real keyboard, and only then moves on. Wrong keys never skip ahead. A correct key holds a short celebration (**about 1.5 seconds**), then the next letter appears.
+A playful typing practice app for children about ages **4–8**. The child sees **one giant letter**, an object that starts with that letter (Fish for F), presses that key, and only then moves on. Wrong keys never skip ahead.
 
-No accounts, ads, analytics, or child data collection. Progress stays in the browser (`localStorage`).
+No accounts, ads, analytics, or child data collection. The child’s first name and progress stay in the browser (`localStorage`). The name is never put in the URL or in SEO text.
 
 ## What it looks like
 
@@ -24,7 +24,7 @@ Fish appears before typing F. The toy keyboard has a long space bar. The finger 
 
 ### Parent settings
 
-Friendly or Calm voice, preview, and speaking speed.
+Child’s name, Friendly or Calm voice, preview, and speaking speed.
 
 ![Parent settings including voice choices](docs/screenshots/parent-settings.png)
 
@@ -32,16 +32,21 @@ Friendly or Calm voice, preview, and speaking speed.
 
 ```mermaid
 flowchart TD
+  name[First-run name if none saved]
   home[Home START]
   map[Lesson map]
-  ready[Letter plus object SVG]
+  prep[Picture plus letter ready]
   type[Child types one key]
   wrong[Stay on same letter]
-  win[Success for 1.5 seconds]
+  win[Correct: small celebration ~3s]
+  streak[3 or 5 in a row: bigger burst]
   next[Next prepared letter]
-  home --> map --> ready --> type
+  party[Lesson done: full party then buttons]
+  name --> home --> map --> prep --> type
   type -->|wrong| wrong --> type
-  type -->|correct| win --> next --> ready
+  type -->|correct| win --> next --> prep
+  win -->|streak| streak --> next
+  next -->|last letter| party
 ```
 
 ## Install
@@ -59,22 +64,42 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). A computer with a physical keyboard is best for finger practice. Phones use the native keyboard and a compact HUD (no full on-screen QWERTY).
 
+## First visit
+
+If no name is saved, a blocking screen asks **Who is learning today?** A blank name cannot continue. After **LET’S GO!**, the name is stored on this device only. Parent settings can change it later (**▶ Test name**).
+
 ## How a lesson works
 
 1. The association picture and word appear **before** typing (Fish / FISH, then F).
-2. Only one target is active. Layout never changes what counts as a correct key.
-3. Wrong keys shake and stay. The picture does not disappear.
-4. Correct keys lock typing, celebrate, keep the same picture, then wait about **1.5 seconds**.
-5. The next letter appears with its picture already ready. Voice does not say the next letter until that scene is on screen.
-6. Lesson complete waits for **Next adventure** or **Play again**.
+2. Typing stays locked for about **0.5 seconds** while the letter zooms in.
+3. Voice then says something like: **F is for Fish! Fatima, type F for Fish.** If the same letter comes right after itself: **F, F, Fish!**
+4. Only one target is active. Layout never changes what counts as a correct key.
+5. First wrong key: sound and shake only. Second: **Almost, Fatima. Find F.** Third: **You can do it, Fatima. Find F.** The picture stays.
+6. A correct key locks typing, keeps the picture, and celebrates about **3 seconds**.
+7. The next letter appears with its picture already ready. Voice does not talk about the next letter until that scene is on screen.
+8. Lesson complete is a **full-screen party**. **Next adventure** and **Play again** appear after a few seconds. The app does not leave that screen by itself.
 
 Desktop shows a toy keyboard that still teaches real geography: staggered rows, F/J bumps, and a wide space bar. The finger hint sits under the **target key**, inside the keyboard card.
+
+### Lessons do not skip letters
+
+Lesson 1 is F and J, repeated so the child can practice. Lesson 2 is still F, J, and Space. D and K are lesson 3. **Play again** repeats the same lesson. **Next adventure** then **PLAY** starts the next unlocked lesson.
+
+### Celebrations
+
+| Moment | Feel |
+| --- | --- |
+| Correct key | Small sparkles, ding, 🐻 clap |
+| 3 or 5 in a row | Stars and party bits from several screen areas |
+| Lesson finished | Balloons, confetti, applause once, **YOU DID IT!** |
+
+Reduced motion (OS or parent setting) skips flying pieces and keeps a still 🎉 ⭐ 🎈.
 
 ## Voice
 
 Browser speech cannot request `gender: "female"`. The app prefers clearer English system voices (Samantha Enhanced over Compact, and similar). Rate stays near normal talking speed. Parents can preview and pick a voice in settings.
 
-Howler still plays success, wrong, star, and celebration sounds.
+Howler still plays success, wrong, star, streak, and lesson-complete sounds. Applause on lesson complete plays **once**, not in a loop.
 
 ## Add lessons
 
@@ -99,7 +124,9 @@ npm run verify
 
 1. Push this folder to GitHub.
 2. Import the repo in Vercel (Next.js defaults).
-3. Deploy. No environment variables are required.
+3. Deploy.
+
+Optional: set `NEXT_PUBLIC_SITE_URL` to the public domain so sitemap, canonical, and Open Graph URLs match production. SEO title, description, robots, sitemap, and JSON-LD are already in the app. They never include the child’s name.
 
 Do **not** copy screenshots into `public/`. GitHub shows `docs/screenshots/` in this README. `.vercelignore` keeps those PNGs out of the Vercel deployment.
 

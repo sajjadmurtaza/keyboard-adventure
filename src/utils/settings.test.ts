@@ -71,5 +71,7 @@ describe("settings", () => {
     saveSettings({ ...defaultSettings, childName: "Ada" });
     expect(loadSettings().childName).toBe("Ada");
     expect(resetSettings().childName).toBe("");
+    window.localStorage.setItem("keyboard-adventure-settings-v1", "{not json");
+    expect(loadSettings().childName).toBe("");
   });
 });

@@ -1,5 +1,6 @@
 import {
   getLessonCompletePhrase,
+  getNameTestPhrase,
   getPreviewPhrase,
   getStreakPhrase,
   getTargetInstruction,
@@ -18,7 +19,11 @@ describe("speech phrases", () => {
     expect(getTargetInstruction("f", "Ada")).toBe(
       "F is for Fish! Ada, type F for Fish.",
     );
-    expect(getTargetInstruction("f", "Ada", { shortened: true })).toBe("F, F, Fish!");
+    expect(getTargetInstruction("f")).toBe("F is for Fish! Type F for Fish.");
+    expect(getTargetInstruction(",", "Ada")).toBe("Ada, type the comma.");
+    expect(getTargetInstruction(",")).toBe("Type the comma.");
+    expect(getTargetInstruction("1", "Ada")).toBe("Ada, type 1.");
+    expect(getTargetInstruction("1")).toBe("Type 1.");
   });
 
   it("paces wrong-key help", () => {
@@ -46,9 +51,11 @@ describe("speech phrases", () => {
     expect(getStreakPhrase(3)).toMatch(/Three|Awesome|Fantastic|Amazing|Super|roll|Wow/i);
     expect(getStreakPhrase(3, "Ada")).toMatch(/Ada|Three|Awesome|Fantastic|Amazing|Super|roll|Wow/i);
     expect(getLessonCompletePhrase()).toMatch(/did it|Adventure|Amazing/i);
-    expect(getLessonCompletePhrase("Ada")).toMatch(/Ada|did it|Adventure/i);
+    expect(getLessonCompletePhrase("Ada")).toMatch(/Ada|did it|Adventure|Fantastic/i);
     expect(getPreviewPhrase()).toContain("Fantastic");
     expect(getPreviewPhrase()).toContain("F");
+    expect(getNameTestPhrase("Fatima")).toBe("Hello, Fatima! Let's start typing!");
+    expect(getNameTestPhrase("   ")).toBe("Hello! Let's start typing!");
     expect(pickFresh(["only"])).toBe("only");
     expect(pickFresh(["only"])).toBe("only");
     expect(pickFresh([])).toBe("");

@@ -136,10 +136,12 @@ export class AudioManager {
         return;
       case "LESSON_COMPLETE":
         this.stopSpeech();
-        this.sounds.play("lessonComplete");
+        this.sounds.play("star");
+        this.later(() => this.sounds.play("lessonComplete"), 180);
         this.later(() => {
+          this.sounds.setDuck(0.45);
           this.say(getLessonCompletePhrase(this.celebrateName()), "high", "celebration", 0);
-        }, AUDIO_TIMING.lessonCompleteSpeechDelay);
+        }, 600);
         return;
       default:
         return;

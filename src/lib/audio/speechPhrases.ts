@@ -124,10 +124,10 @@ export function getLessonCompletePhrase(name?: string): string {
   return pickFresh(
     who
       ? [
-          `Woohoo, ${who}! You did it!`,
+          `Fantastic, ${who}! You finished the adventure!`,
+          `You did it, ${who}!`,
           `Amazing work, ${who}!`,
-          "Woohoo! You did it!",
-          "Fantastic job! Adventure complete!",
+          "Adventure complete!",
         ]
       : ["Woohoo! You did it!", "Fantastic job! Adventure complete!", "Amazing typing!"],
   );

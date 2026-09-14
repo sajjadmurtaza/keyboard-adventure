@@ -100,7 +100,7 @@ export function TargetLetter({
 
 function StarBurst({ compact, level }: { compact?: boolean; level: 1 | 2 | 3 }) {
   const count = compact ? 4 : level >= 3 ? 8 : 6;
-  const bits = ["⭐", "✨", "✦"];
+  const bits = ["⭐", "👏", "✨"];
   const reach = compact ? 70 : 110;
   return (
     <div className="pointer-events-none absolute inset-0 overflow-visible" aria-hidden>

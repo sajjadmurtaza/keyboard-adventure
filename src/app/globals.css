@@ -570,6 +570,26 @@ html.lesson-play body {
   animation: jump 0.7s ease;
 }
 
+@keyframes clap-pop {
+  0%,
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.25) translateY(-6px);
+    opacity: 1;
+  }
+}
+
+.mascot-clap-emoji {
+  animation: clap-pop 0.38s ease-in-out 4;
+}
+
+.mascot-clap-emoji-delay {
+  animation-delay: 0.18s;
+}
+
 .key-glow {
   animation: glow 0.7s ease-in-out 1;
 }
@@ -588,6 +608,65 @@ html.lesson-play body {
 
 .confetti-piece {
   animation: fall 2.2s linear forwards;
+}
+
+.party-sparkle,
+.party-confetti,
+.party-balloon {
+  position: absolute;
+  pointer-events: none;
+  will-change: transform, opacity;
+  line-height: 1;
+}
+
+.party-sparkle {
+  animation: party-sparkle 1.2s ease-out both;
+}
+
+.party-confetti {
+  animation: party-fall 2.6s linear both;
+}
+
+.party-balloon {
+  animation: party-rise 4.4s ease-out both;
+  z-index: 0;
+}
+
+@keyframes party-sparkle {
+  0% {
+    transform: scale(0.5) rotate(0deg);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(1.15) rotate(var(--spin));
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9) translateY(-18px) rotate(var(--spin));
+    opacity: 0;
+  }
+}
+
+@keyframes party-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(72vh) rotate(var(--spin));
+    opacity: 0;
+  }
+}
+
+@keyframes party-rise {
+  0% {
+    transform: translateY(8vh) rotate(0deg);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(-108vh) rotate(var(--spin));
+    opacity: 0.35;
+  }
 }
 
 .new-pulse {
@@ -836,6 +915,7 @@ html.lesson-play body {
   .animate-letter-enter,
   .mascot-bob,
   .mascot-jump,
+  .mascot-clap-emoji,
   .key-glow,
   .key-glow-strong,
   .key-miss,
@@ -844,6 +924,9 @@ html.lesson-play body {
   .star-fly,
   .particle,
   .confetti-piece,
+  .party-sparkle,
+  .party-confetti,
+  .party-balloon,
   .new-pulse,
   .title-bounce,
   .target-halo-miss,

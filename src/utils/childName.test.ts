@@ -10,6 +10,8 @@ describe("child name", () => {
     expect(parseChildName("")).toBeNull();
     expect(parseChildName("   ")).toBeNull();
     expect(parseChildName("a".repeat(CHILD_NAME_MAX + 1))).toBeNull();
+    expect(parseChildName("Ada\u0001")).toBeNull();
+    expect(parseChildName(12)).toBeNull();
     expect(isValidChildName("Fatima")).toBe(true);
     expect(isValidChildName("")).toBe(false);
   });
