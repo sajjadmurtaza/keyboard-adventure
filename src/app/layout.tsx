@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fredoka, Nunito } from "next/font/google";
+import { ProductionGuards } from "@/components/ProductionGuards";
 import { SITE_DESCRIPTION, SITE_TITLE, jsonLd, siteUrl } from "@/lib/seo";
 import "./globals.css";
 
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd()) }}
         />
         {children}
+        <ProductionGuards />
       </body>
     </html>
   );
