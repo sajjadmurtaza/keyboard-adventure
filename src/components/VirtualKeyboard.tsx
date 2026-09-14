@@ -56,7 +56,7 @@ export function VirtualKeyboard({
     const originBox = origin.getBoundingClientRect();
     const keyBox = key.getBoundingClientRect();
     setHintCenter(keyBox.left + keyBox.width / 2 - originBox.left);
-  }, [wanted, mood, helpLevel, missedKey, layout]);
+  }, [wanted, helpLevel, layout]);
 
   return (
     <div

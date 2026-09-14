@@ -33,7 +33,7 @@
   :root {
     --lesson-gap: 16px;
     --target-size: clamp(180px, 24vh, 280px);
-    --key-size: 62px;
+    --key-size: 56px;
     --key-gap: 8px;
     --row-offset-2: 22px;
     --row-offset-3: 45px;
@@ -119,100 +119,64 @@ html.lesson-play body {
 }
 
 @keyframes pop {
-  0% {
-    transform: scale(1) translateY(0);
-  }
-  28% {
-    transform: scale(1.25) translateY(-18px);
-  }
-  52% {
-    transform: scale(0.95) translateY(-4px);
-  }
-  76% {
-    transform: scale(1.1) translateY(-10px);
-  }
+  0%,
   100% {
-    transform: scale(1) translateY(0);
+    filter: brightness(1);
+  }
+  40% {
+    filter: brightness(1.18);
   }
 }
 
 @keyframes wiggle {
   0%,
   100% {
-    transform: translateX(0);
+    filter: brightness(1);
   }
-  15% {
-    transform: translateX(-14px) rotate(-2deg);
-  }
-  30% {
-    transform: translateX(12px) rotate(2deg);
-  }
-  45% {
-    transform: translateX(-10px) rotate(-1deg);
-  }
-  60% {
-    transform: translateX(8px) rotate(1deg);
+  40% {
+    filter: brightness(0.92);
   }
   75% {
-    transform: translateX(-4px);
+    filter: brightness(1);
   }
 }
 
 @keyframes wiggle-mobile {
   0%,
   100% {
-    transform: translateX(0);
-  }
-  20% {
-    transform: translateX(-8px);
+    filter: brightness(1);
   }
   40% {
-    transform: translateX(7px);
-  }
-  60% {
-    transform: translateX(-5px);
-  }
-  80% {
-    transform: translateX(3px);
+    filter: brightness(0.9);
   }
 }
 
 @keyframes letter-enter {
   0% {
     opacity: 0;
-    transform: scale(0.8);
-  }
-  62% {
-    opacity: 1;
-    transform: scale(1.08);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
 @keyframes key-miss {
-  0% {
-    transform: scale(1);
+  0%,
+  100% {
+    filter: brightness(1);
   }
   40% {
-    transform: scale(0.88) translateY(3px);
-  }
-  100% {
-    transform: scale(1);
+    filter: brightness(0.88);
   }
 }
 
 @keyframes key-hit {
-  0% {
-    transform: scale(1);
+  0%,
+  100% {
+    filter: brightness(1);
   }
   35% {
-    transform: scale(1.18);
-  }
-  100% {
-    transform: scale(1.08);
+    filter: brightness(1.2);
   }
 }
 
@@ -297,13 +261,13 @@ html.lesson-play body {
 @keyframes jump {
   0%,
   100% {
-    transform: translateY(0) scale(1) rotate(0deg);
+    transform: scale(1) rotate(0deg);
   }
   30% {
-    transform: translateY(-22px) scale(1.14) rotate(-8deg);
+    transform: scale(1.08) rotate(-6deg);
   }
   55% {
-    transform: translateY(-8px) scale(1.06) rotate(6deg);
+    transform: scale(1.04) rotate(4deg);
   }
 }
 
@@ -416,10 +380,10 @@ html.lesson-play body {
 }
 
 .association-area.association-card {
-  width: auto;
-  height: auto;
+  width: 130px;
+  height: 132px;
   min-width: 130px;
-  min-height: 100px;
+  min-height: 132px;
 }
 
 @media (max-width: 500px) {
@@ -459,11 +423,9 @@ html.lesson-play body {
 @keyframes success-copy-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -722,6 +684,16 @@ html.lesson-play body {
   animation: title-bounce 0.8s cubic-bezier(0.2, 1.3, 0.3, 1);
 }
 
+.play-board {
+  --mascot-size: 52px;
+}
+
+@media (min-height: 900px) {
+  .play-board {
+    --mascot-size: 56px;
+  }
+}
+
 .play-board .target-group {
   display: flex;
   flex-direction: column;
@@ -739,7 +711,7 @@ html.lesson-play body {
 }
 
 .keyboard-stage {
-  padding-bottom: 0;
+  padding-bottom: 4px;
 }
 
 .keyboard-shell {
@@ -748,7 +720,7 @@ html.lesson-play body {
   align-items: stretch;
   gap: var(--key-gap);
   width: 100%;
-  padding: 10px 14px 8px;
+  padding: 10px 14px 14px;
   border-radius: 28px;
   border: 2px solid #e8e1ff;
   background: #f7f5ff;
@@ -757,7 +729,7 @@ html.lesson-play body {
 
 .finger-guide-track {
   position: relative;
-  height: 2rem;
+  height: 1.5rem;
   width: 100%;
   overflow: visible;
 }
@@ -819,7 +791,6 @@ html.lesson-play body {
   border: 3px solid #7657e8;
   color: #34364a;
   box-shadow: 0 4px 0 #c4a92e, 0 0 18px rgba(118, 87, 232, 0.28);
-  transform: scale(1.08);
 }
 
 .keycap-success {
@@ -867,41 +838,29 @@ html.lesson-play body {
 @keyframes letter-enter-hud {
   0% {
     opacity: 0;
-    transform: scale(0.8);
-  }
-  62% {
-    opacity: 1;
-    transform: scale(1.08);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
 @keyframes pop-hud {
   0%,
   100% {
-    transform: scale(1);
+    filter: brightness(1);
   }
   40% {
-    transform: scale(1.1);
+    filter: brightness(1.12);
   }
 }
 
 @keyframes wiggle-hud {
   0%,
   100% {
-    transform: translateX(0);
+    filter: brightness(1);
   }
-  25% {
-    transform: translateX(-6px);
-  }
-  50% {
-    transform: translateX(6px);
-  }
-  75% {
-    transform: translateX(-4px);
+  40% {
+    filter: brightness(0.92);
   }
 }
 
@@ -916,6 +875,7 @@ html.lesson-play body {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
+  padding-bottom: 0;
   gap: 8px;
   min-height: 0;
 }

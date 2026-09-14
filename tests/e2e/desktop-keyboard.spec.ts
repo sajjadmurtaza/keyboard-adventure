@@ -48,6 +48,50 @@ test("desktop lesson keyboard looks like a keyboard", async ({ page }) => {
   await expect(stage).toBeVisible();
 });
 
+test("keyboard and letter stay put on success and miss", async ({ page }) => {
+  await seedChild(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "⭐ START! ⭐" }).click();
+  await page.getByRole("button", { name: "PLAY ▶" }).click();
+  await expect(page.getByTestId("play-stage")).toHaveAttribute("data-lesson-phase", "ready");
+
+  const letter = page.getByTestId("target-letter");
+  const board = page.getByTestId("visual-keyboard");
+  const idleLetter = await letter.boundingBox();
+  const idleBoard = await board.boundingBox();
+  expect(idleLetter && idleBoard).toBeTruthy();
+
+  const header = page.locator("header");
+  const mascot = page.locator("[data-mascot-mood]");
+  const headerBox = await header.boundingBox();
+  const mascotBox = await mascot.boundingBox();
+  expect(headerBox && mascotBox).toBeTruthy();
+  expect(mascotBox!.y).toBeGreaterThanOrEqual(headerBox!.y + headerBox!.height - 2);
+
+  const idleGap = await page.evaluate(() => {
+    const shell = document.querySelector(".keyboard-shell");
+    if (!shell) return 0;
+    return window.innerHeight - shell.getBoundingClientRect().bottom;
+  });
+  expect(idleGap).toBeGreaterThanOrEqual(12);
+
+  await page.keyboard.press("a");
+  await expect(letter).toContainText("F");
+  const missLetter = await letter.boundingBox();
+  const missBoard = await board.boundingBox();
+  expect(Math.abs((missLetter?.y ?? 0) - idleLetter!.y)).toBeLessThan(3);
+  expect(Math.abs((missBoard?.y ?? 0) - idleBoard!.y)).toBeLessThan(3);
+  expect(Math.abs((missBoard?.height ?? 0) - idleBoard!.height)).toBeLessThan(3);
+
+  await page.keyboard.press("f");
+  await expect(page.getByTestId("success-teach")).toHaveText(/is for/i);
+  await expect(page.getByTestId("lesson-instruction")).toHaveCount(0);
+  const winLetter = await letter.boundingBox();
+  const winBoard = await board.boundingBox();
+  expect(Math.abs((winLetter?.y ?? 0) - idleLetter!.y)).toBeLessThan(3);
+  expect(Math.abs((winBoard?.y ?? 0) - idleBoard!.y)).toBeLessThan(3);
+});
+
 test("finger hint sits under the target key, not under space", async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem(

@@ -40,7 +40,6 @@ import {
 import type { MascotMood } from "@/components/mascot/types";
 import { useAudio } from "@/hooks/useAudio";
 import {
-  displayKey,
   instructionFor,
   keysMatch,
   normalizeTarget,
@@ -85,7 +84,6 @@ export function KeyboardAdventure() {
   const [lessonId, setLessonId] = useState(1);
   const [index, setIndex] = useState(0);
   const [mood, setMood] = useState<Mood>("idle");
-  const [feedback, setFeedback] = useState("Find this key!");
   const [correct, setCorrect] = useState(0);
   const [wrong, setWrong] = useState(0);
   const [helpLevel, setHelpLevel] = useState(0);
@@ -258,7 +256,6 @@ export function KeyboardAdventure() {
     setSequence(seq.length ? seq : keys);
     setIndex(0);
     setMood("idle");
-    setFeedback(childName ? `Find this key, ${childName}!` : "Find this key!");
     setCorrect(0);
     setWrong(0);
     setHelpLevel(0);
@@ -343,12 +340,6 @@ export function KeyboardAdventure() {
         setMood("retry");
         setMissedKey(pressed);
         window.setTimeout(() => setMissedKey(null), wrongFeedbackMs(quiet));
-        const shown = displayKey(wanted);
-        const retry =
-          helpLevel % 2 === 0
-            ? `OOPS! 😮\nTRY ${shown} AGAIN!`
-            : `ALMOST! ⭐\nFIND ${shown}!`;
-        setFeedback(retry);
         audio?.notify({ type: "TARGET_WRONG", key: wanted, attempts: helpLevel + 1 });
         window.setTimeout(() => {
           if (phaseRef.current === "wrong-feedback") setPhase("ready");
@@ -374,7 +365,6 @@ export function KeyboardAdventure() {
       }
       setCorrect((value) => value + 1);
       setMood("success");
-      setFeedback(praise.banner);
       audio?.notify({
         type: "TARGET_CORRECT",
         key: wanted,
@@ -410,7 +400,6 @@ export function KeyboardAdventure() {
         setPhase("transitioning");
         setIndex(nextIndex);
         setMood("idle");
-        setFeedback("Find this key!");
         scheduleReady(gen);
       }, celebrationMs(settings, quiet, nextStreak));
     },
@@ -460,7 +449,7 @@ export function KeyboardAdventure() {
         : view === "play" && mood === "success"
           ? "scene-win bg-[#F4FBFF]"
           : "bg-[#F4FBFF]"
-    } ${view === "play" ? "h-[var(--visual-viewport-height,100dvh)] overflow-hidden pb-[max(0.4rem,env(safe-area-inset-bottom))]" : "min-h-dvh pb-3"}`}
+    } ${view === "play" ? "h-[var(--visual-viewport-height,100dvh)] overflow-hidden pb-[max(1rem,env(safe-area-inset-bottom))]" : "min-h-dvh pb-3"}`}
     style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
     >
       <Decor dim={narrow && keyboardOpen} hidden={narrow && keyboardOpen} />
@@ -585,7 +574,6 @@ export function KeyboardAdventure() {
             mood={mood}
             lessonPhase={lessonPhase}
             sequence={sequence}
-            feedback={feedback}
             instruction={instructionFor(target)}
             settings={settings}
             reducedMotion={quiet}
@@ -695,7 +683,6 @@ function Play({
   mood,
   lessonPhase,
   sequence,
-  feedback,
   instruction,
   settings,
   reducedMotion,
@@ -719,7 +706,6 @@ function Play({
   mood: Mood;
   lessonPhase: LessonPhase;
   sequence: string[];
-  feedback: string;
   instruction: string;
   settings: ParentSettings;
   reducedMotion: boolean;
@@ -752,15 +738,11 @@ function Play({
       ? "You got it!"
       : "Find this key!";
   const burstLevel = streak >= 5 ? 3 : streak >= 3 ? 2 : 1;
-  const banner = tightKb
-    ? mood === "retry"
-      ? "Almost! Find it."
-      : mood === "success"
-        ? feedback
-        : null
-    : mood === "idle"
-      ? null
-      : feedback;
+  const copyLine = teachLine
+    ? teachLine
+    : mood === "retry"
+      ? mascotLine
+      : instruction;
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
@@ -786,8 +768,8 @@ function Play({
       ref={stageRef}
       className={`play-board relative grid min-h-0 flex-1 justify-items-center overflow-hidden ${
         tightKb
-          ? "mobile-keyboard-open content-start grid-rows-[auto_1fr_auto]"
-          : "content-center grid-rows-[auto_auto_auto_auto]"
+          ? "mobile-keyboard-open content-start grid-rows-[auto_minmax(0,1fr)_auto]"
+          : "content-stretch grid-rows-[auto_minmax(0,1fr)_auto_auto]"
       }`}
       style={{ gap: "var(--lesson-gap)" }}
       data-testid="play-stage"
@@ -802,14 +784,14 @@ function Play({
         />
       ) : null}
       <PreloadLessonArt keys={sequence} />
-      <div className="flex w-full shrink-0 flex-col items-center gap-1 min-[501px]:flex-row min-[501px]:justify-center min-[501px]:gap-6">
+      <div className="relative z-[1] mt-2 flex w-full shrink-0 flex-col items-center justify-center gap-1 min-[501px]:flex-row min-[501px]:justify-center min-[501px]:gap-6" style={{ minHeight: "calc(var(--mascot-size) + 8px)" }}>
         <ProgressStars
           total={progressTotal}
           filled={progressFilled}
           compact
         />
         {streakNote && density === "tall" && !tightKb ? (
-          <p className="star-pop font-[family-name:var(--font-display)] text-xl font-bold text-[#7657E8] max-[500px]:text-lg">
+          <p className="pointer-events-none absolute top-0 right-2 star-pop font-[family-name:var(--font-display)] text-xl font-bold text-[#7657E8] max-[500px]:text-lg">
             {streakNote}
           </p>
         ) : null}
@@ -843,36 +825,22 @@ function Play({
           burst={mood === "success" && !reducedMotion}
           burstLevel={tightKb ? 1 : burstLevel}
           size={tightKb ? "compact" : compact ? "mobile" : "desktop"}
-          banner={tightKb ? null : banner}
         />
-        {teachLine && !tightKb ? (
-          <p
-            className={`success-teach mt-1 font-[family-name:var(--font-display)] text-lg font-bold text-[#2AA85A] ${
-              reducedMotion ? "" : ""
-            }`}
-            data-testid="success-teach"
-          >
-            {teachLine}
-          </p>
-        ) : null}
       </div>
       {compact ? (
         <p
-          className={`shrink-0 font-[family-name:var(--font-display)] font-semibold ${tightKb ? "text-base" : "text-lg"}`}
-          data-testid="lesson-instruction"
+          className={`mb-1 h-7 shrink-0 overflow-hidden font-[family-name:var(--font-display)] font-semibold leading-7 ${tightKb ? "text-base" : "text-lg"} ${
+            mood === "success" ? "text-[#2AA85A]" : mood === "retry" ? "text-[#7657E8]" : ""
+          }`}
+          data-testid={teachLine ? "success-teach" : "lesson-instruction"}
         >
-          {tightKb
-            ? mood === "success" && teachLine
-              ? teachLine
-              : findLine
-            : mood === "success" && teachLine
-              ? teachLine
-              : target === " "
-                ? "Press the space bar"
-                : `Type the ${target.toUpperCase()} key`}
+          {tightKb && mood === "idle" ? findLine : copyLine}
         </p>
       ) : (
-        <FeedbackMessage text={instruction} kind="idle" />
+        <FeedbackMessage
+          text={copyLine}
+          kind={mood === "retry" ? "retry" : mood === "success" ? "success" : "idle"}
+        />
       )}
       {compact && !tightKb ? (
         <div className="flex shrink-0 flex-col items-center" data-testid="mini-key">
@@ -883,7 +851,7 @@ function Play({
         </div>
       ) : null}
       {!compact ? (
-        <div className="flex w-full shrink-0 flex-col items-center">
+        <div className="mb-1 flex w-full shrink-0 flex-col items-center">
           {settings.keyboardHighlight ? (
             <VirtualKeyboard
               target={target}

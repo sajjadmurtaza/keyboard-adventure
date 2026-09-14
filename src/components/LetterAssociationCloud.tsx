@@ -52,7 +52,7 @@ export function LetterAssociationCloud({
     return (
       <div
         className={`association-area pointer-events-none flex h-[100px] w-[130px] flex-col items-center justify-center gap-1 rounded-[28px] border-2 border-[#D8E7FF] bg-white px-2 shadow ${
-          reducedMotion ? "" : mode === "reward" ? "assoc-reward" : "assoc-cloud-in"
+          reducedMotion ? "" : "assoc-cloud-in"
         }`}
         data-testid="association"
         aria-hidden
@@ -73,17 +73,10 @@ export function LetterAssociationCloud({
     );
   }
 
-  const caption =
-    mode === "hint" || mode === "reward"
-      ? item
-        ? `${letter.toUpperCase()} is for ${item.word}`
-        : letter.toUpperCase()
-      : label;
-
   return (
     <div
-      className={`association-area association-card pointer-events-none flex min-h-[100px] min-w-[130px] flex-col items-center ${
-        reducedMotion ? "" : mode === "reward" ? "assoc-reward" : "assoc-cloud-in"
+      className={`association-area association-card pointer-events-none flex flex-col items-center ${
+        reducedMotion ? "" : "assoc-cloud-in"
       }`}
       aria-hidden
       data-testid="association"
@@ -103,8 +96,8 @@ export function LetterAssociationCloud({
             </span>
           )}
         </div>
-        <p className="mt-1 font-[family-name:var(--font-display)] text-sm font-bold text-[#7657E8] max-[500px]:text-xs">
-          {caption}
+        <p className="mt-1 w-full truncate text-center font-[family-name:var(--font-display)] text-sm font-bold text-[#7657E8] max-[500px]:text-xs">
+          {label}
         </p>
       </div>
     </div>

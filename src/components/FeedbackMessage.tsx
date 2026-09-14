@@ -15,7 +15,8 @@ export function FeedbackMessage({ text, kind }: FeedbackMessageProps) {
 
   return (
     <p
-      className={`min-h-0 text-center font-[family-name:var(--font-display)] text-xl font-bold ${color}`}
+      className={`mb-1 h-8 overflow-hidden text-center font-[family-name:var(--font-display)] text-xl font-bold leading-8 ${color}`}
+      data-testid={kind === "success" ? "success-teach" : "lesson-instruction"}
     >
       {text}
     </p>

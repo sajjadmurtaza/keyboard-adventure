@@ -9,7 +9,6 @@ type TargetLetterProps = {
   burst: boolean;
   burstLevel?: 1 | 2 | 3;
   size?: "desktop" | "mobile" | "compact";
-  banner?: string | null;
 };
 
 export function TargetLetter({
@@ -19,7 +18,6 @@ export function TargetLetter({
   burst,
   burstLevel = 1,
   size = "desktop",
-  banner,
 }: TargetLetterProps) {
   const label = displayKey(target);
   const hint = tinyHint(target);
@@ -78,20 +76,9 @@ export function TargetLetter({
       >
         {label}
       </p>
-      {hud ? null : hint ? (
-        <p className="mt-0.5 text-sm font-semibold text-[#7657E8]">{hint}</p>
-      ) : null}
-      {hud || !banner ? null : (
-        <p
-          className={`mt-1 text-center font-[family-name:var(--font-display)] font-bold leading-tight ${
-            mood === "success"
-              ? "success-headline text-[#2AA85A]"
-              : mood === "retry"
-                ? "text-[#FF4D5E]"
-                : "text-transparent"
-          } ${compact ? "text-xl" : "text-2xl sm:text-3xl"}`}
-        >
-          {banner}
+      {hud ? null : (
+        <p className={`mt-0.5 h-5 text-sm font-semibold leading-5 text-[#7657E8] ${hint ? "" : "invisible"}`}>
+          {hint ?? "space"}
         </p>
       )}
     </div>
