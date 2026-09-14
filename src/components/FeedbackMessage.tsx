@@ -14,6 +14,10 @@ export function FeedbackMessage({ text, kind }: FeedbackMessageProps) {
         : "text-[#34364A]";
 
   return (
-    <p className={`min-h-8 text-center text-2xl font-bold ${color}`}>{text}</p>
+    <p
+      className={`min-h-8 text-center font-[family-name:var(--font-display)] text-2xl font-bold ${color}`}
+    >
+      {text}
+    </p>
   );
 }

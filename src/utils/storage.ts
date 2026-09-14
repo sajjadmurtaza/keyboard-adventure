@@ -50,6 +50,12 @@ export function saveProgress(progress: Progress) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
 }
 
+export function resetProgress(childName = ""): Progress {
+  const next = { ...emptyProgress(), childName };
+  saveProgress(next);
+  return next;
+}
+
 export function isLessonUnlocked(
   lessonId: number,
   completed: number[],

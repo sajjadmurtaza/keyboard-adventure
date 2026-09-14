@@ -12,10 +12,13 @@ export function ProgressStars({ total, filled }: ProgressStarsProps) {
       {Array.from({ length: count }, (_, index) => (
         <span
           key={index}
-          className={index === filled - 1 ? "star-pop inline-block" : "inline-block"}
+          className={index === filled - 1 ? "star-pop relative inline-block" : "inline-block"}
           aria-hidden
         >
           {index < filled ? "⭐" : "☆"}
+          {index === filled - 1 && index < filled ? (
+            <span className="absolute -right-1 -top-1 text-sm">✨</span>
+          ) : null}
         </span>
       ))}
     </div>

@@ -3,8 +3,19 @@ const SETTINGS_KEY = "keyboard-adventure-settings-v1";
 export type Difficulty = "beginner" | "growing" | "practice";
 export type CelebrationLevel = "gentle" | "fun" | "big";
 
+export type NameFrequency = "never" | "sometimes" | "celebrations" | "often";
+
 export type ParentSettings = {
   sound: boolean;
+  masterVolume: number;
+  gameSounds: boolean;
+  voiceGuidance: boolean;
+  autoSpeakTarget: boolean;
+  nameFrequency: NameFrequency;
+  voiceURI: string;
+  speechRate: number;
+  wrongVoiceHelp: boolean;
+  preferLocalVoice: boolean;
   celebrations: boolean;
   celebrationLevel: CelebrationLevel;
   reducedAnimations: boolean;
@@ -19,6 +30,15 @@ export type ParentSettings = {
 
 export const defaultSettings: ParentSettings = {
   sound: true,
+  masterVolume: 0.75,
+  gameSounds: true,
+  voiceGuidance: true,
+  autoSpeakTarget: true,
+  nameFrequency: "sometimes",
+  voiceURI: "",
+  speechRate: 0.9,
+  wrongVoiceHelp: true,
+  preferLocalVoice: true,
   celebrations: true,
   celebrationLevel: "fun",
   reducedAnimations: false,
@@ -42,10 +62,17 @@ export function loadSettings(): ParentSettings {
     const celebrationLevel =
       parsed.celebrationLevel ??
       (parsed.celebrations === false ? "gentle" : "fun");
+    const nameFrequency = parseNameFrequency(parsed.nameFrequency);
+    const speechRate = clamp(Number(parsed.speechRate ?? 0.9), 0.7, 1.1);
+    const masterVolume = clamp(Number(parsed.masterVolume ?? 0.75), 0, 1);
     return {
       ...defaultSettings,
       ...parsed,
       celebrationLevel,
+      nameFrequency,
+      speechRate,
+      masterVolume,
+      voiceURI: typeof parsed.voiceURI === "string" ? parsed.voiceURI : "",
       childName: typeof parsed.childName === "string" ? parsed.childName.trim() : "",
     };
   } catch {
@@ -58,12 +85,35 @@ export function saveSettings(settings: ParentSettings) {
   window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 
+export function resetSettings(): ParentSettings {
+  saveSettings(defaultSettings);
+  return defaultSettings;
+}
+
+function clamp(value: number, min: number, max: number) {
+  if (Number.isNaN(value)) return min;
+  return Math.min(max, Math.max(min, value));
+}
+
+function parseNameFrequency(value: unknown): ParentSettings["nameFrequency"] {
+  if (value === "never" || value === "sometimes" || value === "celebrations" || value === "often") {
+    return value;
+  }
+  return "sometimes";
+}
+
 export function celebrationMs(
   settings: ParentSettings,
   reducedMotion: boolean,
+  streak = 0,
 ): number {
-  if (reducedMotion || settings.reducedAnimations) return 280;
-  if (settings.celebrationLevel === "gentle") return 450;
-  if (settings.celebrationLevel === "big") return 900;
-  return 750;
+  if (reducedMotion || settings.reducedAnimations) return 400;
+  const base =
+    settings.celebrationLevel === "gentle"
+      ? 800
+      : settings.celebrationLevel === "big"
+        ? 1200
+        : 1050;
+  if (streak >= 5) return Math.max(base, 1100);
+  return base;
 }

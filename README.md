@@ -47,9 +47,9 @@ Colors and motion live in `src/app/globals.css`. Fonts are Fredoka (letters) and
 These keys are stored only on this device:
 
 - `keyboard-adventure-progress-v1` — completed lessons, stars, attempt counts
-- `keyboard-adventure-settings-v1` — sound, animations, hints, question count
+- `keyboard-adventure-settings-v1` — sound, voice, volume, animations, hints, question count
 
-Clear site data in the browser to reset. Nothing is sent to a server.
+Parent settings (gear) → **Reset progress** (lessons, stars, stats) or **Reset everything** (also sound, name, and other options). You can also clear this site’s data in the browser. Nothing is sent to a server.
 
 ## How matching works
 

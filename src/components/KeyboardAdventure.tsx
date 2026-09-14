@@ -9,6 +9,7 @@ import { Mascot } from "@/components/Mascot";
 import { ParentSettingsPanel } from "@/components/ParentSettings";
 import { ProgressStars } from "@/components/ProgressStars";
 import { TargetLetter } from "@/components/TargetLetter";
+import { LetterAssociationCloud } from "@/components/LetterAssociationCloud";
 import { MiniKeyHint } from "@/components/MiniKeyHint";
 import { MobileTypePad } from "@/components/MobileTypePad";
 import { VirtualKeyboard } from "@/components/VirtualKeyboard";
@@ -17,9 +18,10 @@ import {
   getLesson,
   PRACTICE_KEY_OPTIONS,
 } from "@/data/lessons";
+import { associationFor } from "@/data/letterAssociations";
 import { useKeyboardInput } from "@/hooks/useKeyboardInput";
 import { useNarrowLayout, useSoftwareKeyboardOpen } from "@/hooks/useViewport";
-import { playComplete, playMiss, playSuccess } from "@/utils/audio";
+import { useAudio } from "@/hooks/useAudio";
 import {
   displayKey,
   instructionFor,
@@ -30,12 +32,14 @@ import {
   celebrationMs,
   defaultSettings,
   loadSettings,
+  resetSettings,
   saveSettings,
   type ParentSettings,
 } from "@/utils/settings";
 import {
   isLessonUnlocked,
   loadProgress,
+  resetProgress,
   saveProgress,
   type Progress,
 } from "@/utils/storage";
@@ -44,22 +48,16 @@ type View = "home" | "lessons" | "practice" | "play" | "complete" | "parent";
 type Mood = "idle" | "success" | "retry";
 
 const PRAISE = [
-  "Great job!",
-  "Awesome!",
-  "You got it!",
-  "Super!",
-  "Fantastic!",
-  "Wow!",
-  "Great typing!",
+  "AMAZING! ⭐",
+  "YOU GOT IT! 🎉",
+  "SUPER! ✨",
+  "AWESOME! ⭐",
+  "GREAT JOB! 🎉",
+  "FANTASTIC! ✨",
 ];
 
 function pick(list: string[]) {
   return list[Math.floor(Math.random() * list.length)] ?? list[0]!;
-}
-
-function spice(message: string, name: string) {
-  if (!name || Math.random() > 0.35) return message;
-  return message.replace("!", `, ${name}!`);
 }
 
 export function KeyboardAdventure() {
@@ -81,7 +79,9 @@ export function KeyboardAdventure() {
   const [showAllLessons, setShowAllLessons] = useState(false);
   const lockRef = useRef(false);
   const recentKeyRef = useRef({ key: "", at: 0 });
+  const [seenLetters, setSeenLetters] = useState<string[]>([]);
   const [typingStarted, setTypingStarted] = useState(false);
+  const { audio, voices, speechAvailable } = useAudio();
   const reducedMotion = usePrefersReducedMotion();
   const narrow = useNarrowLayout();
   const quiet = reducedMotion || settings.reducedAnimations;
@@ -89,6 +89,22 @@ export function KeyboardAdventure() {
   const target = sequence[index] ?? "f";
   const lesson = getLesson(lessonId);
   const childName = settings.childName.trim();
+
+  useEffect(() => {
+    audio?.configure(settings);
+  }, [audio, settings]);
+
+  useEffect(() => {
+    if (view === "play" && mood === "idle") {
+      audio?.notify({ type: "TARGET_SHOWN", key: target });
+    }
+  }, [audio, view, mood, target, index]);
+
+  useEffect(() => {
+    if (view === "home" || view === "lessons" || view === "practice" || view === "parent") {
+      audio?.leaveScreen();
+    }
+  }, [audio, view]);
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage once */
@@ -129,6 +145,7 @@ export function KeyboardAdventure() {
     setStreakNote(null);
     setView("play");
     setTypingStarted(false);
+    setSeenLetters([]);
     if (progress && progress.newlyUnlocked === id) {
       persistProgress({ ...progress, newlyUnlocked: null });
     }
@@ -151,7 +168,7 @@ export function KeyboardAdventure() {
   }
 
   const finishLesson = useCallback(() => {
-    if (settings.sound) playComplete();
+    audio?.notify({ type: "LESSON_COMPLETE" });
     if (lessonId > 0 && progress) {
       const completed = progress.completedLessons.includes(lessonId)
         ? progress.completedLessons
@@ -177,7 +194,7 @@ export function KeyboardAdventure() {
     }
     setView("complete");
     setTypingStarted(false);
-  }, [childName, correct, lessonId, progress, settings.sound, wrong]);
+  }, [audio, childName, correct, lessonId, progress, wrong]);
 
   const onKey = useCallback(
     (pressed: string) => {
@@ -199,17 +216,14 @@ export function KeyboardAdventure() {
         setHelpLevel((value) => Math.min(value + 1, 4));
         setMood("retry");
         setMissedKey(pressed);
-        window.setTimeout(() => setMissedKey(null), 260);
-        const misses = helpLevel + 1;
+        window.setTimeout(() => setMissedKey(null), 320);
         const shown = displayKey(wanted);
         const retry =
-          misses === 1
-            ? "Almost! Try again."
-            : misses === 2
-              ? `Find ${shown} 👇`
-              : "Press this one! 👇";
-        setFeedback(spice(retry, childName));
-        if (settings.sound) playMiss();
+          helpLevel % 2 === 0
+            ? `OOPS! 😮\nTRY ${shown} AGAIN!`
+            : `ALMOST! ⭐\nFIND ${shown}!`;
+        setFeedback(retry);
+        audio?.notify({ type: "TARGET_WRONG", key: wanted, attempts: helpLevel + 1 });
         return;
       }
 
@@ -220,12 +234,19 @@ export function KeyboardAdventure() {
       if (nextStreak === 3) setStreakNote("⭐ 3 IN A ROW! ⭐");
       if (nextStreak === 5) setStreakNote("🔥 SUPER STREAK! ⭐");
       if (nextStreak === 3 || nextStreak === 5) {
-        window.setTimeout(() => setStreakNote(null), 900);
+        window.setTimeout(() => setStreakNote(null), 1100);
       }
       setCorrect((value) => value + 1);
       setMood("success");
-      setFeedback(spice(pick(PRAISE), childName));
-      if (settings.sound) playSuccess();
+      setFeedback(pick(PRAISE));
+      audio?.notify({ type: "TARGET_CORRECT", key: wanted, streak: nextStreak });
+      setSeenLetters((current) =>
+        current.includes(normalizeTarget(wanted))
+          ? current
+          : [...current, normalizeTarget(wanted)],
+      );
+      if (nextStreak === 3) audio?.notify({ type: "STREAK_3" });
+      if (nextStreak === 5) audio?.notify({ type: "STREAK_5" });
 
       window.setTimeout(() => {
         const nextIndex = index + 1;
@@ -238,10 +259,10 @@ export function KeyboardAdventure() {
         setMood("idle");
         setFeedback("Find this key!");
         lockRef.current = false;
-      }, celebrationMs(settings, quiet));
+      }, celebrationMs(settings, quiet, nextStreak));
     },
     [
-      childName,
+      audio,
       finishLesson,
       helpLevel,
       index,
@@ -263,7 +284,13 @@ export function KeyboardAdventure() {
   }, [progress]);
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-[#F4FBFF] px-4 py-3 text-[#34364A]">
+    <div className={`relative flex min-h-dvh flex-col overflow-hidden px-4 py-3 text-[#34364A] ${
+      view === "play" && mood === "retry"
+        ? "scene-miss bg-[#F4FBFF]"
+        : view === "play" && mood === "success"
+          ? "scene-win bg-[#F4FBFF]"
+          : "bg-[#F4FBFF]"
+    }`}>
       <Decor />
       <header className="relative z-10 flex h-12 items-center justify-between max-[500px]:h-10">
         <p className="font-[family-name:var(--font-display)] text-lg font-bold text-[#7657E8] max-[500px]:text-base sm:text-2xl">
@@ -274,8 +301,12 @@ export function KeyboardAdventure() {
           <button
             type="button"
             className="pressable min-h-11 min-w-11 rounded-full bg-white text-xl shadow"
-            aria-label={settings.sound ? "Mute sounds" : "Turn sounds on"}
-            onClick={() => persistSettings({ ...settings, sound: !settings.sound })}
+            aria-label={settings.sound ? "Turn sound off" : "Turn sounds on"}
+            onClick={() => {
+              const next = { ...settings, sound: !settings.sound };
+              persistSettings(next);
+              if (next.sound === false) audio?.stopSpeech();
+            }}
           >
             {settings.sound ? "🔊" : "🔇"}
           </button>
@@ -290,15 +321,20 @@ export function KeyboardAdventure() {
         </div>
       </header>
 
-      <p className="relative z-10 mt-1 hidden text-center text-sm text-[#7657E8] min-[501px]:block">
-        For extra finger practice, a computer keyboard is best.
-      </p>
+      {view !== "play" ? (
+        <p className="relative z-10 mt-1 hidden text-center text-sm text-[#7657E8] min-[501px]:block">
+          For extra finger practice, a computer keyboard is best.
+        </p>
+      ) : null}
 
       <main className="relative z-10 flex flex-1 flex-col">
         {view === "home" ? (
           <Home
             name={childName}
-            onStart={() => setView("lessons")}
+            onStart={() => {
+              audio?.unlock();
+              setView("lessons");
+            }}
             onPractice={() => setView("practice")}
           />
         ) : null}
@@ -335,6 +371,7 @@ export function KeyboardAdventure() {
             title={lessonId === 0 ? "Practice" : (lesson?.title ?? "Lesson")}
             total={sequence.length}
             filled={index + (mood === "success" ? 1 : 0)}
+            step={index}
             target={normalizeTarget(target)}
             mood={mood}
             feedback={feedback}
@@ -342,12 +379,15 @@ export function KeyboardAdventure() {
             settings={settings}
             reducedMotion={quiet}
             streakNote={streakNote}
+            streak={streak}
             helpLevel={helpLevel}
+            firstLook={!seenLetters.includes(normalizeTarget(target))}
             missedKey={missedKey}
             compact={narrow}
             typingStarted={typingStarted}
             onTyped={onKey}
             onStartTyping={() => setTypingStarted(true)}
+            onRepeat={() => audio?.repeatTarget(target)}
             onHome={() => setView("home")}
           />
         ) : null}
@@ -371,10 +411,22 @@ export function KeyboardAdventure() {
             settings={settings}
             accuracy={accuracy}
             onChange={persistSettings}
+            voices={voices}
+            speechAvailable={speechAvailable}
+            onPreviewVoice={() => audio?.preview()}
             onClose={() => setView("home")}
             onOpenLesson={(id) => {
               const data = getLesson(id);
               if (data) startSequence(data.sequence, id);
+            }}
+            onResetProgress={() => {
+              persistProgress(resetProgress(childName));
+              setView("home");
+            }}
+            onResetAll={() => {
+              persistProgress(resetProgress(""));
+              persistSettings(resetSettings());
+              setView("home");
             }}
           />
         ) : null}
@@ -423,6 +475,7 @@ function Play({
   title,
   total,
   filled,
+  step,
   target,
   mood,
   feedback,
@@ -430,17 +483,21 @@ function Play({
   settings,
   reducedMotion,
   streakNote,
+  streak,
   helpLevel,
+  firstLook,
   missedKey,
   compact,
   typingStarted,
   onTyped,
   onStartTyping,
+  onRepeat,
   onHome,
 }: {
   title: string;
   total: number;
   filled: number;
+  step: number;
   target: string;
   mood: Mood;
   feedback: string;
@@ -448,102 +505,131 @@ function Play({
   settings: ParentSettings;
   reducedMotion: boolean;
   streakNote: string | null;
+  streak: number;
   helpLevel: number;
+  firstLook: boolean;
   missedKey: string | null;
   compact: boolean;
   typingStarted: boolean;
   onTyped: (key: string) => void;
   onStartTyping: () => void;
+  onRepeat: () => void;
   onHome: () => void;
 }) {
   const keyboardOpen = useSoftwareKeyboardOpen();
   const tight = compact && keyboardOpen;
   const mascotLine = tight
     ? `Find ${target === " " ? "SPACE" : target.toUpperCase()} 👇`
-    : mood === "idle"
-      ? "Find this key!"
-      : feedback;
+    : mood === "retry"
+      ? `Try ${target === " " ? "SPACE" : target.toUpperCase()} again!`
+      : mood === "success"
+        ? "You got it!"
+        : "Find this key!";
+
+  const burstLevel = streak >= 5 ? 3 : streak >= 3 ? 2 : 1;
 
   return (
     <div
-      className={`flex flex-1 flex-col items-center gap-1 py-1 ${
-        compact
-          ? "max-h-svh justify-start overflow-y-auto max-[500px]:landscape:flex-row max-[500px]:landscape:flex-wrap max-[500px]:landscape:items-center max-[500px]:landscape:justify-center"
-          : "justify-between"
+      className={`play-board flex flex-1 flex-col items-center gap-2 py-1 ${
+        compact ? "play-compact max-h-svh justify-start overflow-y-auto" : "justify-between"
       }`}
     >
-      <div className="flex w-full max-w-5xl items-center justify-between">
+      <div className="flex w-full shrink-0 max-w-5xl items-center justify-between">
         <p className="font-[family-name:var(--font-display)] text-lg font-semibold text-[#7657E8] max-[500px]:text-sm">
           {title}
         </p>
-        <button
-          type="button"
-          className="text-sm text-[#B7BCCD]"
-          onClick={onHome}
-        >
-          Home
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="pressable min-h-11 min-w-11 rounded-full bg-white text-xl shadow"
+            aria-label="Repeat instruction"
+            onClick={onRepeat}
+          >
+            🔊
+          </button>
+          <button
+            type="button"
+            className="text-sm text-[#B7BCCD]"
+            onClick={onHome}
+          >
+            Home
+          </button>
+        </div>
       </div>
-      <div className="flex flex-col items-center gap-1 max-[500px]:landscape:min-w-[42%]">
-        <ProgressStars total={total} filled={filled} />
-        {streakNote ? (
-          <p className="star-pop font-[family-name:var(--font-display)] text-2xl font-bold text-[#7657E8] max-[500px]:text-lg">
-            {streakNote}
-          </p>
-        ) : null}
-        <Mascot
-          line={mascotLine}
+      <ProgressStars total={total} filled={filled} />
+      {streakNote ? (
+        <p className="star-pop font-[family-name:var(--font-display)] text-2xl font-bold text-[#7657E8] max-[500px]:text-lg">
+          {streakNote}
+        </p>
+      ) : null}
+      <Mascot
+        line={mascotLine}
+        compact={compact}
+        tiny={tight}
+        mood={
+          mood === "success" ? "success" : mood === "retry" ? "encourage" : "idle"
+        }
+      />
+      {!tight && associationFor(target) && mood === "success" ? (
+        <LetterAssociationCloud
+          letter={target}
+          mode="reward"
           compact={compact}
-          tiny={tight}
-          mood={
-            mood === "success" ? "success" : mood === "retry" ? "encourage" : "idle"
-          }
-        />
-        <TargetLetter
-          target={target}
-          mood={reducedMotion ? "idle" : mood}
           reducedMotion={reducedMotion}
-          burst={mood === "success" && !reducedMotion}
-          size={tight ? "compact" : compact ? "mobile" : "desktop"}
         />
-      </div>
-      <div className="flex flex-col items-center gap-2 max-[500px]:landscape:min-w-[42%]">
-        {!compact ? (
-          <FeedbackMessage text={instruction} kind="idle" />
-        ) : (
-          <p className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            {tight
-              ? mascotLine
-              : target === " "
-                ? "Press the space bar"
-                : `Type the ${target.toUpperCase()} key`}
-          </p>
-        )}
-        {compact ? (
-          <>
-            {!tight ? <MiniKeyHint target={target} pulse={helpLevel >= 1} /> : null}
-            <MobileTypePad
-              started={typingStarted}
-              onStart={onStartTyping}
-              onKey={onTyped}
-              miss={mood === "retry"}
+      ) : !tight && associationFor(target) && (firstLook || helpLevel >= 2) ? (
+        <LetterAssociationCloud
+          letter={target}
+          mode={helpLevel >= 2 && !firstLook ? "hint" : "intro"}
+          compact={compact}
+          reducedMotion={reducedMotion}
+        />
+      ) : null}
+      <TargetLetter
+        key={`${step}-${target}`}
+        target={target}
+        mood={reducedMotion && mood === "idle" ? "idle" : mood}
+        reducedMotion={reducedMotion}
+        burst={mood === "success" && !reducedMotion}
+        burstLevel={burstLevel}
+        size={tight ? "compact" : compact ? "mobile" : "desktop"}
+        banner={mood === "idle" ? null : feedback}
+      />
+      {!compact ? (
+        <FeedbackMessage text={instruction} kind="idle" />
+      ) : (
+        <p className="font-[family-name:var(--font-display)] text-lg font-semibold">
+          {tight
+            ? mascotLine
+            : target === " "
+              ? "Press the space bar"
+              : `Type the ${target.toUpperCase()} key`}
+        </p>
+      )}
+      {compact ? (
+        <>
+          {!tight ? <MiniKeyHint target={target} pulse={helpLevel >= 1} /> : null}
+          <MobileTypePad
+            started={typingStarted}
+            onStart={onStartTyping}
+            onKey={onTyped}
+            miss={mood === "retry"}
+          />
+        </>
+      ) : (
+        <>
+          {settings.keyboardHighlight ? (
+            <VirtualKeyboard
+              target={target}
+              highlightOn
+              mood={mood}
+              helpLevel={helpLevel}
+              missedKey={missedKey}
             />
-          </>
-        ) : (
-          <>
-            {settings.keyboardHighlight ? (
-              <VirtualKeyboard
-                target={target}
-                highlightOn
-                mood={mood}
-                helpLevel={helpLevel}
-                missedKey={missedKey}
-              />
-            ) : null}
-            <FingerGuide target={target} enabled={settings.fingerHints} />
-          </>
-        )}
-      </div>
+          ) : null}
+          <FingerGuide target={target} enabled={settings.fingerHints} />
+        </>
+      )}
     </div>
   );
 }

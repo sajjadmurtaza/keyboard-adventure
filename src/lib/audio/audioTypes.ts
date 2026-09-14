@@ -1,0 +1,36 @@
+export const AUDIO_TIMING = {
+  targetSpeechDelay: 320,
+  wrongSpeechCooldown: 1400,
+  streakSpeechDelay: 200,
+  lessonCompleteSpeechDelay: 720,
+  encouragementDelay: 280,
+} as const;
+
+export type SpeechPriority = "high" | "medium" | "low";
+
+export type EffectName =
+  | "correct"
+  | "wrong"
+  | "star"
+  | "streak3"
+  | "streak5"
+  | "lessonComplete"
+  | "unlock"
+  | "button";
+
+export type AudioGameEvent =
+  | { type: "TARGET_SHOWN"; key: string }
+  | { type: "TARGET_CORRECT"; key: string; streak: number }
+  | { type: "TARGET_WRONG"; key: string; attempts: number }
+  | { type: "STREAK_3" }
+  | { type: "STREAK_5" }
+  | { type: "LESSON_COMPLETE" }
+  | { type: "LESSON_UNLOCKED" }
+  | { type: "BUTTON_TAP" };
+
+export type VoiceOption = {
+  uri: string;
+  name: string;
+  lang: string;
+  local: boolean;
+};

@@ -30,7 +30,7 @@ export function MobileTypePad({
         onClick={focusPad}
         className={`flex min-h-16 w-full flex-col items-center justify-center rounded-[24px] border-4 px-4 py-3 font-[family-name:var(--font-display)] text-xl font-bold ${
           miss
-            ? "border-[#FF7A7A] bg-[#FFE1E1]"
+            ? "border-[#FF4D5E] bg-[#FFE4E8]"
             : started
               ? "border-[#7657E8] bg-white"
               : "border-[#FFD85A] bg-[#FFF6C8]"

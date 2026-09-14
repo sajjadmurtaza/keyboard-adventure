@@ -19,9 +19,9 @@ export function KeyboardKey({
 }: KeyboardKeyProps) {
   const toneClass =
     tone === "success"
-      ? "border-[#65D98B] bg-[#65D98B] text-[#1F4D32] scale-110"
+      ? "key-hit border-[#38D978] bg-[#38D978] text-[#14532D] shadow-[0_0_18px_rgba(56,217,120,0.55)]"
       : tone === "miss"
-        ? "border-[#FF7A7A] bg-[#FFE1E1] text-[#34364A]"
+        ? "key-miss border-[#FF4D5E] bg-[#FF4D5E] text-white shadow-[0_0_16px_rgba(255,77,94,0.45)]"
         : tone === "strong"
           ? "key-glow-strong border-[#7657E8] bg-[#FFD85A] text-[#34364A]"
           : tone === "target"

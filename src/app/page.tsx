@@ -1,5 +1,10 @@
 import { KeyboardAdventure } from "@/components/KeyboardAdventure";
+import { AudioProvider } from "@/components/AudioProvider";
 
 export default function Home() {
-  return <KeyboardAdventure />;
+  return (
+    <AudioProvider>
+      <KeyboardAdventure />
+    </AudioProvider>
+  );
 }

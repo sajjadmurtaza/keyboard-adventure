@@ -25,7 +25,7 @@ export function VirtualKeyboard({
     if (!highlightOn) return "idle" as const;
     if (wanted !== key) return "idle" as const;
     if (mood === "success") return "success" as const;
-    if (helpLevel >= 2) return "strong" as const;
+    if (mood === "retry" || helpLevel >= 2) return "strong" as const;
     return "target" as const;
   }
 

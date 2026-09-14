@@ -38,7 +38,7 @@ export function LessonComplete({
       {!reducedMotion ? <Confetti /> : null}
       <Mascot line={childName ? `You did it, ${childName}!` : "You did it!"} mood="complete" />
       <h1 className="title-bounce font-[family-name:var(--font-display)] text-4xl font-bold text-[#7657E8] max-[500px]:px-2 sm:text-7xl">
-        YOU DID IT!
+        🎉 YOU DID IT! 🎉
       </h1>
       <p className="text-4xl" aria-hidden>
         {"⭐".repeat(stars)}
@@ -70,7 +70,7 @@ export function LessonComplete({
 }
 
 function Confetti() {
-  const bits = ["🎊", "⭐", "🎉", "✦", "⭐", "🎊", "✨", "🎉", "⭐", "✦"];
+  const bits = ["🎊", "⭐", "🎉", "✦", "⭐", "🎊", "✨", "🎉", "⭐", "✦", "🎊", "⭐", "✨", "🎉", "⭐", "✦", "🎊", "⭐"];
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
       {bits.map((bit, index) => (
@@ -78,8 +78,8 @@ function Confetti() {
           key={index}
           className="confetti-piece absolute text-3xl"
           style={{
-            left: `${8 + index * 9}%`,
-            animationDelay: `${index * 0.08}s`,
+            left: `${4 + (index % 10) * 9.5}%`,
+            animationDelay: `${index * 0.06}s`,
           }}
         >
           {bit}
