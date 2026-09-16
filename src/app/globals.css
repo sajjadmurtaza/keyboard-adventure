@@ -387,14 +387,25 @@ html.lesson-play body {
 }
 
 @media (max-width: 500px) {
-  .association-area:not(.association-inline) {
-    width: 80px;
-    height: 55px;
+  .association-area.association-card {
+    width: 104px;
+    height: 112px;
+    min-width: 104px;
+    min-height: 112px;
+  }
+
+  .association-area:not(.association-inline):not(.association-card) {
+    width: 104px;
+    height: 88px;
   }
 }
 
 .assoc-cloud-in {
   animation: assoc-in 0.35s ease both;
+}
+
+.assoc-slide {
+  animation: assoc-slide 0.4s ease both;
 }
 
 .assoc-reward {
@@ -417,6 +428,17 @@ html.lesson-play body {
   100% {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes assoc-slide {
+  0% {
+    opacity: 0;
+    transform: translateX(22px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -943,6 +965,7 @@ html.lesson-play body {
   .target-halo-miss,
   .target-halo-win,
   .assoc-cloud-in,
+  .assoc-slide,
   .assoc-reward,
   .success-headline,
   .success-teach,

@@ -3,7 +3,9 @@ import {
   getNameTestPhrase,
   getPreviewPhrase,
   getStreakPhrase,
+  getAssociationLine,
   getTargetInstruction,
+  getTargetTourLines,
   getWrongInstruction,
   pickFresh,
   shouldSayName,
@@ -21,6 +23,19 @@ describe("speech phrases", () => {
     );
     expect(getTargetInstruction("f")).toBe("eff is for Fish! Type eff for Fish.");
     expect(getTargetInstruction("e")).toBe("ee is for Egg! Type ee for Egg.");
+    expect(getAssociationLine("f", "Frog")).toBe("eff is for Frog!");
+    expect(getAssociationLine("c", "Cake")).toBe("see is for Cake!");
+    expect(getTargetTourLines("f", "Fatima")).toEqual([
+      "eff is for Fish!",
+      "eff is for Frog!",
+      "eff is for Flower!",
+      "Fatima, type eff.",
+    ]);
+    expect(getTargetTourLines("f", "Fatima", { prompt: false })).toEqual([
+      "eff is for Fish!",
+      "eff is for Frog!",
+      "eff is for Flower!",
+    ]);
     expect(spokenKey("e")).toBe("ee");
     expect(getTargetInstruction(",", "Ada")).toBe("Ada, type the comma.");
     expect(getTargetInstruction(",")).toBe("Type the comma.");

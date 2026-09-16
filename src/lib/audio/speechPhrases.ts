@@ -1,4 +1,4 @@
-import { associationFor } from "@/data/letterAssociations";
+import { associationFor, associationsFor } from "@/data/letterAssociations";
 import { displayKey, normalizeTarget, tinyHint } from "@/utils/keys";
 import { parseChildName } from "@/utils/childName";
 import type { NameFrequency } from "@/utils/settings";
@@ -76,6 +76,38 @@ export function shouldSayName(
     return kind === "celebrate" ? chance(0.35) : chance(0.25);
   }
   return true;
+}
+
+export const ASSOCIATION_STEP_MS = 2200;
+export const ASSOCIATION_PAUSE_MS = 520;
+export const ASSOCIATION_REWARD_DELAY_MS = 1200;
+
+export function getAssociationLine(key: string, word: string): string {
+  return `${spokenKey(key)} is for ${word}!`;
+}
+
+export function associationTourMs(key: string, reducedMotion = false): number {
+  const count = associationsFor(key).length;
+  if (count === 0) return 0;
+  const step = reducedMotion ? 1400 : ASSOCIATION_STEP_MS;
+  return count * step + Math.max(0, count - 1) * ASSOCIATION_PAUSE_MS;
+}
+
+export function getTargetTourLines(
+  key: string,
+  name?: string,
+  options?: { shortened?: boolean; prompt?: boolean },
+): string[] {
+  const items = associationsFor(key);
+  if (items.length === 0) {
+    return [getTargetInstruction(key, name, options)];
+  }
+  const lines = items.map((item) => getAssociationLine(key, item.word));
+  if (options?.prompt === false) return lines;
+  const who = parseChildName(name ?? "") ?? "";
+  const label = spokenKey(key);
+  const prompt = who ? `${who}, type ${label}.` : `Type ${label}.`;
+  return [...lines, prompt];
 }
 
 export function getTargetInstruction(

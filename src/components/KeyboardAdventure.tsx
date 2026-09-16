@@ -21,7 +21,7 @@ import {
   getLesson,
   PRACTICE_KEY_OPTIONS,
 } from "@/data/lessons";
-import { associationFor, type LetterArtId } from "@/data/letterAssociations";
+import { associationFor, associationsFor } from "@/data/letterAssociations";
 import { getSuccessPraise } from "@/data/letterPraise";
 import { useKeyboardInput } from "@/hooks/useKeyboardInput";
 import {
@@ -727,8 +727,11 @@ function Play({
   const stageRef = useRef<HTMLDivElement>(null);
   const tightKb = compact && keyboardOpen;
   const assoc = associationFor(target);
+  const [assocWord, setAssocWord] = useState(assoc?.word ?? "");
   const teachLine =
-    mood === "success" && assoc ? `${target.toUpperCase()} is for ${assoc.word}!` : null;
+    mood === "success" && assoc
+      ? `${target.toUpperCase()} is for ${assocWord || assoc.word}!`
+      : null;
   const findLine = tightKb
     ? `Type ${target === " " ? "SPACE" : target.toUpperCase()}`
     : `Find ${target === " " ? "SPACE" : target.toUpperCase()} 👇`;
@@ -760,6 +763,7 @@ function Play({
       badge={compact && !tightKb}
       inline={tightKb}
       reducedMotion={reducedMotion}
+      onWord={setAssocWord}
     />
   );
 
@@ -874,9 +878,7 @@ function Play({
 function PreloadLessonArt({ keys }: { keys: string[] }) {
   const ids = [
     ...new Set(
-      keys
-        .map((key) => associationFor(key)?.art)
-        .filter((id): id is LetterArtId => Boolean(id)),
+      keys.flatMap((key) => associationsFor(key).map((item) => item.art)),
     ),
   ];
   if (ids.length === 0) return null;

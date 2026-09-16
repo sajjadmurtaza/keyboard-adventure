@@ -58,7 +58,7 @@ export class SpeechManager {
     window.speechSynthesis.cancel();
   }
 
-  speak(text: string, options: SpeakOptions, cooldownMs = 0): boolean {
+  speak(text: string, options: SpeakOptions, cooldownMs = 0, onEnd?: () => void): boolean {
     if (!this.available() || !text.trim()) return false;
     const now = Date.now();
     if (options.priority !== "high" && now - this.lastSpokeAt < cooldownMs) {
@@ -72,6 +72,17 @@ export class SpeechManager {
     const voice = this.pickVoice(options.voiceURI, options.preferLocal);
     if (voice) utterance.voice = voice;
     utterance.lang = voice?.lang ?? preferredEnglishLang();
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      onEnd?.();
+    };
+    utterance.onend = finish;
+    utterance.onerror = (event) => {
+      if (event.error === "canceled" || event.error === "interrupted") return;
+      finish();
+    };
     this.lastSpokeAt = now;
     window.speechSynthesis.speak(utterance);
     return true;
