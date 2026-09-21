@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { Analytics } from "@vercel/analytics/next";
 import { Fredoka, Nunito } from "next/font/google";
 import { ProductionGuards } from "@/components/ProductionGuards";
 import { NO_SELECT_CSS } from "@/utils/pageLock";
@@ -75,6 +76,7 @@ export default function RootLayout({
         />
         {children}
         <ProductionGuards />
+        <Analytics />
       </body>
     </html>
   );
