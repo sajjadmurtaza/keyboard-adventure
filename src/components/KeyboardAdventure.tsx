@@ -813,8 +813,15 @@ function Play({
           ? "You know this!"
           : "Find this key!";
   const burstLevel = streak >= 5 ? 3 : streak >= 3 ? 2 : 1;
+  const wrongLines = [
+    `Oops! Try ${label}! 😄`,
+    `Oh hooo! Almost there! 🔍`,
+    `You can do it! Find ${label}! 💪`,
+    `Keep going! You've got this! 🌟`,
+  ];
+  const wrongLine = wrongLines[Math.min(helpLevel - 1, wrongLines.length - 1)] ?? wrongLines[0];
   const copyLine =
-    mood === "success" ? successLine : mood === "retry" ? mascotLine : idleLine;
+    mood === "success" ? successLine : mood === "retry" ? wrongLine : idleLine;
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
