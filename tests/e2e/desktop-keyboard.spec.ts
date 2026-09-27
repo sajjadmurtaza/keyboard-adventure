@@ -84,7 +84,7 @@ test("keyboard and letter stay put on success and miss", async ({ page }) => {
   expect(Math.abs((missBoard?.height ?? 0) - idleBoard!.height)).toBeLessThan(3);
 
   await page.keyboard.press("f");
-  await expect(page.getByTestId("success-teach")).toHaveText(/is for/i);
+  await expect(page.getByTestId("success-teach")).toHaveText(/You found F/i);
   await expect(page.getByTestId("lesson-instruction")).toHaveCount(0);
   const winLetter = await letter.boundingBox();
   const winBoard = await board.boundingBox();

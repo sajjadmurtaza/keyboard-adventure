@@ -47,6 +47,16 @@ describe("progress storage", () => {
     expect(loadProgress().currentLesson).toBe(1);
     expect(loadProgress().newlyUnlocked).toBe(7);
     expect(loadProgress().lessonBestResults).toEqual({ "1": 4 });
+    window.localStorage.setItem(
+      "keyboard-adventure-progress-v1",
+      JSON.stringify({ completedLessons: [1] }),
+    );
+    expect(loadProgress().introducedKeys).toEqual(["f", "j"]);
+    window.localStorage.setItem(
+      "keyboard-adventure-progress-v1",
+      JSON.stringify({ completedLessons: [1], introducedKeys: ["F"] }),
+    );
+    expect(loadProgress().introducedKeys).toEqual(["f"]);
   });
 
   it("saves and resets", () => {

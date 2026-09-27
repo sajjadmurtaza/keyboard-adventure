@@ -3,6 +3,7 @@ import {
   getNameTestPhrase,
   getPreviewPhrase,
   getStreakPhrase,
+  associationTourMs,
   getAssociationLine,
   getTargetInstruction,
   getTargetTourLines,
@@ -25,6 +26,9 @@ describe("speech phrases", () => {
     expect(getTargetInstruction("e")).toBe("ee is for Egg! Type ee for Egg.");
     expect(getAssociationLine("f", "Frog")).toBe("eff is for Frog!");
     expect(getAssociationLine("c", "Cake")).toBe("see is for Cake!");
+    expect(associationTourMs(" ")).toBe(0);
+    expect(associationTourMs("f")).toBe(3 * 2200 + 2 * 520);
+    expect(associationTourMs("f", true)).toBe(3 * 1400 + 2 * 520);
     expect(getTargetTourLines("f", "Fatima")).toEqual([
       "eff is for Fish!",
       "eff is for Frog!",
@@ -35,6 +39,14 @@ describe("speech phrases", () => {
       "eff is for Fish!",
       "eff is for Frog!",
       "eff is for Flower!",
+    ]);
+    expect(getTargetTourLines("f", "Fatima", { word: "Frog" })).toEqual([
+      "eff is for Frog!",
+      "Fatima, type eff.",
+    ]);
+    expect(getTargetTourLines("j", undefined, { word: "Juice", review: true })).toEqual([
+      "jay is for Juice!",
+      "You know this!",
     ]);
     expect(spokenKey("e")).toBe("ee");
     expect(getTargetInstruction(",", "Ada")).toBe("Ada, type the comma.");

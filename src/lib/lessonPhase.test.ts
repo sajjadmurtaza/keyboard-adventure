@@ -1,4 +1,4 @@
-import { canAcceptTyping, SUCCESS_HOLD_MS, successHoldMs, targetArriveMs, wrongFeedbackMs, type LessonPhase } from "@/lib/lessonPhase";
+import { canAcceptTyping, reviewHoldMs, SUCCESS_HOLD_MS, successHoldMs, targetArriveMs, wrongFeedbackMs, type LessonPhase } from "@/lib/lessonPhase";
 import { describe, expect, it } from "vitest";
 
 describe("lesson phase", () => {
@@ -26,5 +26,7 @@ describe("lesson phase", () => {
     expect(successHoldMs(5, true)).toBe(1800);
     expect(successHoldMs(3)).toBeGreaterThanOrEqual(3000);
     expect(successHoldMs(5)).toBeGreaterThanOrEqual(3200);
+    expect(reviewHoldMs()).toBe(1400);
+    expect(reviewHoldMs(true)).toBe(900);
   });
 });

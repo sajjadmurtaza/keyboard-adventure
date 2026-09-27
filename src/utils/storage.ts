@@ -1,4 +1,6 @@
+import { keysFromLessons } from "@/lib/curriculum/sequence";
 import { parseChildName } from "@/utils/childName";
+import { normalizeTarget } from "@/utils/keys";
 
 const STORAGE_KEY = "keyboard-adventure-progress-v1";
 const MAX_LESSON = 32;
@@ -13,6 +15,7 @@ export type Progress = {
   incorrectAttempts: number;
   lessonBestResults: Record<string, number>;
   newlyUnlocked: number | null;
+  introducedKeys: string[];
 };
 
 const emptyProgress = (): Progress => ({
@@ -24,6 +27,7 @@ const emptyProgress = (): Progress => ({
   incorrectAttempts: 0,
   lessonBestResults: {},
   newlyUnlocked: null,
+  introducedKeys: [],
 });
 
 function asCount(value: unknown, fallback = 0): number {
@@ -59,6 +63,15 @@ function asBestResults(value: unknown): Record<string, number> {
   return out;
 }
 
+function asKeyList(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null;
+  const keys = value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => normalizeTarget(item))
+    .filter((item) => item === " " || item.length === 1);
+  return [...new Set(keys)].slice(0, 64);
+}
+
 export function loadProgress(): Progress {
   if (typeof window === "undefined") return emptyProgress();
   try {
@@ -69,15 +82,18 @@ export function loadProgress(): Progress {
       return emptyProgress();
     }
     const newly = parsed.newlyUnlocked;
+    const completedLessons = asLessonIds(parsed.completedLessons);
+    const introduced = asKeyList(parsed.introducedKeys);
     return {
       childName: parseChildName(parsed.childName) ?? "",
-      completedLessons: asLessonIds(parsed.completedLessons),
+      completedLessons,
       starsEarned: asCount(parsed.starsEarned),
       currentLesson: asLessonId(parsed.currentLesson),
       correctAttempts: asCount(parsed.correctAttempts),
       incorrectAttempts: asCount(parsed.incorrectAttempts),
       lessonBestResults: asBestResults(parsed.lessonBestResults),
       newlyUnlocked: typeof newly === "number" ? asLessonId(newly) : null,
+      introducedKeys: introduced ?? keysFromLessons(completedLessons),
     };
   } catch {
     return emptyProgress();

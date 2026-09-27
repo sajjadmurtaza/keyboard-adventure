@@ -21,9 +21,16 @@ import {
   getLesson,
   PRACTICE_KEY_OPTIONS,
 } from "@/data/lessons";
-import { associationFor, associationsFor } from "@/data/letterAssociations";
+import { associationsFor } from "@/data/letterAssociations";
 import { getSuccessPraise } from "@/data/letterPraise";
 import { useKeyboardInput } from "@/hooks/useKeyboardInput";
+import {
+  canAcceptTyping,
+  reviewHoldMs,
+  targetArriveMs,
+  wrongFeedbackMs,
+  type LessonPhase,
+} from "@/lib/lessonPhase";
 import {
   useCoarsePointer,
   useHeightDensity,
@@ -32,14 +39,16 @@ import {
   useVisualViewportVar,
 } from "@/hooks/useViewport";
 import {
-  canAcceptTyping,
-  targetArriveMs,
-  wrongFeedbackMs,
-  type LessonPhase,
-} from "@/lib/lessonPhase";
+  lessonRun,
+  visitTone,
+  recallWord,
+  type LessonRun,
+  type VisitTone,
+} from "@/lib/curriculum/sequence";
 import type { MascotMood } from "@/components/mascot/types";
 import { useAudio } from "@/hooks/useAudio";
 import {
+  displayKey,
   instructionFor,
   keysMatch,
   normalizeTarget,
@@ -76,6 +85,20 @@ function mascotMoodFor(mood: Mood, streak: number): MascotMood {
   return "idle";
 }
 
+const emptyRun: LessonRun = { turns: [], newKeys: [], reviewPool: [], reviewVisits: [] };
+
+function learnedLabel(run: LessonRun, lessonId: number): string {
+  if (lessonId === 0) return "Practice";
+  if (run.newKeys.length > 0) return run.newKeys.map((key) => displayKey(key)).join(" + ");
+  return getLesson(lessonId)?.title ?? "This lesson";
+}
+
+function nextLessonLabel(lessonId: number): string | null {
+  const next = getLesson(lessonId + 1);
+  if (!next) return null;
+  return next.keys.map((key) => displayKey(key)).join(" + ");
+}
+
 export function KeyboardAdventure() {
   const [view, setView] = useState<View>("home");
   const [settings, setSettings] = useState<ParentSettings>(defaultSettings);
@@ -106,6 +129,10 @@ export function KeyboardAdventure() {
   const lessonGenRef = useRef(0);
   const recentKeyRef = useRef({ key: "", at: 0 });
   const [seenLetters, setSeenLetters] = useState<string[]>([]);
+  const [introduced, setIntroduced] = useState<string[]>([]);
+  const [playSeed, setPlaySeed] = useState(0);
+  const [activeRun, setActiveRun] = useState<LessonRun>(emptyRun);
+  const introducedRef = useRef<string[]>([]);
   const mobileInputRef = useRef<HTMLInputElement>(null);
   const { audio, voices, speechAvailable } = useAudio();
   const reducedMotion = usePrefersReducedMotion();
@@ -177,9 +204,16 @@ export function KeyboardAdventure() {
     if (view === "play" && lessonPhase === "ready" && mood === "idle") {
       const previous = index > 0 ? sequence[index - 1] : undefined;
       const shortened = Boolean(previous && keysMatch(previous, target));
-      audio?.notify({ type: "TARGET_SHOWN", key: target, shortened });
+      const tone = visitTone(target, activeRun.newKeys, introduced);
+      audio?.notify({
+        type: "TARGET_SHOWN",
+        key: target,
+        shortened,
+        word: tone === "introduce" ? undefined : recallWord(target, index),
+        review: tone === "review",
+      });
     }
-  }, [audio, view, mood, target, index, lessonPhase, sequence]);
+  }, [activeRun.newKeys, audio, introduced, view, mood, target, index, lessonPhase, sequence]);
 
   useEffect(() => {
     if (view === "home" || view === "lessons" || view === "practice" || view === "parent") {
@@ -190,7 +224,10 @@ export function KeyboardAdventure() {
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage once */
     setSettings(loadSettings());
-    setProgress(loadProgress());
+    const saved = loadProgress();
+    setProgress(saved);
+    setIntroduced(saved.introducedKeys);
+    introducedRef.current = saved.introducedKeys;
     setSettingsReady(true);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
@@ -242,9 +279,9 @@ export function KeyboardAdventure() {
     setView("home");
   }
 
-  function startSequence(keys: string[], id: number) {
+  function startSequence(keys: string[], id: number, preserve = false) {
     let seq = keys;
-    if (id > 0 && settings.difficulty === "growing") {
+    if (!preserve && id > 0 && settings.difficulty === "growing") {
       seq = [...keys, ...keys].slice(0, settings.questionCount);
     } else if (id > 0 && settings.difficulty === "practice") {
       seq = keys.slice(0, settings.questionCount);
@@ -277,13 +314,26 @@ export function KeyboardAdventure() {
     ) {
       return;
     }
-    startSequence(data.sequence, id);
-    if (narrow) focusMobileType();
+    beginLesson(id);
   }
 
   function startPractice() {
     const seq = buildPracticeSequence(practiceKeys, settings.questionCount);
+    setActiveRun({
+      turns: seq,
+      newKeys: [...new Set(seq)],
+      reviewPool: [],
+      reviewVisits: [],
+    });
     startSequence(seq, 0);
+    if (narrow) focusMobileType();
+  }
+
+  function beginLesson(id: number) {
+    const run = lessonRun(id, progress?.completedLessons ?? [], playSeed);
+    setPlaySeed((value) => value + 1);
+    setActiveRun(run);
+    startSequence([...run.turns], id, true);
     if (narrow) focusMobileType();
   }
 
@@ -302,6 +352,7 @@ export function KeyboardAdventure() {
         starsEarned: progress.starsEarned + 1,
         correctAttempts: progress.correctAttempts + correct,
         incorrectAttempts: progress.incorrectAttempts + wrong,
+        introducedKeys: introducedRef.current,
         lessonBestResults: {
           ...progress.lessonBestResults,
           [String(lessonId)]: Math.max(
@@ -351,7 +402,16 @@ export function KeyboardAdventure() {
       setPhase("success");
       setHelpLevel(0);
       const nextStreak = streak + 1;
-      const firstLook = !seenLetters.includes(normalizeTarget(wanted));
+      const tone = visitTone(wanted, activeRun.newKeys, introducedRef.current);
+      const normalizedWanted = normalizeTarget(wanted);
+      if (!introducedRef.current.includes(normalizedWanted)) {
+        introducedRef.current = [...introducedRef.current, normalizedWanted];
+        setIntroduced(introducedRef.current);
+        if (progress) {
+          persistProgress({ ...progress, introducedKeys: introducedRef.current });
+        }
+      }
+      const firstLook = !seenLetters.includes(normalizedWanted);
       const praise = getSuccessPraise(wanted, {
         firstLook,
         streak: nextStreak,
@@ -375,9 +435,7 @@ export function KeyboardAdventure() {
         speakTeach: praise.speakTeach,
       });
       setSeenLetters((current) =>
-        current.includes(normalizeTarget(wanted))
-          ? current
-          : [...current, normalizeTarget(wanted)],
+        current.includes(normalizedWanted) ? current : [...current, normalizedWanted],
       );
       if (nextStreak === 3) audio?.notify({ type: "STREAK_3" });
       if (nextStreak === 5) audio?.notify({ type: "STREAK_5" });
@@ -401,15 +459,17 @@ export function KeyboardAdventure() {
         setIndex(nextIndex);
         setMood("idle");
         scheduleReady(gen);
-      }, celebrationMs(settings, quiet, nextStreak));
+      }, tone === "review" && nextStreak < 3 ? reviewHoldMs(quiet) : celebrationMs(settings, quiet, nextStreak));
     },
     [
+      activeRun.newKeys,
       audio,
       childName,
       finishLesson,
       helpLevel,
       index,
       quiet,
+      progress,
       scheduleReady,
       seenLetters,
       sequence,
@@ -591,6 +651,7 @@ export function KeyboardAdventure() {
             progressTotal={sequence.length}
             progressFilled={index + (mood === "success" ? 1 : 0)}
             layout={resolvedLayout}
+            tone={visitTone(normalizeTarget(target), activeRun.newKeys, introduced)}
           />
         ) : null}
 
@@ -600,9 +661,17 @@ export function KeyboardAdventure() {
               lessonId === 0 ? startPractice() : startLesson(lessonId)
             }
             onNext={() => {
+              const nextId = lessonId + 1;
+              if (getLesson(nextId)) {
+                startLesson(nextId);
+                return;
+              }
               setView("lessons");
             }}
-            hasNext={lessonId > 0}
+            hasNext={lessonId > 0 && Boolean(getLesson(lessonId + 1))}
+            learned={learnedLabel(activeRun, lessonId)}
+            remembered={activeRun.reviewVisits.map((key) => displayKey(key))}
+            nextLabel={nextLessonLabel(lessonId)}
             childName={childName}
             reducedMotion={quiet}
           />
@@ -619,18 +688,20 @@ export function KeyboardAdventure() {
             onPreviewName={() => audio?.previewName()}
             onClose={goHome}
             onOpenLesson={(id) => {
-              const data = getLesson(id);
-              if (data) {
-                startSequence(data.sequence, id);
-                if (narrow) focusMobileType();
-              }
+              if (getLesson(id)) beginLesson(id);
             }}
             onResetProgress={() => {
-              persistProgress(resetProgress(childName));
+              const next = resetProgress(childName);
+              introducedRef.current = next.introducedKeys;
+              setIntroduced(next.introducedKeys);
+              persistProgress(next);
               setView("home");
             }}
             onResetAll={() => {
-              persistProgress(resetProgress(""));
+              const next = resetProgress("");
+              introducedRef.current = next.introducedKeys;
+              setIntroduced(next.introducedKeys);
+              persistProgress(next);
               persistSettings(resetSettings());
               setView("home");
             }}
@@ -700,6 +771,7 @@ function Play({
   progressTotal,
   progressFilled,
   layout,
+  tone,
 }: {
   step: number;
   target: string;
@@ -723,29 +795,26 @@ function Play({
   progressTotal: number;
   progressFilled: number;
   layout: KeyboardLayoutId;
+  tone: VisitTone;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const tightKb = compact && keyboardOpen;
-  const assoc = associationFor(target);
-  const [assocWord, setAssocWord] = useState(assoc?.word ?? "");
-  const teachLine =
-    mood === "success" && assoc
-      ? `${target.toUpperCase()} is for ${assocWord || assoc.word}!`
-      : null;
-  const findLine = tightKb
-    ? `Type ${target === " " ? "SPACE" : target.toUpperCase()}`
-    : `Find ${target === " " ? "SPACE" : target.toUpperCase()} 👇`;
-  const mascotLine = mood === "retry"
-    ? `Try ${target === " " ? "SPACE" : target.toUpperCase()} again!`
-    : mood === "success"
-      ? "You got it!"
-      : "Find this key!";
+  const label = target === " " ? "SPACE" : target.toUpperCase();
+  const foundLine = `You found ${label}!`;
+  const successLine = tone === "review" ? "You remembered!" : foundLine;
+  const idleLine = tone === "review" ? "You know this!" : instruction;
+  const findLine = tightKb ? `Type ${label}` : `Find ${label} 👇`;
+  const mascotLine =
+    mood === "retry"
+      ? `Try ${label} again!`
+      : mood === "success"
+        ? successLine
+        : tone === "review"
+          ? "You know this!"
+          : "Find this key!";
   const burstLevel = streak >= 5 ? 3 : streak >= 3 ? 2 : 1;
-  const copyLine = teachLine
-    ? teachLine
-    : mood === "retry"
-      ? mascotLine
-      : instruction;
+  const copyLine =
+    mood === "success" ? successLine : mood === "retry" ? mascotLine : idleLine;
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
@@ -763,7 +832,6 @@ function Play({
       badge={compact && !tightKb}
       inline={tightKb}
       reducedMotion={reducedMotion}
-      onWord={setAssocWord}
     />
   );
 
@@ -836,7 +904,7 @@ function Play({
           className={`mb-1 h-7 shrink-0 overflow-hidden font-[family-name:var(--font-display)] font-semibold leading-7 ${tightKb ? "text-base" : "text-lg"} ${
             mood === "success" ? "text-[#2AA85A]" : mood === "retry" ? "text-[#7657E8]" : ""
           }`}
-          data-testid={teachLine ? "success-teach" : "lesson-instruction"}
+          data-testid={mood === "success" ? "success-teach" : "lesson-instruction"}
         >
           {tightKb && mood === "idle" ? findLine : copyLine}
         </p>

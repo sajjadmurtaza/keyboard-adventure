@@ -1,4 +1,5 @@
 export const SUCCESS_HOLD_MS = 2800;
+export const REVIEW_HOLD_MS = 1400;
 export const TARGET_ARRIVE_MS = 520;
 export const WRONG_FEEDBACK_MS = 500;
 
@@ -20,6 +21,10 @@ export function targetArriveMs(reducedMotion = false): number {
 
 export function wrongFeedbackMs(reducedMotion = false): number {
   return reducedMotion ? 280 : WRONG_FEEDBACK_MS;
+}
+
+export function reviewHoldMs(reducedMotion = false): number {
+  return reducedMotion ? 900 : REVIEW_HOLD_MS;
 }
 
 export function successHoldMs(streak: number, reducedMotion = false): number {

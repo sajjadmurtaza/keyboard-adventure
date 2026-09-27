@@ -2,6 +2,7 @@
 
 import { displayKey } from "@/utils/keys";
 import { getLesson, worldForLesson, worlds, type Lesson } from "@/data/lessons";
+import { planLesson } from "@/lib/curriculum/sequence";
 import { isLessonUnlocked, type Progress } from "@/utils/storage";
 
 type AdventureMapProps = {
@@ -30,6 +31,7 @@ export function AdventureMap({
     .filter((id) => id < currentId && progress.completedLessons.includes(id))
     .at(-1);
   const upcomingId = world.lessonIds.find((id) => id > currentId);
+  const currentPlan = current ? planLesson(current, progress.completedLessons, 0) : null;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center gap-6 py-4">
@@ -43,10 +45,12 @@ export function AdventureMap({
         <p className="mt-1 text-lg text-[#5A5C72]">{world.blurb}</p>
       </div>
 
-      {current ? (
+      {current && currentPlan ? (
         <CurrentCard
           lesson={current}
           isNew={progress.newlyUnlocked === current.id}
+          reviewKeys={currentPlan.reviewPool}
+          newKeys={currentPlan.newKeys}
           onPlay={() => onPlay(current.id)}
         />
       ) : null}
@@ -133,12 +137,17 @@ export function AdventureMap({
 function CurrentCard({
   lesson,
   isNew,
+  newKeys,
+  reviewKeys,
   onPlay,
 }: {
   lesson: Lesson;
   isNew: boolean;
+  newKeys: readonly string[];
+  reviewKeys: readonly string[];
   onPlay: () => void;
 }) {
+  const shown = newKeys.length > 0 ? newKeys : lesson.keys;
   return (
     <div
       className={`w-full max-w-lg rounded-[28px] border-4 border-[#7657E8] bg-gradient-to-b from-[#FFF6C8] to-white p-6 text-center shadow-[0_16px_40px_rgba(118,87,232,0.18)] ${
@@ -148,7 +157,13 @@ function CurrentCard({
       <p className="font-[family-name:var(--font-display)] text-lg font-bold text-[#7657E8]">
         {isNew ? "⭐ NEW! ⭐" : "⭐ YOUR NEXT ADVENTURE"}
       </p>
-      <MiniKeys keys={lesson.keys} />
+      <MiniKeys keys={shown} />
+      {reviewKeys.length > 0 ? (
+        <div className="mt-3">
+          <p className="text-sm font-semibold text-[#5A5C72]">Old friends may visit</p>
+          <MiniKeys keys={[...reviewKeys]} compact />
+        </div>
+      ) : null}
       <p className="mt-4 font-[family-name:var(--font-display)] text-2xl font-bold">
         {lesson.description}
       </p>
@@ -163,18 +178,22 @@ function CurrentCard({
   );
 }
 
-function MiniKeys({ keys }: { keys: string[] }) {
+function MiniKeys({ keys, compact = false }: { keys: readonly string[]; compact?: boolean }) {
   return (
-    <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+    <div className={`flex flex-wrap items-center justify-center gap-3 ${compact ? "mt-2" : "mt-5"}`}>
       {keys.map((key) => {
         const space = key === " ";
         return (
           <span
             key={key === " " ? "space" : key}
-            className={`flex h-16 items-center justify-center rounded-2xl border-4 border-[#7657E8] bg-[#FFD85A] font-[family-name:var(--font-display)] font-bold ${
-              space
-                ? "min-w-[9.5rem] px-5 text-2xl tracking-wide"
-                : "w-16 text-3xl"
+            className={`flex items-center justify-center rounded-2xl border-4 border-[#7657E8] bg-[#FFD85A] font-[family-name:var(--font-display)] font-bold ${
+              compact
+                ? space
+                  ? "h-10 min-w-24 px-3 text-sm"
+                  : "h-10 w-10 text-lg"
+                : space
+                  ? "h-16 min-w-[9.5rem] px-5 text-2xl tracking-wide"
+                  : "h-16 w-16 text-3xl"
             }`}
           >
             {displayKey(key)}

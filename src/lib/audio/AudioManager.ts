@@ -34,6 +34,9 @@ export class AudioManager {
   private generation = 0;
   private timers = new Set<number>();
   private lastTargetKey = "";
+  private pinnedWord: string | undefined;
+  private pinnedReview = false;
+  private focusIndex = 0;
   private assocStep: AssociationStep = { key: "", index: 0 };
   private assocListeners = new Set<() => void>();
 
@@ -89,7 +92,14 @@ export class AudioManager {
     if (!settings?.sound || !settings.voiceGuidance) return;
     this.bump();
     this.speech.cancel();
-    this.runTour(key, { speak: true, prompt: true, delay: 0 });
+    const same = this.lastTargetKey === key;
+    this.runTour(key, {
+      speak: true,
+      prompt: true,
+      delay: 0,
+      word: same ? this.pinnedWord : undefined,
+      review: same && this.pinnedReview,
+    });
   }
 
   notify(event: AudioGameEvent) {
@@ -97,6 +107,8 @@ export class AudioManager {
 
     if (event.type === "TARGET_SHOWN") {
       this.lastTargetKey = event.key;
+      this.pinnedWord = event.word;
+      this.pinnedReview = event.review === true;
       this.bump();
       this.speech.cancel();
       const speak = Boolean(
@@ -106,6 +118,8 @@ export class AudioManager {
         speak,
         prompt: true,
         shortened: event.shortened === true,
+        word: event.word,
+        review: event.review === true,
         delay: settings ? nextLetterSpeechDelay(settings) : 280,
       });
       return;
@@ -187,15 +201,32 @@ export class AudioManager {
 
   private runTour(
     key: string,
-    options: { speak: boolean; prompt: boolean; shortened?: boolean; delay: number },
+    options: {
+      speak: boolean;
+      prompt: boolean;
+      shortened?: boolean;
+      word?: string;
+      review?: boolean;
+      delay: number;
+    },
   ) {
     const settings = this.settings;
     const name = parseChildName(settings?.childName ?? "") ?? undefined;
     const lines = getTargetTourLines(key, name, {
       shortened: options.shortened,
       prompt: options.prompt,
+      word: options.word,
+      review: options.review,
     });
     const items = associationsFor(key);
+    const pinned =
+      options.word == null
+        ? null
+        : Math.max(
+            0,
+            items.findIndex((item) => item.word === options.word),
+          );
+    this.focusIndex = pinned ?? 0;
     const gen = this.generation;
     const stepMs = ASSOCIATION_STEP_MS;
 
@@ -203,7 +234,10 @@ export class AudioManager {
       if (gen !== this.generation) return;
       const text = lines[i];
       if (!text) return;
-      this.setAssoc(key, Math.min(i, Math.max(0, items.length - 1)));
+      this.setAssoc(
+        key,
+        pinned ?? Math.min(i, Math.max(0, items.length - 1)),
+      );
       const next = () => {
         if (gen !== this.generation) return;
         if (!options.speak) {
@@ -235,7 +269,7 @@ export class AudioManager {
   private haltTour(pictureKey?: string) {
     this.bump();
     this.speech.cancel();
-    if (pictureKey) this.setAssoc(pictureKey, 0);
+    if (pictureKey) this.setAssoc(pictureKey, this.focusIndex);
   }
 
   private maybeCorrectSpeech(phrase: string, speakPraise: boolean, streak: number) {

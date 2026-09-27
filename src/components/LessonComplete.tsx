@@ -8,6 +8,9 @@ type LessonCompleteProps = {
   onAgain: () => void;
   onNext: () => void;
   hasNext: boolean;
+  learned: string;
+  remembered: string[];
+  nextLabel: string | null;
   childName: string;
   reducedMotion: boolean;
 };
@@ -16,6 +19,9 @@ export function LessonComplete({
   onAgain,
   onNext,
   hasNext,
+  learned,
+  remembered,
+  nextLabel,
   childName,
   reducedMotion,
 }: LessonCompleteProps) {
@@ -54,15 +60,23 @@ export function LessonComplete({
         <p className="font-[family-name:var(--font-display)] text-3xl font-semibold text-[#34364A]">
           {wow}
         </p>
+        <p className="font-[family-name:var(--font-display)] text-2xl font-bold text-[#7657E8]">
+          {learned} learned!
+        </p>
+        {remembered.length > 0 ? (
+          <p className="font-[family-name:var(--font-display)] text-xl font-semibold text-[#34364A]">
+            You also remembered {remembered.join(" · ")}
+          </p>
+        ) : null}
         {showButtons ? (
           <div className="relative z-[4] flex flex-wrap justify-center gap-4">
-            {hasNext ? (
+            {hasNext && nextLabel ? (
               <button
                 type="button"
                 onClick={onNext}
                 className="pressable min-h-16 rounded-full bg-[#7657E8] px-10 font-[family-name:var(--font-display)] text-2xl font-bold text-white shadow-lg"
               >
-                Next Adventure →
+                Next: {nextLabel} →
               </button>
             ) : null}
             <button

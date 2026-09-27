@@ -96,14 +96,21 @@ export function associationTourMs(key: string, reducedMotion = false): number {
 export function getTargetTourLines(
   key: string,
   name?: string,
-  options?: { shortened?: boolean; prompt?: boolean },
+  options?: { shortened?: boolean; prompt?: boolean; word?: string; review?: boolean },
 ): string[] {
   const items = associationsFor(key);
   if (items.length === 0) {
-    return [getTargetInstruction(key, name, options)];
+    const line = getTargetInstruction(key, name, options);
+    return options?.review ? ["You know this!", line] : [line];
   }
-  const lines = items.map((item) => getAssociationLine(key, item.word));
+  const chosen = options?.word
+    ? items.find((item) => item.word === options.word) ?? items[0]
+    : undefined;
+  const lines = chosen
+    ? [getAssociationLine(key, chosen.word)]
+    : items.map((item) => getAssociationLine(key, item.word));
   if (options?.prompt === false) return lines;
+  if (options?.review) return [...lines, "You know this!"];
   const who = parseChildName(name ?? "") ?? "";
   const label = spokenKey(key);
   const prompt = who ? `${who}, type ${label}.` : `Type ${label}.`;
