@@ -48,6 +48,14 @@ describe("lessonMirrorCostumes", () => {
     expect(isLessonMirrorArt("sun")).toBe(true);
   });
 
+  it("keeps octopus as an underwater swimming companion (not a hat)", () => {
+    const octopus = lessonMirrorCostumeForArt("octopus");
+    expect(octopus).not.toBeNull();
+    expect(octopus!.style).toBe("scene");
+    expect(isSceneLessonCostume(octopus)).toBe(true);
+    expect(isCanvasLessonCostume(octopus)).toBe(false);
+  });
+
   it("places the drum as a musical hand prop, not a face frame", () => {
     const drum = lessonMirrorCostumeForArt("drum");
     expect(drum?.style).toBe("hand-prop");

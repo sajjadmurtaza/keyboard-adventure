@@ -268,20 +268,43 @@ export function LetterAssociationCloud({
             />
             {items.length > 1 && !stage && !inline && !badge ? (
               <div
-                className="mt-1 flex items-center justify-center gap-1.5"
-                data-testid="association-tour-dots"
+                className="association-picker"
+                data-testid="association-tour-cards"
                 aria-hidden
               >
-                {items.map((entry, i) => (
-                  <span
-                    key={`${entry.art}-${i}`}
-                    className={`h-2 w-2 rounded-full transition-transform ${
-                      i === index
-                        ? "scale-125 bg-[#7657E8]"
-                        : "bg-[#C5C9E0]"
-                    }`}
-                  />
-                ))}
+                {items.map((entry, i) => {
+                  const cardScene = living
+                    ? livingSceneForArt(entry.art)
+                    : null;
+                  const active = i === index;
+                  return (
+                    <div
+                      key={`${entry.art}-${i}`}
+                      className={`association-picker-card ${
+                        active ? "association-picker-card--active" : ""
+                      }`}
+                      data-active={active ? "true" : "false"}
+                      data-art={entry.art}
+                      style={
+                        cardScene
+                          ? {
+                              background: cardScene.tint,
+                              borderColor: active
+                                ? cardScene.border
+                                : "transparent",
+                            }
+                          : undefined
+                      }
+                    >
+                      <div className="association-picker-card__art">
+                        <LetterArt id={entry.art} className="h-full w-full" />
+                      </div>
+                      <span className="association-picker-card__label">
+                        {entry.word}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             ) : null}
           </>

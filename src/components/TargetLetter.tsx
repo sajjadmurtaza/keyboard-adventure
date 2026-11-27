@@ -40,7 +40,7 @@ export function TargetLetter({
       : size === "mobile"
         ? "clamp(130px, 38vw, 185px)"
         : size === "stage"
-          ? "clamp(72px, 12vh, 140px)"
+          ? "clamp(110px, 20vh, 220px)"
           : "var(--target-size)";
 
   const letterColor =

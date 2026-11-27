@@ -208,6 +208,53 @@ export function LessonLearningMirror({
     };
   }, [tearDown, releaseLandmarker]);
 
+  /* Camera-off: keep the themed world alive on the same canvas region. */
+  useEffect(() => {
+    if (mirror === "live" || mirror === "starting") return;
+    if (!cameraAllowedByParent) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    let raf = 0;
+    let active = true;
+
+    const paintWorld = () => {
+      if (!active) return;
+      const parent = canvas.parentElement;
+      if (parent) {
+        const w = Math.max(1, Math.floor(parent.clientWidth));
+        const h = Math.max(1, Math.floor(parent.clientHeight));
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+        }
+      }
+      const ctx = canvas.getContext("2d");
+      if (ctx && canvas.width > 0 && canvas.height > 0) {
+        ctx.fillStyle = sceneRef.current?.tint ?? "#BBDDF5";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawLessonMirrorExperience(
+          ctx,
+          canvas.width,
+          canvas.height,
+          experienceRef.current,
+          moodRef.current,
+          reducedMotionRef.current,
+          performance.now(),
+          null,
+        );
+      }
+      raf = requestAnimationFrame(paintWorld);
+    };
+
+    raf = requestAnimationFrame(paintWorld);
+    return () => {
+      active = false;
+      cancelAnimationFrame(raf);
+    };
+  }, [mirror, cameraAllowedByParent, activeItem?.art]);
+
   useEffect(() => {
     if (mirror !== "live") return;
 
@@ -425,17 +472,25 @@ export function LessonLearningMirror({
 
   const shellClass = stageLayout
     ? "magic-mirror-shell"
-    : "flex w-full flex-col items-center gap-2";
+    : "lesson-mirror-shell-play";
 
   // Play layout: same panel height as the picture card. Stage keeps compact magic frame.
   const frameClass = stageLayout
     ? "magic-mirror-frame relative overflow-hidden rounded-[20px] shadow-[0_8px_20px_rgba(48,48,71,0.12)]"
-    : "lesson-mirror-frame-play relative overflow-hidden rounded-[28px] shadow-[0_10px_24px_rgba(48,48,71,0.14)]";
+    : "lesson-mirror-frame-play relative overflow-hidden rounded-[28px] border-[3px] border-[#d8e7ff] shadow-[0_10px_24px_rgba(118,87,232,0.12)]";
 
   const offSceneMotion =
     reducedMotion || !activeItem
       ? ""
       : `art-idle-${activeItem.motion}`;
+
+  const inviteLine =
+    mirror === "starting"
+      ? "Waking mirror…"
+      : experience.feelLine ||
+        (costume
+          ? `Meet ${/^[aeiou]/i.test(costume.name) ? "an" : "a"} ${costume.name}`
+          : "See yourself!");
 
   if (!cameraAllowedByParent) {
     return (
@@ -490,49 +545,6 @@ export function LessonLearningMirror({
     !reducedMotion && mood === "success" && activeItem
       ? `lesson-mirror-react lesson-mirror-react--${activeItem.art}`
       : "";
-
-  /** Sheet-style accessory tiles for this letter — active one pops like the AR preview. */
-  const accessoryTour =
-    items.length > 0 ? (
-      <div
-        className="lesson-mirror-accessory-tour"
-        data-testid="lesson-mirror-accessory-tour"
-        aria-hidden
-      >
-        {items.map((entry, i) => {
-          const tileCostume = lessonMirrorCostumeForArt(entry.art);
-          const active = i === index;
-          const src =
-            tileCostume &&
-            isCanvasLessonCostume(tileCostume) &&
-            tileCostume.assetPath
-              ? tileCostume.assetPath
-              : null;
-          return (
-            <div
-              key={`${entry.art}-${i}`}
-              className={`lesson-mirror-accessory-tile ${
-                active ? "lesson-mirror-accessory-tile--active" : ""
-              } ${!reducedMotion && active ? "lesson-mirror-accessory-tile--pop" : ""}`}
-              data-active={active ? "true" : "false"}
-              data-art={entry.art}
-            >
-              <div className="lesson-mirror-accessory-tile__art">
-                {src ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- local AR accessory PNG/SVG
-                  <img src={src} alt="" draggable={false} />
-                ) : (
-                  <LetterArt id={entry.art} className="h-full w-full" />
-                )}
-              </div>
-              <span className="lesson-mirror-accessory-tile__label">
-                {entry.word}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    ) : null;
 
   const associationStickers =
     activeItem && mirror === "live" && !companionMode ? (
@@ -597,7 +609,7 @@ export function LessonLearningMirror({
       <canvas
         ref={canvasRef}
         data-testid="lesson-mirror-canvas"
-        className={`h-full w-full object-contain ${mirror === "live" ? "block" : "hidden"}`}
+        className="absolute inset-0 z-0 h-full w-full object-cover"
       />
       {associationStickers}
       {companionProps}
@@ -646,80 +658,72 @@ export function LessonLearningMirror({
     >
       <div
         className={frameClass}
-        style={{ background: scene?.tint ?? "#BBDDF5" }}
+        style={{ background: scene?.tint ?? "#E8F6FF" }}
       >
         {liveBadge}
         {media}
         {mirror !== "live" ? (
           <div
-            className={`absolute inset-0 z-[1] flex flex-col items-center justify-center bg-gradient-to-b from-[#7048D7]/90 to-[#9B7BFF]/90 text-center text-white ${
-              stageLayout ? "gap-1 p-2" : "gap-1.5 p-3"
+            className={`lesson-mirror-idle absolute inset-0 z-[1] flex flex-col items-center text-center ${
+              stageLayout ? "gap-1 p-2 pb-3" : "gap-1.5 p-3 pb-4 sm:p-4"
             }`}
           >
             {activeItem ? (
               <div
-                className={`lesson-mirror-preview-tile shrink-0 ${
-                  stageLayout ? "h-16 w-16" : "h-[4.5rem] w-[4.5rem] sm:h-20 sm:w-20"
-                } ${reducedMotion ? "" : offSceneMotion}`}
+                className={`lesson-mirror-idle-world-art ${
+                  reducedMotion ? "" : offSceneMotion
+                }`}
                 data-testid="lesson-mirror-preview-art"
                 aria-hidden
               >
-                {costume && isCanvasLessonCostume(costume) && costume.assetPath ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- local AR accessory
-                  <img
-                    src={costume.assetPath}
-                    alt=""
-                    className="h-full w-full object-contain"
-                    draggable={false}
-                  />
-                ) : (
-                  <LetterArt id={activeItem.art} className="h-full w-full" />
-                )}
+                <LetterArt id={activeItem.art} className="h-full w-full" />
               </div>
             ) : null}
-            <p
-              className={`font-[family-name:var(--font-display)] font-bold ${
-                stageLayout ? "text-sm leading-tight" : "text-sm sm:text-base"
-              }`}
-            >
-              {mirror === "starting"
-                ? "Waking mirror…"
-                : experience.id !== "default-play"
-                  ? experience.feelLine
-                  : costume
-                    ? `Become a ${costume.name}!`
-                    : "See yourself!"}
-            </p>
-            {errorMessage ? (
-              <p className="max-w-xs text-[10px] leading-snug" data-testid="lesson-mirror-error">
-                {errorMessage}
+            <div className="lesson-mirror-idle-controls">
+              <div className="flex max-w-[92%] flex-col items-center gap-0.5">
+                {scene?.place ? (
+                  <p className="rounded-full bg-white/90 px-2.5 py-0.5 font-[family-name:var(--font-nunito)] text-[10px] font-bold uppercase tracking-wide text-[#7048D7] shadow-sm sm:text-[11px]">
+                    {scene.place}
+                  </p>
+                ) : null}
+                <p
+                  className={`rounded-full bg-white/90 px-3 py-1 font-[family-name:var(--font-display)] font-bold leading-tight text-[#303047] shadow-sm ${
+                    stageLayout ? "text-sm" : "text-sm sm:text-base"
+                  }`}
+                >
+                  {inviteLine}
+                </p>
+              </div>
+              {errorMessage ? (
+                <p className="max-w-xs text-[10px] leading-snug text-[#b42318]" data-testid="lesson-mirror-error">
+                  {errorMessage}
+                </p>
+              ) : null}
+              {mirror !== "starting" ? (
+                <button
+                  type="button"
+                  data-testid="lesson-mirror-start"
+                  onClick={() => void startMirror()}
+                  className={`pressable rounded-full bg-[#7048D7] font-[family-name:var(--font-display)] font-bold text-white shadow-md ${
+                    stageLayout
+                      ? "mt-0.5 min-h-8 px-3 text-xs"
+                      : "mt-0.5 min-h-10 px-5 text-sm"
+                  }`}
+                >
+                  Start Magic Mirror
+                </button>
+              ) : null}
+              <p className="text-[10px] font-semibold text-[#5a5a78]/90">
+                Stays on this device
               </p>
-            ) : null}
-            {mirror !== "starting" ? (
-              <button
-                type="button"
-                data-testid="lesson-mirror-start"
-                onClick={() => void startMirror()}
-                className={`pressable rounded-full bg-white font-[family-name:var(--font-display)] font-bold text-[#7048D7] shadow ${
-                  stageLayout
-                    ? "mt-0.5 min-h-8 px-3 text-xs"
-                    : "mt-1 min-h-10 px-5 text-sm"
-                }`}
-              >
-                ✨ Start camera
-              </button>
-            ) : null}
-            <p className="text-[10px] font-semibold text-white/90">
-              🔒 Stays on this device
-            </p>
+            </div>
           </div>
         ) : null}
 
-        {/* Stage layout keeps compact overlays; play layout uses the control row below */}
-        {stageLayout && mirror === "live" ? (
-          <>
+        {mirror === "live" ? (
+          <div className="lesson-mirror-live-bar pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex items-end justify-between gap-2 p-2.5 sm:p-3">
             <p
-              className="pointer-events-none absolute bottom-3 left-3 z-[2] max-w-[70%] truncate rounded-full bg-white/95 px-2.5 py-1 font-[family-name:var(--font-display)] text-[11px] font-bold text-[#7048D7] shadow"
+              className="pointer-events-none min-w-0 max-w-[70%] truncate rounded-full bg-white/95 px-2.5 py-1 font-[family-name:var(--font-display)] text-[11px] font-bold text-[#7048D7] shadow"
               data-testid="lesson-mirror-costume-name"
             >
               {experience.feelLine}
@@ -728,29 +732,7 @@ export function LessonLearningMirror({
               type="button"
               data-testid="lesson-mirror-stop"
               onClick={tearDown}
-              className="pressable absolute bottom-3 right-3 z-[2] min-h-8 rounded-full bg-white/95 px-3 font-[family-name:var(--font-display)] text-xs font-bold text-[#7048D7] shadow"
-            >
-              Stop camera
-            </button>
-          </>
-        ) : null}
-      </div>
-
-      <div className="mt-1 flex w-full flex-col items-center gap-1 px-0.5">
-        {accessoryTour}
-        {!stageLayout && mirror === "live" ? (
-          <div className="flex w-full items-center justify-center gap-1.5">
-            <p
-              className="min-w-0 truncate font-[family-name:var(--font-display)] text-xs font-bold text-[#7048D7] sm:text-sm"
-              data-testid="lesson-mirror-costume-name"
-            >
-              {experience.feelLine}
-            </p>
-            <button
-              type="button"
-              data-testid="lesson-mirror-stop"
-              onClick={tearDown}
-              className="pressable min-h-8 shrink-0 rounded-full bg-white px-3 font-[family-name:var(--font-display)] text-xs font-bold text-[#7048D7] shadow"
+              className="pressable pointer-events-auto min-h-8 shrink-0 rounded-full bg-white/95 px-3 font-[family-name:var(--font-display)] text-xs font-bold text-[#7048D7] shadow"
             >
               Stop
             </button>

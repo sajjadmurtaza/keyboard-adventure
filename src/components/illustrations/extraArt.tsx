@@ -327,10 +327,42 @@ function Owl() {
 function Octopus() {
   return (
     <Frame>
-      <circle cx="100" cy="86" r="40" fill="#FF9FC8" />
-      <path d="M70 112c0 28-16 44-8 52M90 118c0 32-8 48 4 52M110 118c0 32 8 48-4 52M130 112c0 28 16 44 8 52" stroke="#E85A9A" strokeWidth="10" fill="none" />
-      <circle cx="86" cy="82" r="6" fill={NAVY} />
-      <circle cx="114" cy="82" r="6" fill={NAVY} />
+      <ellipse cx="100" cy="178" rx="52" ry="10" fill={NAVY} opacity="0.12" />
+      {/* Tentacles behind body */}
+      <path
+        d="M62 108c-18 22-28 48-10 58M78 118c-8 28-4 48 10 54M122 118c8 28 4 48-10 54M138 108c18 22 28 48 10 58"
+        stroke="#C94F8E"
+        strokeWidth="14"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M70 112c-6 24-18 42-4 50M90 120c0 30-6 46 6 50M110 120c0 30 6 46-6 50M130 112c6 24 18 42 4 50"
+        stroke="#FF7AB8"
+        strokeWidth="11"
+        strokeLinecap="round"
+        fill="none"
+      />
+      {/* Body */}
+      <ellipse cx="100" cy="88" rx="48" ry="46" fill="#FF9FC8" />
+      <ellipse cx="88" cy="74" rx="18" ry="14" fill="#FFC2DD" opacity="0.85" />
+      {/* Eyes */}
+      <circle cx="82" cy="84" r="11" fill="white" />
+      <circle cx="118" cy="84" r="11" fill="white" />
+      <circle cx="84" cy="86" r="6" fill={NAVY} />
+      <circle cx="120" cy="86" r="6" fill={NAVY} />
+      <circle cx="86" cy="84" r="2" fill="white" />
+      <circle cx="122" cy="84" r="2" fill="white" />
+      {/* Smile */}
+      <path
+        d="M88 104c8 10 16 10 24 0"
+        stroke={NAVY}
+        strokeWidth="4"
+        strokeLinecap="round"
+      />
+      {/* Cheek spots */}
+      <circle cx="68" cy="98" r="5" fill="#FF6BA8" opacity="0.55" />
+      <circle cx="132" cy="98" r="5" fill="#FF6BA8" opacity="0.55" />
     </Frame>
   );
 }

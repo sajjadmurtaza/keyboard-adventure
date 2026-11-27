@@ -275,11 +275,13 @@ export const LESSON_MIRROR_COSTUMES: readonly LessonMirrorCostume[] = [
   {
     art: "octopus",
     name: "Octopus",
-    assetPath: wearableAsset("octopus.png"),
-    anchor: "hat",
-    scale: 1.9,
-    offsetY: -0.55,
-    style: "head-accessory",
+    // Underwater companion — face stays clear; ambient draws the sea world.
+    assetPath: "",
+    anchor: "helmet",
+    scale: 1,
+    offsetY: 0,
+    style: "scene",
+    fallback: true,
   },
   {
     art: "panda",
