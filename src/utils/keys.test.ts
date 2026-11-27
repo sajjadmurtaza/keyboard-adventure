@@ -50,7 +50,7 @@ describe("keys", () => {
   it("displays keys for children", () => {
     expect(displayKey(" ")).toBe("SPACE");
     expect(displayKey("f")).toBe("F");
-    expect(instructionFor(" ")).toBe("Press the space bar");
-    expect(instructionFor("j")).toBe("Press the J key");
+    expect(instructionFor(" ")).toBe("Press the space bar!");
+    expect(instructionFor("j")).toBe("Find the letter J!");
   });
 });

@@ -9,6 +9,7 @@ import {
 import { livingSceneForArt } from "@/data/livingScenes";
 import { useAudio } from "@/hooks/useAudio";
 import { highlightLetterInWord } from "@/lib/letterHighlight";
+import { displayKey, tinyHint } from "@/utils/keys";
 
 export type AssociationReaction = "idle" | "thinking" | "reward" | "encourage";
 
@@ -113,7 +114,11 @@ export function LetterAssociationCloud({
   );
   const index = step.key === letter ? step.index : 0;
   const item = items[index] ?? items[0];
-  const fallback = letter.toUpperCase();
+  const hintName =
+    tinyHint(letter) ?? (letter === " " ? "Space" : displayKey(letter));
+  // Never show the same lonely glyph twice — empty keys use the spoken name once.
+  const fallback = items.length === 0 ? hintName : letter.toUpperCase();
+  const emptyLabel = items.length === 0 ? hintName : null;
   const reaction = resolveReaction(reactionProp, mode);
   const motionClass = motionClassFor(item, reaction, reducedMotion, living);
   const slideClass = reducedMotion ? "" : "assoc-slide";
@@ -199,6 +204,9 @@ export function LetterAssociationCloud({
       data-testid="association"
       data-reaction={reaction}
       data-scene={scene?.art ?? ""}
+      data-assoc-index={String(index)}
+      data-assoc-word={item?.word ?? fallback}
+      data-assoc-count={String(items.length)}
     >
       <div
         className={`flex h-full w-full flex-col items-center justify-center rounded-[32px] border-[3px] px-3 py-2 shadow-[0_10px_24px_rgba(118,87,232,0.12)] ${frameClass}`}
@@ -210,35 +218,74 @@ export function LetterAssociationCloud({
       >
         {scene ? (
           <p
-            className="mb-0.5 font-[family-name:var(--font-nunito)] text-[10px] font-semibold tracking-wide text-[#5A5C72]"
+            className={`mb-0.5 font-[family-name:var(--font-nunito)] font-semibold tracking-wide text-[#5A5C72] ${
+              stage ? "text-[10px]" : "text-xs sm:text-sm"
+            }`}
             data-testid="association-place"
           >
             {scene.place}
           </p>
         ) : null}
-        <div
-          key={`${item?.art ?? fallback}-${reaction}`}
-          className={slideClass}
-          style={{
-            width: compact ? 64 : stage ? "clamp(56px, 10vh, 84px)" : living ? 104 : 88,
-            height: compact ? 64 : stage ? "clamp(56px, 10vh, 84px)" : living ? 104 : 88,
-          }}
-        >
-          <Picture item={item} motionClass={motionClass} fallback={fallback} />
-        </div>
-        <WordLabel
-          word={item?.word ?? fallback}
-          letter={letter}
-          living={living}
-          className={`mt-1 w-full truncate text-center font-[family-name:var(--font-display)] font-bold text-[#7048D7] ${
-            stage ? "text-lg" : "text-sm max-[500px]:text-xs"
-          }`}
-        />
-        {living && scene && reaction === "idle" && !stage ? (
-          <p className="mt-0.5 text-center font-[family-name:var(--font-nunito)] text-[10px] font-semibold text-[#7657E8]">
-            {scene.invite}
-          </p>
-        ) : null}
+        {emptyLabel ? (
+          <>
+            <p
+              className={`w-full truncate text-center font-[family-name:var(--font-display)] font-bold text-[#7048D7] ${
+                stage ? "text-lg" : "text-3xl max-[500px]:text-xl"
+              }`}
+              data-testid="association-empty-label"
+            >
+              {emptyLabel}
+            </p>
+            <p className="mt-1 text-center font-[family-name:var(--font-nunito)] text-xs font-semibold text-[#5A5C72]">
+              Find this key!
+            </p>
+          </>
+        ) : (
+          <>
+            <div
+              key={`${item?.art ?? fallback}-${reaction}`}
+              className={`assoc-art-slot shrink-0 ${slideClass}`}
+              style={
+                compact || stage
+                  ? {
+                      width: stage ? "clamp(56px, 10vh, 84px)" : 64,
+                      height: stage ? "clamp(56px, 10vh, 84px)" : 64,
+                    }
+                  : undefined
+              }
+            >
+              <Picture item={item} motionClass={motionClass} fallback={fallback} />
+            </div>
+            <WordLabel
+              word={item?.word ?? fallback}
+              letter={letter}
+              living={living}
+              className={`mt-1 w-full truncate text-center font-[family-name:var(--font-display)] font-bold text-[#7048D7] ${
+                stage
+                  ? "text-lg"
+                  : "text-xl sm:text-2xl"
+              }`}
+            />
+            {items.length > 1 && !stage && !inline && !badge ? (
+              <div
+                className="mt-1 flex items-center justify-center gap-1.5"
+                data-testid="association-tour-dots"
+                aria-hidden
+              >
+                {items.map((entry, i) => (
+                  <span
+                    key={`${entry.art}-${i}`}
+                    className={`h-2 w-2 rounded-full transition-transform ${
+                      i === index
+                        ? "scale-125 bg-[#7657E8]"
+                        : "bg-[#C5C9E0]"
+                    }`}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
     </div>
   );

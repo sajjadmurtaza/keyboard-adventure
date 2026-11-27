@@ -105,6 +105,7 @@ describe("visit tone and recall picture", () => {
     expect(recallWord("f", 0)).toBe("Frog");
     expect(recallWord("f", 1)).toBe("Flower");
     expect(recallWord("f", 2)).toBe("Frog");
-    expect(recallWord(" ", 0)).toBeUndefined();
+    expect(recallWord(" ", 0)).toBe("Cloud");
+    expect(recallWord(";", 0)).toBe("Pause");
   });
 });

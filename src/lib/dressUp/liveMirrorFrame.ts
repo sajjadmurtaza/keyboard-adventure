@@ -27,7 +27,29 @@ export type LiveMirrorFrameResult = {
   pose: FacePose | null;
   /** True when the face fills most of the frame — child should move back. */
   tooClose: boolean;
+  /** Costume was painted this frame (tracked or portrait fallback). */
+  costumeDrawn: boolean;
 };
+
+/** Centered portrait pose so costumes still appear when tracking is cold. */
+export function portraitFallbackPose(
+  videoW: number,
+  videoH: number,
+  pad = 0,
+): FacePose {
+  const faceW = Math.min(videoW, videoH) * 0.44;
+  const faceH = faceW * 1.15;
+  const cx = pad + videoW / 2;
+  const cy = pad + videoH * 0.48;
+  return {
+    cx,
+    cy,
+    width: faceW,
+    height: faceH,
+    rotation: 0,
+    crownY: cy - faceH * 0.42,
+  };
+}
 
 export function drawLiveMirrorFrame(opts: {
   video: HTMLVideoElement;
@@ -57,7 +79,9 @@ export function drawLiveMirrorFrame(opts: {
 
   const w = video.videoWidth;
   const h = video.videoHeight;
-  if (!w || !h) return { detected: false, pose: null, tooClose: false };
+  if (!w || !h) {
+    return { detected: false, pose: null, tooClose: false, costumeDrawn: false };
+  }
 
   const pad = Math.round(Math.min(w, h) * Math.max(0, stagePad));
   const canvasW = w + pad * 2;
@@ -68,7 +92,9 @@ export function drawLiveMirrorFrame(opts: {
   }
 
   const ctx = canvas.getContext("2d");
-  if (!ctx) return { detected: false, pose: null, tooClose: false };
+  if (!ctx) {
+    return { detected: false, pose: null, tooClose: false, costumeDrawn: false };
+  }
 
   // Stage backdrop (visible when costumes extend into padding)
   ctx.fillStyle = stageFill;
@@ -84,9 +110,10 @@ export function drawLiveMirrorFrame(opts: {
   let pose: FacePose | null = null;
   let detected = false;
   let tooClose = false;
+  let costumeDrawn = false;
 
-  // Layer 2 — face-tracked costume
-  if (landmarker && costume) {
+  // Layer 2 — face-tracked costume when possible
+  if (landmarker) {
     try {
       const result = landmarker.detectForVideo(video, performance.now());
       const landmarks = result.faceLandmarks[0];
@@ -96,19 +123,12 @@ export function drawLiveMirrorFrame(opts: {
         if (smoothed) {
           detected = true;
           tooClose = smoothed.width > w * 0.58;
-          const inCanvas: FacePose = {
+          pose = {
             ...smoothed,
             cx: smoothed.cx + pad,
             cy: smoothed.cy + pad,
             crownY: smoothed.crownY + pad,
           };
-          pose = inCanvas;
-          drawCostumeOverlay(
-            ctx,
-            mirrorFacePose(inCanvas, canvasW),
-            costume,
-            costumeImage,
-          );
         }
       } else {
         smoother.reset();
@@ -118,5 +138,18 @@ export function drawLiveMirrorFrame(opts: {
     }
   }
 
-  return { detected, pose, tooClose };
+  // Always paint the association prop: track the face when we have it,
+  // otherwise park a portrait-sized hood so kids still see Fish/Frog/Flower.
+  if (costume && costumeImage) {
+    const drawPose = pose ?? portraitFallbackPose(w, h, pad);
+    drawCostumeOverlay(
+      ctx,
+      pose ? mirrorFacePose(drawPose, canvasW) : drawPose,
+      costume,
+      costumeImage,
+    );
+    costumeDrawn = true;
+  }
+
+  return { detected, pose, tooClose, costumeDrawn };
 }

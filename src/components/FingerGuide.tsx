@@ -23,7 +23,7 @@ export function FingerGuide({
 
   return (
     <div
-      className="finger-guide pointer-events-none flex max-w-[11rem] items-center justify-center gap-1 whitespace-nowrap"
+      className="finger-guide pointer-events-none flex max-w-[16rem] items-center justify-center gap-1.5 whitespace-nowrap"
       data-testid="finger-guide"
       data-hand={hint.hand}
       style={
@@ -32,13 +32,13 @@ export function FingerGuide({
           : undefined
       }
     >
-      <span className="text-sm leading-none text-[#7657E8]" aria-hidden>
+      <span className="text-base leading-none text-[#7657E8]" aria-hidden>
         ↑
       </span>
       <HandIcon hand={hint.hand} compact={compact} />
       <p
-        className={`font-[family-name:var(--font-display)] font-semibold leading-none text-[#7657E8] ${
-          compact ? "text-[11px]" : "text-xs"
+        className={`font-[family-name:var(--font-display)] font-bold leading-none text-[#7657E8] ${
+          compact ? "text-xs" : "text-sm sm:text-base"
         }`}
       >
         {hint.label}

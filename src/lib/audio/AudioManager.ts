@@ -244,19 +244,22 @@ export class AudioManager {
         key,
         pinned ?? Math.min(i, Math.max(0, items.length - 1)),
       );
-      const next = () => {
+      const lineStarted = Date.now();
+      const advance = () => {
         if (gen !== this.generation) return;
-        if (!options.speak) {
-          play(i + 1);
-          return;
-        }
-        this.later(() => play(i + 1), ASSOCIATION_PAUSE_MS);
+        play(i + 1);
       };
       if (!options.speak) {
-        this.later(next, stepMs);
+        this.later(advance, stepMs);
         return;
       }
-      this.say("high", "instruction", 0, text, next);
+      // Keep the slow association cadence even when speech ends early.
+      const afterSpeak = () => {
+        if (gen !== this.generation) return;
+        const remain = Math.max(0, stepMs - (Date.now() - lineStarted));
+        this.later(advance, remain + ASSOCIATION_PAUSE_MS);
+      };
+      this.say("high", "instruction", 0, text, afterSpeak);
     };
 
     this.setAssoc(key, 0);

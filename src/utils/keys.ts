@@ -73,8 +73,8 @@ export function tinyHint(key: string): string | null {
 
 export function instructionFor(key: string): string {
   const normalized = normalizeTarget(key);
-  if (normalized === " ") return "Press the space bar";
-  return `Press the ${displayKey(normalized)} key`;
+  if (normalized === " ") return "Press the space bar!";
+  return `Find the letter ${displayKey(normalized)}!`;
 }
 
 export type Hand = "left" | "right" | "thumbs";

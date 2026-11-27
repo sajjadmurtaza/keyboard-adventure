@@ -20,6 +20,7 @@ export default defineConfig({
         "src/lib/audio/voiceSelect.ts",
         "src/lib/lessonPhase.ts",
         "src/lib/curriculum/adventure.ts",
+        "src/lib/dressUp/fallbackMirrorProp.ts",
       ],
       exclude: ["**/*.test.ts", "src/utils/audio.ts"],
       reporter: ["text", "lcov", "html"],

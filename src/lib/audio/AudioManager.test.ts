@@ -99,7 +99,8 @@ function shownF(audio: AudioManager) {
 
 async function finishLine(speech: ReturnType<typeof installSpeech>) {
   speech.endCurrent();
-  await vi.advanceTimersByTimeAsync(ASSOCIATION_PAUSE_MS);
+  // Tour holds each picture for ASSOCIATION_STEP_MS, then a short pause.
+  await vi.advanceTimersByTimeAsync(ASSOCIATION_STEP_MS + ASSOCIATION_PAUSE_MS);
 }
 
 describe("AudioManager letter tour", () => {
@@ -240,13 +241,19 @@ describe("AudioManager letter tour", () => {
     expect(speech.spoken.at(-1)?.text).toBe("eff is for Frog!");
   });
 
-  it("does not start an association tour for space", async () => {
+  it("tours space associations (Jump → Cloud → Gap)", async () => {
     const speech = installSpeech();
     const audio = new AudioManager();
     audio.configure(settings());
     audio.notify({ type: "TARGET_SHOWN", key: " " });
     await vi.advanceTimersByTimeAsync(nextLetterSpeechDelay(settings()));
-    expect(speech.spoken.map((item) => item.text)).toEqual(["Ada, press the space bar."]);
+    expect(speech.spoken.map((item) => item.text)).toEqual([
+      "space bar is for Jump!",
+    ]);
+    expect(audio.getAssociation()).toEqual({ key: " ", index: 0 });
+    await finishLine(speech);
+    expect(speech.spoken.at(-1)?.text).toBe("space bar is for Cloud!");
+    expect(audio.getAssociation()).toEqual({ key: " ", index: 1 });
   });
 
   it("stops the letter tour on a wrong key and may speak a hint", async () => {
@@ -315,23 +322,21 @@ describe("AudioManager letter tour", () => {
     expect(speech.spoken.map((item) => item.text)).toEqual(["eff is for Fish!"]);
   });
 
-  it("speaks a single punctuation instruction instead of a letter tour", async () => {
+  it("tours punctuation associations like letters (Stop → Pause → Wink)", async () => {
     const speech = installSpeech();
     const audio = new AudioManager();
     audio.configure(settings());
     audio.notify({ type: "TARGET_SHOWN", key: ";" });
     await vi.advanceTimersByTimeAsync(nextLetterSpeechDelay(settings()));
-    expect(speech.spoken.map((item) => item.text)).toEqual(["Ada, type the semicolon."]);
-    audio.notify({
-      type: "TARGET_CORRECT",
-      key: ";",
-      streak: 1,
-      phrase: "Super!",
-      speakPraise: true,
-    });
-    await vi.advanceTimersByTimeAsync(AUDIO_TIMING.encouragementDelay);
-    expect(speech.spoken.at(-1)?.text).toBe("Super!");
-    await vi.advanceTimersByTimeAsync(ASSOCIATION_STEP_MS);
-    expect(speech.spoken.filter((item) => item.text.includes("is for"))).toEqual([]);
+    expect(speech.spoken.map((item) => item.text)).toEqual([
+      "semicolon is for Stop!",
+    ]);
+    expect(audio.getAssociation()).toEqual({ key: ";", index: 0 });
+    await finishLine(speech);
+    expect(speech.spoken.at(-1)?.text).toBe("semicolon is for Pause!");
+    expect(audio.getAssociation()).toEqual({ key: ";", index: 1 });
+    await finishLine(speech);
+    expect(speech.spoken.at(-1)?.text).toBe("semicolon is for Wink!");
+    expect(audio.getAssociation()).toEqual({ key: ";", index: 2 });
   });
 });

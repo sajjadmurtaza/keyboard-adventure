@@ -41,9 +41,36 @@ describe("drawLiveMirrorFrame", () => {
 
     expect(result.detected).toBe(false);
     expect(result.tooClose).toBe(false);
+    expect(result.costumeDrawn).toBe(false);
     expect(calls).toContain("drawImage");
     expect(canvas.width).toBe(320);
     expect(canvas.height).toBe(240);
+  });
+
+  it("still draws the costume with a portrait fallback when tracking is cold", () => {
+    const { canvas, calls } = mockCanvas();
+    const video = {
+      videoWidth: 320,
+      videoHeight: 240,
+    } as HTMLVideoElement;
+    const image = {
+      naturalWidth: 100,
+      naturalHeight: 100,
+    } as unknown as CanvasImageSource;
+
+    const result = drawLiveMirrorFrame({
+      video,
+      canvas,
+      landmarker: null,
+      smoother: new FacePoseSmoother(1),
+      costume: { scale: 2.3, offsetY: 0, anchor: "helmet" },
+      costumeImage: image,
+      stagePad: 0.28,
+    });
+
+    expect(result.detected).toBe(false);
+    expect(result.costumeDrawn).toBe(true);
+    expect(calls.filter((c) => c === "drawImage").length).toBeGreaterThanOrEqual(2);
   });
 
   it("adds stage padding so costumes have headroom without zooming video", () => {
@@ -108,6 +135,7 @@ describe("drawLiveMirrorFrame", () => {
     expect(landmarker.detectForVideo).toHaveBeenCalled();
     expect(result.detected).toBe(true);
     expect(result.pose).not.toBeNull();
+    expect(result.costumeDrawn).toBe(true);
     // video + costume
     expect(calls.filter((c) => c === "drawImage").length).toBeGreaterThanOrEqual(2);
   });

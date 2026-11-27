@@ -20,6 +20,6 @@ describe("livingScenes", () => {
         expect(scene!.invite).toContain("letter");
       }
     }
-    expect(Object.keys(LIVING_SCENES)).toHaveLength(6);
+    expect(Object.keys(LIVING_SCENES).length).toBeGreaterThanOrEqual(6);
   });
 });

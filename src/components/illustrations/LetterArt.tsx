@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { LetterArtId } from "@/data/letterAssociations";
 import { EXTRA_ART } from "@/components/illustrations/extraArt";
+import { PUNCT_ART } from "@/components/illustrations/punctArt";
 
 const NAVY = "#263238";
 
@@ -381,7 +382,10 @@ const BASE_ART = {
   zebra: Zebra,
 } as const;
 
-const ART = { ...BASE_ART, ...EXTRA_ART } as Record<LetterArtId, () => ReactNode>;
+const ART = { ...BASE_ART, ...EXTRA_ART, ...PUNCT_ART } as Record<
+  LetterArtId,
+  () => ReactNode
+>;
 
 export const ILLUSTRATIONS = ART;
 export const LETTER_ART_IDS = Object.keys(ART) as LetterArtId[];

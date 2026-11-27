@@ -76,12 +76,56 @@ export type LetterArtId =
   | "yacht"
   | "zebra"
   | "zoo"
-  | "zipper";
+  | "zipper"
+  | "stop-sign"
+  | "pause"
+  | "wink"
+  | "breath"
+  | "list"
+  | "curve"
+  | "dot"
+  | "bullseye"
+  | "fullstop"
+  | "path"
+  | "slide"
+  | "divide"
+  | "jump"
+  | "space-cloud"
+  | "gap";
 
 export type LetterAssociation = {
   word: string;
   art: LetterArtId;
   motion: "swim" | "bounce" | "float" | "pulse" | "wiggle";
+};
+
+/** Space + punctuation keys taught in later home-row lessons. */
+export const PUNCTUATION_ASSOCIATIONS: Record<string, readonly LetterAssociation[]> = {
+  " ": [
+    { word: "Jump", art: "jump", motion: "bounce" },
+    { word: "Cloud", art: "space-cloud", motion: "float" },
+    { word: "Gap", art: "gap", motion: "pulse" },
+  ],
+  ";": [
+    { word: "Stop", art: "stop-sign", motion: "bounce" },
+    { word: "Pause", art: "pause", motion: "pulse" },
+    { word: "Wink", art: "wink", motion: "wiggle" },
+  ],
+  ",": [
+    { word: "Breath", art: "breath", motion: "float" },
+    { word: "List", art: "list", motion: "bounce" },
+    { word: "Curve", art: "curve", motion: "wiggle" },
+  ],
+  ".": [
+    { word: "Dot", art: "dot", motion: "bounce" },
+    { word: "Target", art: "bullseye", motion: "pulse" },
+    { word: "Stop", art: "fullstop", motion: "bounce" },
+  ],
+  "/": [
+    { word: "Path", art: "path", motion: "float" },
+    { word: "Slide", art: "slide", motion: "wiggle" },
+    { word: "Divide", art: "divide", motion: "pulse" },
+  ],
 };
 
 export const LETTER_ASSOCIATIONS: Record<string, readonly LetterAssociation[]> = {
@@ -218,9 +262,13 @@ export const LETTER_ASSOCIATIONS: Record<string, readonly LetterAssociation[]> =
 };
 
 export function associationsFor(key: string): readonly LetterAssociation[] {
+  if (key === " ") return PUNCTUATION_ASSOCIATIONS[" "] ?? [];
+  if (key.length !== 1) return [];
   const letter = key.toLowerCase();
-  if (letter.length !== 1 || letter < "a" || letter > "z") return [];
-  return LETTER_ASSOCIATIONS[letter] ?? [];
+  if (letter >= "a" && letter <= "z") {
+    return LETTER_ASSOCIATIONS[letter] ?? [];
+  }
+  return PUNCTUATION_ASSOCIATIONS[letter] ?? [];
 }
 
 export function associationFor(key: string): LetterAssociation | null {

@@ -9,13 +9,10 @@
       <stop offset="0%" stop-color="#FFB74D"/>
       <stop offset="100%" stop-color="#F57C00"/>
     </linearGradient>
-    <filter id="fiSoft" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#0D3A5C" flood-opacity="0.3"/>
-    </filter>
-  </defs>
-  <path d="M12 160 Q4 90 52 68 Q88 110 48 178 Z" fill="url(#fiFin)" stroke="#C45E00" stroke-width="4" filter="url(#fiSoft)"/>
-  <path d="M308 160 Q316 90 268 68 Q232 110 272 178 Z" fill="url(#fiFin)" stroke="#C45E00" stroke-width="4" filter="url(#fiSoft)"/>
-  <path fill="url(#fiShell)" fill-rule="evenodd" stroke="#155A86" stroke-width="6" filter="url(#fiSoft)" d="
+</defs>
+  <path d="M12 160 Q4 90 52 68 Q88 110 48 178 Z" fill="url(#fiFin)" stroke="#C45E00" stroke-width="4"/>
+  <path d="M308 160 Q316 90 268 68 Q232 110 272 178 Z" fill="url(#fiFin)" stroke="#C45E00" stroke-width="4"/>
+  <path fill="url(#fiShell)" fill-rule="evenodd" stroke="#155A86" stroke-width="6" d="
     M160 26c76 0 130 54 130 134 0 86-54 134-130 134S30 246 30 160C30 80 84 26 160 26z
     M160 98c-48 0-82 36-82 76s34 76 82 76 82-36 82-76-34-76-82-76z"/>
   <path d="M110 40 Q160 4 210 40 Q178 62 160 56 Q142 62 110 40 Z" fill="url(#fiFin)" stroke="#C45E00" stroke-width="3"/>

@@ -26,8 +26,14 @@ describe("speech phrases", () => {
     expect(getTargetInstruction("e")).toBe("ee is for Egg! Type ee for Egg.");
     expect(getAssociationLine("f", "Frog")).toBe("eff is for Frog!");
     expect(getAssociationLine("c", "Cake")).toBe("see is for Cake!");
-    expect(associationTourMs(" ")).toBe(0);
+    expect(associationTourMs(" ")).toBe(3 * 2200 + 2 * 520);
     expect(associationTourMs("f")).toBe(3 * 2200 + 2 * 520);
+    expect(getTargetTourLines(";", "Ada")).toEqual([
+      "semicolon is for Stop!",
+      "semicolon is for Pause!",
+      "semicolon is for Wink!",
+      "Ada, type semicolon.",
+    ]);
     expect(associationTourMs("f", true)).toBe(3 * 1400 + 2 * 520);
     expect(getTargetTourLines("f", "Fatima")).toEqual([
       "eff is for Fish!",

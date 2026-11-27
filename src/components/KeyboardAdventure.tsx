@@ -60,7 +60,6 @@ import {
   planPlaySession,
   recordKeyResult,
 } from "@/lib/curriculum/adventure";
-import type { MascotMood } from "@/components/mascot/types";
 import { useAudio } from "@/hooks/useAudio";
 import {
   displayKey,
@@ -100,13 +99,6 @@ type View =
   | "wardrobe"
   | "dress-up";
 type Mood = "idle" | "success" | "retry";
-
-function mascotMoodFor(mood: Mood, streak: number): MascotMood {
-  if (mood === "retry") return "encourage";
-  if (mood === "success" && streak >= 3) return "streak";
-  if (mood === "success") return "success";
-  return "idle";
-}
 
 const emptyRun: LessonRun = { turns: [], newKeys: [], reviewPool: [], reviewVisits: [] };
 
@@ -163,7 +155,6 @@ export function KeyboardAdventure() {
   const [activeRun, setActiveRun] = useState<LessonRun>(emptyRun);
   const [adventureSession, setAdventureSession] = useState(false);
   const introducedRef = useRef<string[]>([]);
-  const assocCursorRef = useRef<Record<string, number>>({});
   const practiceTickRef = useRef(0);
   const progressRef = useRef<Progress | null>(null);
   const mobileInputRef = useRef<HTMLInputElement>(null);
@@ -238,17 +229,12 @@ export function KeyboardAdventure() {
       const previous = index > 0 ? sequence[index - 1] : undefined;
       const shortened = Boolean(previous && keysMatch(previous, target));
       const tone = visitTone(target, activeRun.newKeys, introduced);
-      const normalized = normalizeTarget(target);
-      const items = associationsFor(normalized);
-      const last = assocCursorRef.current[normalized] ?? -1;
-      const nextIdx = items.length ? (last + 1) % items.length : 0;
-      if (items.length) assocCursorRef.current[normalized] = nextIdx;
-      const word = items[nextIdx]?.word;
+      // Full 3-association tour (Fish → Frog → Flower, etc.) + camera costume sync.
+      // Do not pin a single word — that collapsed the tour to one picture.
       audio?.notify({
         type: "TARGET_SHOWN",
         key: target,
         shortened,
-        word,
         review: tone === "review",
       });
     }
@@ -1057,14 +1043,6 @@ function Play({
   const successLine = tone === "review" ? "You remembered!" : foundLine;
   const idleLine = tone === "review" ? "You know this!" : instruction;
   const findLine = tightKb ? `Type ${label}` : `Find the letter ${label}!`;
-  const mascotLine =
-    mood === "retry"
-      ? `Try ${label} again!`
-      : mood === "success"
-        ? successLine
-        : tone === "review"
-          ? "You know this!"
-          : "Find this key!";
   const burstLevel = streak >= 5 ? 3 : streak >= 3 ? 2 : 1;
   const wrongLines = [
     `Oops! Try ${label}! 😄`,
@@ -1101,14 +1079,14 @@ function Play({
       reaction={associationReaction}
       living={hasArt}
       stage={false}
-      badge={compact && !tightKb}
+      badge={false}
       inline={tightKb}
       reducedMotion={reducedMotion}
     />
   );
 
   const keyboardBlock = !compact ? (
-    <div className="mb-1 flex w-full shrink-0 flex-col items-center">
+    <div className="mb-1 mt-auto flex w-full shrink-0 flex-col items-center self-end">
       {settings.keyboardHighlight ? (
         <VirtualKeyboard
           target={target}
@@ -1138,7 +1116,7 @@ function Play({
       className={`play-board relative grid min-h-0 flex-1 justify-items-center overflow-hidden ${
         tightKb
           ? "mobile-keyboard-open content-start grid-rows-[auto_minmax(0,1fr)_auto]"
-          : "content-stretch grid-rows-[auto_minmax(0,1fr)_auto_auto]"
+          : "content-start grid-rows-[auto_auto_auto_minmax(0,1fr)]"
       }`}
       style={{ gap: "var(--lesson-gap)" }}
       data-testid="play-stage"
@@ -1154,48 +1132,39 @@ function Play({
         />
       ) : null}
       <PreloadLessonArt keys={sequence} />
-      <div
-        className="relative z-[1] mt-1 flex w-full shrink-0 flex-col items-center justify-center gap-1 min-[501px]:flex-row min-[501px]:justify-center min-[501px]:gap-4"
-        style={{ minHeight: "calc(var(--mascot-size) + 4px)" }}
-      >
+      <div className="relative z-[1] flex w-full shrink-0 items-center justify-center gap-2 py-0.5">
         <ProgressStars total={progressTotal} filled={progressFilled} compact />
-        {streakNote && density === "tall" && !tightKb ? (
-          <p className="pointer-events-none absolute top-0 right-2 star-pop font-[family-name:var(--font-display)] text-xl font-bold text-[#7657E8] max-[500px]:text-lg">
+        {streakNote && !tightKb ? (
+          <p className="star-pop font-[family-name:var(--font-display)] text-sm font-bold text-[#7657E8] sm:text-base">
             {streakNote}
           </p>
         ) : null}
         {costumeNote && !tightKb ? (
           <p
-            className="pointer-events-none absolute top-0 left-2 max-w-[11rem] star-pop font-[family-name:var(--font-display)] text-sm font-bold text-[#7657E8] max-[500px]:text-xs"
+            className="max-w-[10rem] truncate star-pop font-[family-name:var(--font-display)] text-xs font-bold text-[#7657E8]"
             data-testid="costume-unlock-toast"
           >
             {costumeNote}
           </p>
         ) : null}
-        <div className="flex items-center gap-1">
-          {tightKb || density === "tight" ? null : (
-            <Mascot
-              line={mascotLine}
-              compact
-              tiny={density === "compact"}
-              mood={mascotMoodFor(mood, streak)}
-            />
-          )}
-          <button
-            type="button"
-            className="pressable min-h-9 min-w-9 rounded-full bg-white text-lg shadow"
-            data-testid="repeat-instruction"
-            aria-label="Repeat instruction"
-            onClick={onRepeat}
-          >
-            🔁
-          </button>
-        </div>
+        <button
+          type="button"
+          className="pressable min-h-8 min-w-8 rounded-full bg-white text-base shadow"
+          data-testid="repeat-instruction"
+          aria-label="Repeat instruction"
+          onClick={onRepeat}
+        >
+          🔁
+        </button>
       </div>
       <div className="target-group relative z-[3] min-h-0 w-full">
-        <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center justify-center gap-3 sm:gap-5">
-          <div className="flex min-w-0 flex-col items-center">
-            {association}
+        {/* One balanced focus band: Picture | Letter | Mirror */}
+        <div
+          className="lesson-focus min-w-0"
+          data-has-mirror={showMirror ? "true" : "false"}
+        >
+          <div className="lesson-focus-art">{association}</div>
+          <div className="lesson-focus-letter">
             <TargetLetter
               key={`${step}-${target}`}
               target={target}
@@ -1207,7 +1176,7 @@ function Play({
             />
           </div>
           {showMirror ? (
-            <div className="adventure-mirror shrink-0" data-testid="adventure-mirror">
+            <div className="adventure-mirror" data-testid="adventure-mirror">
               <LessonLearningMirror
                 letter={target}
                 cameraAllowedByParent={settings.cameraLessonMirror}

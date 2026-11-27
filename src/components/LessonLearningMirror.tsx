@@ -9,6 +9,7 @@ import {
   stopCameraTracks,
 } from "@/lib/dressUp/cameraSession";
 import {
+  ensureLessonMirrorImage,
   getCachedLessonMirrorImage,
   preloadLessonMirrorImages,
 } from "@/lib/dressUp/lessonMirrorImages";
@@ -52,6 +53,8 @@ export function LessonLearningMirror({
   const [mirror, setMirror] = useState<MirrorState>("off");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [tooClose, setTooClose] = useState(false);
+  const [faceMissing, setFaceMissing] = useState(false);
+  const [costumeReady, setCostumeReady] = useState(false);
 
   const { audio } = useAudio();
   const assocStep = useSyncExternalStore(
@@ -86,7 +89,32 @@ export function LessonLearningMirror({
 
   useEffect(() => {
     costumeRef.current = costume;
+    let cancelled = false;
+    if (!costume) {
+      setCostumeReady(false);
+      return;
+    }
+    void ensureLessonMirrorImage(costume)
+      .then(() => {
+        if (!cancelled) setCostumeReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) setCostumeReady(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [costume]);
+
+  // Warm all three association costumes for this letter so the tour swaps smoothly.
+  useEffect(() => {
+    for (const item of items) {
+      const next = lessonMirrorCostumeForArt(item.art);
+      if (next) {
+        void ensureLessonMirrorImage(next).catch(() => undefined);
+      }
+    }
+  }, [items]);
 
   useEffect(() => {
     sceneRef.current = scene;
@@ -122,6 +150,7 @@ export function LessonLearningMirror({
     smootherRef.current.reset();
     tooCloseRef.current = false;
     setTooClose(false);
+    setFaceMissing(false);
     setMirror("off");
     setErrorMessage(null);
   }, []);
@@ -176,6 +205,10 @@ export function LessonLearningMirror({
       const image = costumeNow
         ? getCachedLessonMirrorImage(costumeNow.art)
         : null;
+      // If the tour advanced before decode finished, kick another load.
+      if (costumeNow && !image) {
+        void ensureLessonMirrorImage(costumeNow).catch(() => undefined);
+      }
 
       const frame = drawLiveMirrorFrame({
         video,
@@ -208,6 +241,8 @@ export function LessonLearningMirror({
           tooCloseRef.current = frame.tooClose;
           setTooClose(frame.tooClose);
         }
+        setFaceMissing(!frame.detected);
+        if (frame.costumeDrawn) setCostumeReady(true);
       }
 
       rafRef.current = requestAnimationFrame(tick);
@@ -269,28 +304,39 @@ export function LessonLearningMirror({
     try {
       await preloadLessonMirrorImages();
     } catch {
-      /* still show camera */
+      /* still show camera + DOM stickers */
+    }
+    if (costume) {
+      try {
+        await ensureLessonMirrorImage(costume);
+        if (gen === sessionGenRef.current) setCostumeReady(true);
+      } catch {
+        /* portrait stickers still show the animal */
+      }
     }
     if (gen !== sessionGenRef.current) return;
 
     try {
       landmarkerRef.current = await getFaceLandmarker();
     } catch {
+      // Camera still works — portrait fallback keeps Fish/Frog/Flower on screen.
       landmarkerRef.current = null;
     }
     if (gen !== sessionGenRef.current) return;
 
     smootherRef.current.reset();
+    setFaceMissing(true);
     setMirror("live");
   }
 
   const shellClass = stageLayout
     ? "magic-mirror-shell"
-    : "flex w-full max-w-[12rem] flex-col items-center gap-1.5";
+    : "flex w-full flex-col items-center gap-2";
 
+  // Play layout: same panel height as the picture card. Stage keeps compact magic frame.
   const frameClass = stageLayout
     ? "magic-mirror-frame relative overflow-hidden rounded-[20px] shadow-[0_8px_20px_rgba(48,48,71,0.12)]"
-    : "relative aspect-[4/3] w-full overflow-hidden rounded-[22px] shadow-[0_10px_28px_rgba(48,48,71,0.12)]";
+    : "lesson-mirror-frame-play relative overflow-hidden rounded-[28px] shadow-[0_10px_24px_rgba(48,48,71,0.14)]";
 
   const offSceneMotion =
     reducedMotion || !activeItem
@@ -335,86 +381,116 @@ export function LessonLearningMirror({
     );
   }
 
+  const liveBadge =
+    mirror === "live" ? (
+      <span
+        className="pointer-events-none absolute left-2 top-2 z-[2] rounded-full bg-[#2AA85A] px-2.5 py-0.5 font-[family-name:var(--font-nunito)] text-[11px] font-bold text-white shadow"
+        data-testid="lesson-mirror-live-badge"
+      >
+        ● Live
+      </span>
+    ) : null;
+
+  const associationStickers =
+    activeItem && mirror === "live" ? (
+      <div
+        className={`pointer-events-none absolute right-1.5 top-1.5 z-[3] ${
+          stageLayout ? "h-10 w-10" : "h-11 w-11 sm:h-12 sm:w-12"
+        } ${reducedMotion ? "" : offSceneMotion}`}
+        data-testid="lesson-mirror-sticker-right"
+        aria-hidden
+      >
+        <LetterArt id={activeItem.art} className="h-full w-full drop-shadow-md" />
+      </div>
+    ) : null;
+
+  const media = (
+    <>
+      <video
+        ref={videoRef}
+        className="pointer-events-none absolute h-px w-px opacity-0"
+        playsInline
+        muted
+        autoPlay
+        aria-hidden
+      />
+      <canvas
+        ref={canvasRef}
+        data-testid="lesson-mirror-canvas"
+        className={`h-full w-full object-contain ${mirror === "live" ? "block" : "hidden"}`}
+      />
+      {associationStickers}
+      {mirror === "live" ? (
+        <div
+          className={`pointer-events-none absolute inset-0 rounded-[28px] ${
+            mood === "success" && !reducedMotion ? "lesson-mirror-win" : ""
+          } ${mood === "retry" && !reducedMotion ? "lesson-mirror-miss" : ""}`}
+          aria-hidden
+        />
+      ) : null}
+      {mirror === "live" && faceMissing ? (
+        <p
+          className="pointer-events-none absolute bottom-3 left-1/2 z-[2] w-[90%] -translate-x-1/2 rounded-full bg-white/95 px-3 py-1.5 text-center font-[family-name:var(--font-nunito)] text-xs font-bold text-[#7048D7] shadow"
+          data-testid="lesson-mirror-face-guide"
+        >
+          {costumeReady
+            ? `Look at the camera — become the ${costume?.name ?? "friend"}!`
+            : "Look at the camera — your costume is waking up!"}
+        </p>
+      ) : null}
+      {mirror === "live" && tooClose && !faceMissing ? (
+        <p
+          className="pointer-events-none absolute bottom-3 left-1/2 z-[2] w-[90%] -translate-x-1/2 rounded-full bg-white/95 px-3 py-1.5 text-center font-[family-name:var(--font-nunito)] text-xs font-bold text-[#7048D7] shadow"
+          data-testid="lesson-mirror-too-close"
+        >
+          A little farther back — let&apos;s fit your whole costume!
+        </p>
+      ) : null}
+    </>
+  );
+
   return (
     <div
       className={shellClass}
       data-testid="lesson-learning-mirror"
       data-mirror-art={costume?.art ?? ""}
       data-mirror-live={mirror === "live" ? "true" : "false"}
+      data-mirror-fallback={costume?.fallback ? "true" : "false"}
     >
       <div
         className={frameClass}
         style={{ background: scene?.tint ?? "#BBDDF5" }}
       >
-        {mirror === "live" ? (
-          <div className="pointer-events-none absolute left-2 top-2 z-[2] flex max-w-[85%] items-center gap-1.5">
-            <span className="truncate rounded-full bg-white/90 px-2 py-0.5 font-[family-name:var(--font-nunito)] text-[10px] font-bold text-[#303047] shadow sm:text-[11px] sm:px-2.5">
-              {scene ? `🌷 ${scene.place}` : "Magic Mirror"}
-            </span>
-            <span
-              className="shrink-0 rounded-full bg-[#2AA85A] px-2 py-0.5 font-[family-name:var(--font-nunito)] text-[10px] font-bold text-white shadow"
-              data-testid="lesson-mirror-live-badge"
-            >
-              ● Live
-            </span>
-          </div>
-        ) : null}
-
-        <video
-          ref={videoRef}
-          className="pointer-events-none absolute h-px w-px opacity-0"
-          playsInline
-          muted
-          autoPlay
-          aria-hidden
-        />
-        <canvas
-          ref={canvasRef}
-          data-testid="lesson-mirror-canvas"
-          className={`h-full w-full object-contain ${mirror === "live" ? "block" : "hidden"}`}
-        />
-        {mirror === "live" ? (
-          <div
-            className={`pointer-events-none absolute inset-0 rounded-[22px] ${
-              mood === "success" && !reducedMotion ? "lesson-mirror-win" : ""
-            } ${mood === "retry" && !reducedMotion ? "lesson-mirror-miss" : ""}`}
-            aria-hidden
-          />
-        ) : null}
-
-        {mirror === "live" && tooClose ? (
-          <p
-            className="pointer-events-none absolute bottom-12 left-1/2 z-[2] w-[90%] -translate-x-1/2 rounded-full bg-white/95 px-3 py-1.5 text-center font-[family-name:var(--font-nunito)] text-xs font-bold text-[#7048D7] shadow"
-            data-testid="lesson-mirror-too-close"
-          >
-            A little farther back — let&apos;s fit your whole costume!
-          </p>
-        ) : null}
-
+        {liveBadge}
+        {media}
         {mirror !== "live" ? (
           <div
-            className={`absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#7048D7]/90 to-[#9B7BFF]/90 text-center text-white ${
+            className={`absolute inset-0 z-[1] flex flex-col items-center justify-center bg-gradient-to-b from-[#7048D7]/90 to-[#9B7BFF]/90 text-center text-white ${
               stageLayout ? "gap-1 p-2" : "gap-1.5 p-3"
             }`}
           >
+            {activeItem ? (
+              <div
+                className={`shrink-0 ${
+                  stageLayout ? "h-14 w-14" : "h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem]"
+                } ${reducedMotion ? "" : offSceneMotion}`}
+                data-testid="lesson-mirror-preview-art"
+                aria-hidden
+              >
+                <LetterArt id={activeItem.art} className="h-full w-full" />
+              </div>
+            ) : null}
             <p
               className={`font-[family-name:var(--font-display)] font-bold ${
-                stageLayout ? "text-sm leading-tight" : "text-base sm:text-lg"
+                stageLayout ? "text-sm leading-tight" : "text-sm sm:text-base"
               }`}
             >
-              {mirror === "starting" ? "Waking mirror…" : "See yourself!"}
+              {mirror === "starting"
+                ? "Waking mirror…"
+                : costume
+                  ? `Become a ${costume.name}!`
+                  : "See yourself!"}
             </p>
-            {costume && !stageLayout ? (
-              <p className="text-xs font-semibold opacity-95 sm:text-sm">
-                Become a {costume.name}
-                {scene ? ` · ${scene.place}` : ""}
-              </p>
-            ) : null}
-            {costume && stageLayout ? (
-              <p className="max-w-full truncate px-1 text-[10px] font-semibold opacity-95">
-                Become a {costume.name}
-              </p>
-            ) : null}
             {errorMessage ? (
               <p className="max-w-xs text-[10px] leading-snug" data-testid="lesson-mirror-error">
                 {errorMessage}
@@ -428,23 +504,20 @@ export function LessonLearningMirror({
                 className={`pressable rounded-full bg-white font-[family-name:var(--font-display)] font-bold text-[#7048D7] shadow ${
                   stageLayout
                     ? "mt-0.5 min-h-8 px-3 text-xs"
-                    : "mt-1 min-h-9 px-4 text-sm"
+                    : "mt-1 min-h-10 px-5 text-sm"
                 }`}
               >
                 ✨ Start camera
               </button>
             ) : null}
-            {!stageLayout ? (
-              <p className="text-[10px] font-semibold text-white/90">
-                🔒 Stays on this device
-              </p>
-            ) : (
-              <p className="text-[9px] font-semibold text-white/85">🔒 This device</p>
-            )}
+            <p className="text-[10px] font-semibold text-white/90">
+              🔒 Stays on this device
+            </p>
           </div>
         ) : null}
 
-        {mirror === "live" ? (
+        {/* Stage layout keeps compact overlays; play layout uses the control row below */}
+        {stageLayout && mirror === "live" ? (
           <>
             <p
               className="pointer-events-none absolute bottom-3 left-3 z-[2] max-w-[70%] truncate rounded-full bg-white/95 px-2.5 py-1 font-[family-name:var(--font-display)] text-[11px] font-bold text-[#7048D7] shadow"
@@ -463,6 +536,45 @@ export function LessonLearningMirror({
           </>
         ) : null}
       </div>
+
+      {!stageLayout ? (
+        <div className="mt-1 flex w-full flex-col items-center gap-0.5 px-0.5">
+          {items.length > 1 ? (
+            <div
+              className="flex items-center justify-center gap-1"
+              data-testid="mirror-tour-dots"
+              aria-hidden
+            >
+              {items.map((entry, i) => (
+                <span
+                  key={`${entry.art}-${i}`}
+                  className={`h-1.5 w-1.5 rounded-full transition-transform ${
+                    i === index ? "scale-125 bg-[#7657E8]" : "bg-[#C5C9E0]"
+                  }`}
+                />
+              ))}
+            </div>
+          ) : null}
+          {mirror === "live" ? (
+            <div className="flex w-full items-center justify-center gap-1.5">
+              <p
+                className="min-w-0 truncate font-[family-name:var(--font-display)] text-xs font-bold text-[#7048D7] sm:text-sm"
+                data-testid="lesson-mirror-costume-name"
+              >
+                {costume ? `You're the ${costume.name}!` : "Looking magical!"}
+              </p>
+              <button
+                type="button"
+                data-testid="lesson-mirror-stop"
+                onClick={tearDown}
+                className="pressable min-h-8 shrink-0 rounded-full bg-white px-3 font-[family-name:var(--font-display)] text-xs font-bold text-[#7048D7] shadow"
+              >
+                Stop
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
