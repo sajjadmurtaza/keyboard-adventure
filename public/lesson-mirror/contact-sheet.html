@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lesson Mirror Asset Contact Sheet</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Nunito, system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 1.5rem;
+        background: #f4f6ff;
+        color: #303047;
+      }
+      h1 {
+        margin: 0 0 0.25rem;
+        font-size: 1.5rem;
+      }
+      .meta {
+        margin-bottom: 1.25rem;
+        color: #5a5a78;
+        font-size: 0.95rem;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 0.85rem;
+      }
+      .card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 0.75rem;
+        box-shadow: 0 6px 16px rgba(48, 48, 71, 0.08);
+      }
+      .card img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: contain;
+        background: #eaf4ff;
+        border-radius: 12px;
+      }
+      .badge {
+        display: inline-block;
+        margin-top: 0.35rem;
+        padding: 0.1rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        background: #efe8ff;
+        color: #7048d7;
+      }
+      .badge.companion {
+        background: #e7f8ee;
+        color: #1f7a45;
+      }
+      .badge.missing {
+        background: #fff0e8;
+        color: #b34b16;
+      }
+      .word {
+        font-weight: 800;
+        font-size: 0.95rem;
+      }
+      .art {
+        font-size: 0.75rem;
+        color: #6a6a88;
+      }
+      .placeholder {
+        display: grid;
+        place-items: center;
+        aspect-ratio: 1;
+        border-radius: 12px;
+        background: linear-gradient(160deg, #dff0ff, #f3e9ff);
+        font-size: 2rem;
+        font-weight: 800;
+        color: #7048d7;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Lesson Mirror — asset contact sheet</h1>
+    <p class="meta" id="summary">Loading inventory…</p>
+    <div class="grid" id="grid"></div>
+    <script>
+      async function main() {
+        const inv = await fetch("./ASSET_INVENTORY.json").then((r) => r.json());
+        const s = inv.summary;
+        document.getElementById("summary").textContent =
+          `${inv.items.length} associations · ${s.dedicatedFaceFrames} canvas wearables · ` +
+          `${s.companionLetterArt} LetterArt companions · mirror SVG ${s.mirrorSvgBytes} bytes`;
+
+        const grid = document.getElementById("grid");
+        for (const item of inv.items) {
+          const card = document.createElement("article");
+          card.className = "card";
+          const visual = document.createElement("div");
+          if (item.style === "face-frame" || item.style === "head-accessory") {
+            const img = document.createElement("img");
+            const path = item.costume.startsWith("dress-up/")
+              ? `/${item.costume}`
+              : item.costume.startsWith("lesson-mirror/")
+                ? `./${item.costume.slice("lesson-mirror/".length)}`
+                : item.costume;
+            img.src = path.includes("?") ? path : path;
+            img.alt = item.word;
+            img.loading = "lazy";
+            visual.appendChild(img);
+          } else {
+            const ph = document.createElement("div");
+            ph.className = "placeholder";
+            ph.textContent = item.word.slice(0, 1).toUpperCase();
+            ph.title = "LetterArt companion at runtime";
+            visual.appendChild(ph);
+          }
+          const word = document.createElement("div");
+          word.className = "word";
+          word.textContent = `${item.key.toUpperCase()} · ${item.word}`;
+          const art = document.createElement("div");
+          art.className = "art";
+          art.textContent = item.art;
+          const badge = document.createElement("span");
+          badge.className = `badge ${item.style === "companion" ? "companion" : ""}`;
+          badge.textContent = item.style;
+          card.append(visual, word, art, badge);
+          grid.appendChild(card);
+        }
+      }
+      main().catch((err) => {
+        document.getElementById("summary").textContent = String(err);
+      });
+    </script>
+  </body>
+</html>

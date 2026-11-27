@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" width="320" height="320">
+  <defs>
+    <radialGradient id="apBody" cx="38%" cy="32%" r="70%">
+      <stop offset="0%" stop-color="#FF8A7A"/>
+      <stop offset="55%" stop-color="#FF5A4A"/>
+      <stop offset="100%" stop-color="#C62828"/>
+    </radialGradient>
+    <linearGradient id="apLeaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#B6E07A"/>
+      <stop offset="100%" stop-color="#2E7D32"/>
+    </linearGradient>
+  </defs>
+  <!-- Stem + leaf -->
+  <path d="M160 36c16-24 40-10 24 18" stroke="#2E7D32" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <ellipse cx="196" cy="50" rx="26" ry="14" fill="url(#apLeaf)" stroke="#1B5E20" stroke-width="3" transform="rotate(30 196 50)"/>
+  <!-- Apple shell with open face -->
+  <path fill="url(#apBody)" fill-rule="evenodd" stroke="#8E1B1B" stroke-width="6" d="
+    M160 48c56 0 108 46 108 118 0 80-50 128-108 128S52 246 52 166C52 94 104 48 160 48z
+    M160 100c-48 0-82 36-82 74s34 74 82 74 82-36 82-74-34-74-82-74z"/>
+  <ellipse cx="160" cy="178" rx="78" ry="70" fill="none" stroke="#FFCDD2" stroke-width="5" opacity="0.55"/>
+  <circle cx="112" cy="86" r="8" fill="#FFFFFF" opacity="0.7"/>
+  <circle cx="214" cy="100" r="5" fill="#FFFFFF" opacity="0.5"/>
+</svg>

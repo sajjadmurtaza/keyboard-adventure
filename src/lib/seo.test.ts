@@ -37,6 +37,10 @@ describe("seo", () => {
     expect(siteUrl()).toBe("https://keyboard-adventure.app");
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "not a url");
     expect(siteUrl()).toBe("https://keyboard-adventure.app");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "ftp://files.example");
+    expect(siteUrl()).toBe("https://keyboard-adventure.app");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://user:secret@example.com");
+    expect(siteUrl()).toBe("https://keyboard-adventure.app");
     vi.unstubAllEnvs();
   });
 });

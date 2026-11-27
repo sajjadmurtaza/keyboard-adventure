@@ -35,6 +35,15 @@ export class FacePoseSmoother {
       height: prev.height + (sample.height - prev.height) * a,
       rotation: prev.rotation + (rot - prev.rotation) * a,
       crownY: prev.crownY + (sample.crownY - prev.crownY) * a,
+      leftEyeX: prev.leftEyeX + (sample.leftEyeX - prev.leftEyeX) * a,
+      leftEyeY: prev.leftEyeY + (sample.leftEyeY - prev.leftEyeY) * a,
+      rightEyeX: prev.rightEyeX + (sample.rightEyeX - prev.rightEyeX) * a,
+      rightEyeY: prev.rightEyeY + (sample.rightEyeY - prev.rightEyeY) * a,
+      eyeSpan: prev.eyeSpan + (sample.eyeSpan - prev.eyeSpan) * a,
+      shoulderCx: prev.shoulderCx + (sample.shoulderCx - prev.shoulderCx) * a,
+      shoulderCy: prev.shoulderCy + (sample.shoulderCy - prev.shoulderCy) * a,
+      shoulderWidth:
+        prev.shoulderWidth + (sample.shoulderWidth - prev.shoulderWidth) * a,
     };
     return { ...this.current };
   }

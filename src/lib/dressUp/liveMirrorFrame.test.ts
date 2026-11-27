@@ -14,6 +14,7 @@ function mockCanvas() {
     drawImage: () => calls.push("drawImage"),
     fillRect: () => calls.push("fillRect"),
   };
+  // scale is used by costume breathe animation
   const canvas = {
     width: 0,
     height: 0,

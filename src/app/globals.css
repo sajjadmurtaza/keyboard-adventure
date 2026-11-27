@@ -19,8 +19,8 @@
   --success-glow: rgba(56, 217, 120, 0.4);
   --font-display: var(--font-fredoka);
   --font-sans: var(--font-nunito);
-  --lesson-gap: 10px;
-  --target-size: clamp(140px, 20vh, 220px);
+  --lesson-gap: 6px;
+  --target-size: clamp(140px, 18vh, 200px);
   --key-size: 60px;
   --key-gap: 8px;
   --row-offset-2: 22px;
@@ -31,26 +31,26 @@
 
 @media (min-height: 900px) {
   :root {
-    --lesson-gap: 14px;
-    --target-size: clamp(160px, 22vh, 240px);
-    --key-size: 72px;
-    --key-gap: 9px;
-    --row-offset-2: 26px;
-    --row-offset-3: 52px;
-    --space-width: 400px;
-    --mascot-size: 80px;
+    --lesson-gap: 8px;
+    --target-size: clamp(150px, 18vh, 210px);
+    --key-size: 68px;
+    --key-gap: 8px;
+    --row-offset-2: 24px;
+    --row-offset-3: 48px;
+    --space-width: 380px;
+    --mascot-size: 72px;
   }
 }
 
 @media (max-height: 899px) {
   :root {
-    --lesson-gap: 6px;
-    --target-size: clamp(130px, 20vh, 210px);
-    --key-size: 64px;
-    --key-gap: 8px;
-    --row-offset-2: 22px;
-    --row-offset-3: 44px;
-    --space-width: 360px;
+    --lesson-gap: 5px;
+    --target-size: clamp(120px, 17vh, 190px);
+    --key-size: 60px;
+    --key-gap: 7px;
+    --row-offset-2: 20px;
+    --row-offset-3: 40px;
+    --space-width: 340px;
     --mascot-size: 48px;
   }
 }
@@ -444,11 +444,11 @@ html.lesson-play body {
 }
 
 .assoc-slide {
-  animation: assoc-slide 0.4s ease both;
+  animation: assoc-slide 0.55s cubic-bezier(0.22, 1.35, 0.36, 1) both;
 }
 
 .assoc-reward {
-  animation: assoc-in 0.28s ease both;
+  animation: assoc-in 0.4s cubic-bezier(0.2, 1.4, 0.3, 1) both;
 }
 
 .success-headline {
@@ -462,22 +462,30 @@ html.lesson-play body {
 @keyframes assoc-in {
   0% {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.72) translateY(12px);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.06) translateY(-2px);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
 @keyframes assoc-slide {
   0% {
     opacity: 0;
-    transform: translateX(22px);
+    transform: translateX(28px) scale(0.82) rotate(4deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-4px) scale(1.05) rotate(-1.5deg);
   }
   100% {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1) rotate(0deg);
   }
 }
 
@@ -575,30 +583,36 @@ html.lesson-play body {
 @keyframes art-idle-swim {
   0%,
   100% {
-    transform: translateX(0) rotate(0deg);
+    transform: translateX(0) translateY(0) rotate(0deg);
   }
-  50% {
-    transform: translateX(5px) rotate(-3deg);
+  25% {
+    transform: translateX(7px) translateY(-3px) rotate(-4deg);
+  }
+  75% {
+    transform: translateX(-6px) translateY(2px) rotate(3deg);
   }
 }
 
 @keyframes art-idle-bounce {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
-  50% {
-    transform: translateY(-5px);
+  40% {
+    transform: translateY(-10px) scale(1.04, 0.96);
+  }
+  60% {
+    transform: translateY(-2px) scale(0.98, 1.03);
   }
 }
 
 @keyframes art-idle-float {
   0%,
   100% {
-    transform: translateY(0) rotate(0deg);
+    transform: translateY(0) rotate(0deg) scale(1);
   }
   50% {
-    transform: translateY(-4px) rotate(2deg);
+    transform: translateY(-8px) rotate(3deg) scale(1.03);
   }
 }
 
@@ -606,19 +620,21 @@ html.lesson-play body {
   0%,
   100% {
     transform: scale(1);
+    filter: brightness(1);
   }
   50% {
-    transform: scale(1.04);
+    transform: scale(1.07);
+    filter: brightness(1.06);
   }
 }
 
 @keyframes art-idle-wiggle {
   0%,
   100% {
-    transform: rotate(0deg);
+    transform: rotate(0deg) translateX(0);
   }
   25% {
-    transform: rotate(-3deg);
+    transform: rotate(-5deg) translateX(-2px);
   }
   75% {
     transform: rotate(3deg);
@@ -915,12 +931,44 @@ html.lesson-play body {
 
 .play-board {
   --mascot-size: 52px;
-  --focus-panel: clamp(150px, 22vw, 240px);
+  --focus-panel: clamp(140px, 22vw, 240px);
+  --focus-band-max: min(100%, 72rem);
+  --focus-band-height: clamp(132px, 22vh, 240px);
+}
+
+/* Pack sections as one centered cluster — equal breathing room, no mid-board desert. */
+.play-board.play-board-packed {
+  grid-template-rows: auto auto auto auto;
+  align-content: center;
+  justify-items: center;
+  row-gap: var(--lesson-gap);
+  width: 100%;
+  min-height: 0;
+}
+
+.play-board .play-keyboard {
+  margin-top: 0;
+  width: min(100%, 68rem);
+  justify-self: center;
 }
 
 @media (min-height: 900px) {
   .play-board {
     --mascot-size: 56px;
+    --focus-panel: clamp(160px, 20vw, 260px);
+    --focus-band-height: clamp(160px, 24vh, 280px);
+  }
+}
+
+@media (max-height: 759px) {
+  .play-board {
+    --focus-band-height: clamp(120px, 20vh, 190px);
+  }
+}
+
+@media (max-height: 649px) {
+  .play-board {
+    --focus-band-height: clamp(108px, 18vh, 160px);
   }
 }
 
@@ -929,21 +977,31 @@ html.lesson-play body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   width: 100%;
+  max-width: var(--focus-band-max);
+  margin-inline: auto;
+  min-height: 0;
+  padding-inline: clamp(0.5rem, 2vw, 1.25rem);
+  box-sizing: border-box;
 }
 
 .play-board .lesson-focus {
   display: grid;
-  grid-template-columns: var(--focus-panel) minmax(7rem, auto) var(--focus-panel);
-  grid-template-areas: "art letter mirror";
   align-items: stretch;
   justify-content: center;
   justify-items: stretch;
-  gap: clamp(0.5rem, 1.6vw, 1.25rem);
-  width: min(100%, 52rem);
-  margin-inline: auto;
-  min-height: clamp(150px, 24vh, 240px);
+  gap: clamp(0.5rem, 1.6vw, 1.1rem);
+  width: 100%;
+  height: var(--focus-band-height);
+  max-height: var(--focus-band-height);
+  min-height: var(--focus-band-height);
+}
+
+/* Mirror on: two equal panels that always fill the band (left = art+letter, right = camera). */
+.play-board .lesson-focus[data-has-mirror="true"] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "pair mirror";
 }
 
 .play-board .lesson-focus[data-has-mirror="false"] {
@@ -951,6 +1009,36 @@ html.lesson-play body {
   grid-template-areas: "art letter";
   width: fit-content;
   max-width: 100%;
+  height: auto;
+  max-height: none;
+  min-height: clamp(140px, 20vh, 210px);
+}
+
+.play-board .lesson-focus-pair {
+  grid-area: pair;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.35rem, 1.2vw, 0.85rem);
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  padding: clamp(0.25rem, 0.8vw, 0.5rem) clamp(0.4rem, 1.2vw, 0.75rem);
+  border-radius: 28px;
+  border: 3px solid #d8e7ff;
+  background: #fffef6;
+  box-shadow: 0 10px 24px rgba(118, 87, 232, 0.12);
+  overflow: hidden;
+}
+
+/* One shared left card: drop the nested association chrome. */
+.play-board .lesson-focus-pair .association-area.association-card > div {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0.15rem 0.25rem !important;
+  border-radius: 0 !important;
 }
 
 .play-board .lesson-focus-art {
@@ -959,6 +1047,13 @@ html.lesson-play body {
   align-items: stretch;
   justify-content: center;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.play-board .lesson-focus-pair .lesson-focus-art {
+  flex: 1 1 auto;
+  max-width: min(100%, 16rem);
 }
 
 .play-board .lesson-focus-letter {
@@ -967,48 +1062,133 @@ html.lesson-play body {
   align-items: center;
   justify-content: center;
   min-width: 0;
-  padding-inline: 0.25rem;
+  padding-inline: 0.15rem;
+}
+
+.play-board .lesson-focus-pair .lesson-focus-letter {
+  flex: 0 0 auto;
 }
 
 .play-board .adventure-mirror {
   grid-area: mirror;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.play-board .adventure-mirror > * {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
 }
 
 .play-board .lesson-mirror-frame-play {
   width: 100%;
   height: 100%;
-  min-height: clamp(150px, 22vh, 220px);
+  min-height: 0;
   max-height: none;
   aspect-ratio: auto;
+}
+
+.play-board .association-area.association-card {
+  min-height: 0;
+  height: 100%;
+}
+
+.play-board .lesson-focus-pair .association-area.association-card {
+  width: 100%;
+}
+
+.play-board .lesson-focus-pair .association-area.association-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.play-board .lesson-focus-pair .association-area.association-card > div {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.play-board .lesson-focus-pair .association-area.association-card .assoc-art-slot {
+  width: clamp(56px, 9vh, 112px);
+  height: clamp(56px, 9vh, 112px);
+}
+
+.play-board .lesson-focus-pair .association-area.association-card [data-testid="association-place"] {
+  font-size: clamp(9px, 1.4vh, 12px);
+  margin-bottom: 0;
+}
+
+.play-board .lesson-focus-pair .association-area.association-card [data-testid="association-word"] {
+  font-size: clamp(0.95rem, 2.4vh, 1.35rem);
+  line-height: 1.1;
+  margin-top: 0.15rem;
+}
+
+@media (max-height: 759px) {
+  .play-board .lesson-focus-pair .association-area.association-card .assoc-art-slot {
+    width: clamp(44px, 7.5vh, 72px);
+    height: clamp(44px, 7.5vh, 72px);
+  }
+
+  .play-board .lesson-focus-pair .association-area.association-card [data-testid="association-place"] {
+    display: none;
+  }
+
+  .play-board .lesson-focus-pair .association-area.association-card [data-testid="association-tour-dots"] {
+    margin-top: 0.15rem;
+  }
+}
+
+@media (max-height: 649px) {
+  .play-board .lesson-focus-pair .association-area.association-card .assoc-art-slot {
+    width: clamp(40px, 7vh, 60px);
+    height: clamp(40px, 7vh, 60px);
+  }
 }
 
 @media (max-width: 720px) {
   .play-board {
     --focus-panel: min(42vw, 180px);
+    --focus-band-height: clamp(200px, 36vh, 280px);
   }
 
   .play-board .lesson-focus[data-has-mirror="true"] {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
-      "letter letter"
-      "art mirror";
-    width: min(100%, 26rem);
-    min-height: 0;
+      "pair pair"
+      "mirror mirror";
+    max-height: none;
+    height: auto;
+  }
+
+  .play-board .lesson-focus-pair {
+    min-height: clamp(110px, 18vh, 150px);
+  }
+
+  .play-board .adventure-mirror {
+    min-height: clamp(120px, 20vh, 170px);
   }
 
   .play-board .lesson-focus[data-has-mirror="false"] {
     grid-template-columns: var(--focus-panel) minmax(5rem, auto);
     grid-template-areas: "art letter";
   }
-
-  .play-board .lesson-focus-letter {
-    padding-block: 0.15rem;
-  }
 }
 
 @media (max-width: 500px) {
   .play-board {
     --focus-panel: min(44vw, 154px);
+  }
+
+  .play-board .lesson-focus-pair {
+    border-radius: 22px;
+    gap: 0.25rem;
+    padding: 0.35rem 0.45rem;
   }
 }
 
@@ -1266,6 +1446,216 @@ html.lesson-play body {
 
 .lesson-mirror-miss {
   box-shadow: 0 0 0 3px #c4b8e8, 0 8px 16px rgba(118, 87, 232, 0.25);
+}
+
+/* Sheet-style accessory tour — flips with the association like the AR preview. */
+.lesson-mirror-accessory-tour {
+  display: flex;
+  width: 100%;
+  max-width: 22rem;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0 0.15rem;
+}
+
+.lesson-mirror-accessory-tile {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  opacity: 0.55;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.lesson-mirror-accessory-tile--active {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.lesson-mirror-accessory-tile__art {
+  display: flex;
+  aspect-ratio: 1;
+  width: 100%;
+  max-width: 4.25rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 0.85rem;
+  background: linear-gradient(180deg, #e8f2fb 0%, #d7e8f6 100%);
+  box-shadow: 0 2px 0 rgba(48, 48, 71, 0.06);
+}
+
+.lesson-mirror-accessory-tile__art img,
+.lesson-mirror-accessory-tile__art svg {
+  height: 88%;
+  width: 88%;
+  object-fit: contain;
+}
+
+.lesson-mirror-accessory-tile__label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #4a4a68;
+}
+
+.lesson-mirror-accessory-tile--active .lesson-mirror-accessory-tile__label {
+  color: #7048d7;
+}
+
+.lesson-mirror-accessory-tile--pop .lesson-mirror-accessory-tile__art {
+  animation: mirror-accessory-pop 0.42s cubic-bezier(0.22, 1.35, 0.36, 1) both;
+}
+
+.lesson-mirror-preview-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: linear-gradient(180deg, #e8f2fb 0%, #d7e8f6 100%);
+  box-shadow: 0 4px 12px rgba(48, 48, 71, 0.18);
+}
+
+@keyframes mirror-accessory-pop {
+  0% {
+    transform: scale(0.86);
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Face-relative LetterArt companions (no generic circle rings). */
+.lesson-mirror-companion {
+  position: absolute;
+  width: clamp(3.25rem, 22%, 5.5rem);
+  height: clamp(3.25rem, 22%, 5.5rem);
+  filter: drop-shadow(0 4px 8px rgba(48, 48, 71, 0.22));
+}
+
+.lesson-mirror-companion--left {
+  left: 4%;
+  top: 42%;
+  transform: translateY(-50%) rotate(-8deg);
+}
+
+.lesson-mirror-companion--right {
+  right: 4%;
+  top: 38%;
+  transform: translateY(-50%) rotate(8deg);
+}
+
+/* Brief, object-flavored success reactions (respect prefers-reduced-motion below). */
+.lesson-mirror-react--drum {
+  animation: mirror-react-drum 0.55s ease-out;
+}
+
+.lesson-mirror-react--juice {
+  animation: mirror-react-juice 0.6s ease-out;
+}
+
+.lesson-mirror-react--frog {
+  animation: mirror-react-hop 0.5s ease-out;
+}
+
+.lesson-mirror-react--fish {
+  animation: mirror-react-swim 0.65s ease-in-out;
+}
+
+.lesson-mirror-react--flower {
+  animation: mirror-react-bloom 0.7s ease-out;
+}
+
+.lesson-mirror-react--sun {
+  animation: mirror-react-bloom 0.55s ease-out;
+}
+
+.lesson-mirror-react--rocket {
+  animation: mirror-react-launch 0.7s ease-out;
+}
+
+@keyframes mirror-react-drum {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  35% {
+    transform: scale(1.06) rotate(-3deg);
+  }
+  70% {
+    transform: scale(1.03) rotate(3deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes mirror-react-juice {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08) rotate(2deg);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes mirror-react-hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10%);
+  }
+}
+
+@keyframes mirror-react-swim {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  50% {
+    transform: translateX(4%) rotate(-4deg);
+  }
+}
+
+@keyframes mirror-react-bloom {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.85;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes mirror-react-launch {
+  0% {
+    transform: translateY(6%) scale(0.96);
+  }
+  100% {
+    transform: translateY(-8%) scale(1.05);
+  }
 }
 
 /*
@@ -1617,7 +2007,15 @@ html.lesson-play body {
   .art-react-happy,
   .art-react-encourage,
   .art-react-think,
-  .mirror-face-guide-pulse {
+  .mirror-face-guide-pulse,
+  .lesson-mirror-react--drum,
+  .lesson-mirror-react--juice,
+  .lesson-mirror-react--frog,
+  .lesson-mirror-react--fish,
+  .lesson-mirror-react--flower,
+  .lesson-mirror-react--sun,
+  .lesson-mirror-react--rocket,
+  .lesson-mirror-accessory-tile--pop .lesson-mirror-accessory-tile__art {
     animation: none;
   }
 }

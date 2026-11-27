@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" width="320" height="320">
+  <defs>
+    <linearGradient id="ctFur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFCC80"/>
+      <stop offset="50%" stop-color="#FFB74D"/>
+      <stop offset="100%" stop-color="#EF6C00"/>
+    </linearGradient>
+  </defs>
+  <!-- Pointy ears -->
+  <path d="M72 128 L52 36 L130 92 Z" fill="url(#ctFur)" stroke="#E65100" stroke-width="5"/>
+  <path d="M248 128 L268 36 L190 92 Z" fill="url(#ctFur)" stroke="#E65100" stroke-width="5"/>
+  <path d="M78 112 L66 58 L112 92 Z" fill="#FFE0B2"/>
+  <path d="M242 112 L254 58 L208 92 Z" fill="#FFE0B2"/>
+  <!-- Hood with open face -->
+  <path fill="url(#ctFur)" fill-rule="evenodd" stroke="#E65100" stroke-width="6" d="
+    M160 56c70 0 116 48 116 112 0 76-46 120-116 120S44 244 44 168C44 104 90 56 160 56z
+    M160 102c-46 0-78 34-78 72s32 72 78 72 78-34 78-72-32-72-78-72z"/>
+  <ellipse cx="160" cy="176" rx="74" ry="66" fill="none" stroke="#FFE0B2" stroke-width="5" opacity="0.55"/>
+  <circle cx="118" cy="90" r="6" fill="#FFFFFF" opacity="0.65"/>
+</svg>

@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { associationsFor } from "@/data/letterAssociations";
-import { lessonMirrorCostumeForArt } from "@/data/lessonMirrorCostumes";
+import {
+  isCanvasLessonCostume,
+  isSceneLessonCostume,
+  lessonMirrorCostumeForArt,
+} from "@/data/lessonMirrorCostumes";
+import { mirrorExperienceForArt } from "@/data/lessonMirrorExperiences";
 import { livingSceneForArt } from "@/data/livingScenes";
 import {
   startCameraSession,
@@ -14,11 +19,14 @@ import {
   preloadLessonMirrorImages,
 } from "@/lib/dressUp/lessonMirrorImages";
 import { getFaceLandmarker } from "@/lib/dressUp/faceLandmarker";
+import { getPoseLandmarker } from "@/lib/dressUp/poseLandmarker";
 import { drawLiveMirrorFrame } from "@/lib/dressUp/liveMirrorFrame";
+import { drawLessonMirrorExperience } from "@/lib/dressUp/lessonMirrorExperience";
 import { drawLivingMirrorMood } from "@/lib/dressUp/livingMirrorEffects";
 import { FacePoseSmoother } from "@/lib/dressUp/smoothing";
 import { LetterArt } from "@/components/illustrations/LetterArt";
 import { useAudio } from "@/hooks/useAudio";
+import type { PoseLandmarkerHandle } from "@/lib/dressUp/poseLandmarker";
 
 type MirrorMood = "idle" | "success" | "retry";
 
@@ -54,7 +62,7 @@ export function LessonLearningMirror({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [tooClose, setTooClose] = useState(false);
   const [faceMissing, setFaceMissing] = useState(false);
-  const [costumeReady, setCostumeReady] = useState(false);
+  const [canvasCostumeReady, setCanvasCostumeReady] = useState(false);
 
   const { audio } = useAudio();
   const assocStep = useSyncExternalStore(
@@ -68,6 +76,10 @@ export function LessonLearningMirror({
   const activeItem = items[index] ?? items[0];
   const costume = lessonMirrorCostumeForArt(activeItem?.art);
   const scene = livingSceneForArt(activeItem?.art);
+  const experience = mirrorExperienceForArt(activeItem?.art);
+  const costumeReady =
+    !!costume &&
+    (!isCanvasLessonCostume(costume) || canvasCostumeReady);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -75,42 +87,49 @@ export function LessonLearningMirror({
   const landmarkerRef = useRef<Awaited<ReturnType<typeof getFaceLandmarker>> | null>(
     null,
   );
+  const poseLandmarkerRef = useRef<PoseLandmarkerHandle | null>(null);
   const rafRef = useRef(0);
   const runningRef = useRef(false);
   const sessionGenRef = useRef(0);
   const costumeRef = useRef(costume);
   const sceneRef = useRef(scene);
+  const experienceRef = useRef(experience);
   const parentAllowedRef = useRef(cameraAllowedByParent);
   const reducedMotionRef = useRef(reducedMotion);
   const smootherRef = useRef(new FacePoseSmoother(0.38));
   const moodRef = useRef(mood);
   const tooCloseRef = useRef(false);
   const lastHintPublishRef = useRef(0);
+  const costumeArtRef = useRef<string | null>(null);
+  const costumeSwapAtRef = useRef(0);
 
   useEffect(() => {
     costumeRef.current = costume;
     let cancelled = false;
-    if (!costume) {
-      setCostumeReady(false);
+    if (!costume || !isCanvasLessonCostume(costume)) {
       return;
     }
-    void ensureLessonMirrorImage(costume)
+    const wearable = costume;
+    /* eslint-disable react-hooks/set-state-in-effect -- reset ready while the new SVG loads */
+    setCanvasCostumeReady(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    void ensureLessonMirrorImage(wearable)
       .then(() => {
-        if (!cancelled) setCostumeReady(true);
+        if (!cancelled) setCanvasCostumeReady(true);
       })
       .catch(() => {
-        if (!cancelled) setCostumeReady(false);
+        if (!cancelled) setCanvasCostumeReady(false);
       });
     return () => {
       cancelled = true;
     };
   }, [costume]);
 
-  // Warm all three association costumes for this letter so the tour swaps smoothly.
+  // Prefetch the next few association wearables for this letter.
   useEffect(() => {
     for (const item of items) {
       const next = lessonMirrorCostumeForArt(item.art);
-      if (next) {
+      if (next && isCanvasLessonCostume(next)) {
         void ensureLessonMirrorImage(next).catch(() => undefined);
       }
     }
@@ -119,6 +138,10 @@ export function LessonLearningMirror({
   useEffect(() => {
     sceneRef.current = scene;
   }, [scene]);
+
+  useEffect(() => {
+    experienceRef.current = experience;
+  }, [experience]);
 
   useEffect(() => {
     parentAllowedRef.current = cameraAllowedByParent;
@@ -202,12 +225,60 @@ export function LessonLearningMirror({
       }
 
       const costumeNow = costumeRef.current;
-      const image = costumeNow
-        ? getCachedLessonMirrorImage(costumeNow.art)
+      const canvasCostume = isCanvasLessonCostume(costumeNow)
+        ? costumeNow
+        : null;
+      const image = canvasCostume
+        ? getCachedLessonMirrorImage(canvasCostume.art)
         : null;
       // If the tour advanced before decode finished, kick another load.
-      if (costumeNow && !image) {
-        void ensureLessonMirrorImage(costumeNow).catch(() => undefined);
+      if (canvasCostume && !image) {
+        void ensureLessonMirrorImage(canvasCostume).catch(() => undefined);
+      }
+
+      const artKey = canvasCostume?.art ?? null;
+      if (artKey && artKey !== costumeArtRef.current) {
+        costumeArtRef.current = artKey;
+        costumeSwapAtRef.current = performance.now();
+      } else if (!artKey) {
+        costumeArtRef.current = null;
+      }
+      const swapAge = performance.now() - costumeSwapAtRef.current;
+      const costumeEntrance = reducedMotionRef.current
+        ? 1
+        : Math.min(1, swapAge / 420);
+
+      let costumeActionBob = 0;
+      if (
+        !reducedMotionRef.current &&
+        moodRef.current === "success" &&
+        canvasCostume
+      ) {
+        if (canvasCostume.style === "hand-prop" && canvasCostume.anchor === "mouth") {
+          costumeActionBob = Math.sin(performance.now() / 90) * 0.04;
+        } else if (canvasCostume.art === "drum") {
+          costumeActionBob = Math.sin(performance.now() / 70) * 0.03;
+        }
+      }
+
+      let shoulderOverride: {
+        cx: number;
+        cy: number;
+        width: number;
+        rotation?: number;
+      } | null = null;
+      if (
+        canvasCostume?.style === "body-wear" &&
+        poseLandmarkerRef.current
+      ) {
+        try {
+          shoulderOverride = poseLandmarkerRef.current.detectForVideo(
+            video,
+            performance.now(),
+          );
+        } catch {
+          shoulderOverride = null;
+        }
       }
 
       const frame = drawLiveMirrorFrame({
@@ -215,14 +286,29 @@ export function LessonLearningMirror({
         canvas,
         landmarker: landmarkerRef.current,
         smoother: smootherRef.current,
-        costume: costumeNow,
+        costume: canvasCostume,
         costumeImage: image,
         stagePad: LESSON_STAGE_PAD,
         stageFill: sceneRef.current?.tint ?? "#BBDDF5",
+        costumeEntrance,
+        costumeActionBob,
+        shoulderOverride,
       });
 
       const ctx = canvas.getContext("2d");
       if (ctx) {
+        const nowMs = performance.now();
+        // Ambient world first (heat / sea / rain…) so the child feels the object.
+        drawLessonMirrorExperience(
+          ctx,
+          canvas.width,
+          canvas.height,
+          experienceRef.current,
+          moodRef.current,
+          reducedMotionRef.current,
+          nowMs,
+          frame.pose,
+        );
         drawLivingMirrorMood(
           ctx,
           canvas.width,
@@ -230,7 +316,7 @@ export function LessonLearningMirror({
           moodRef.current,
           sceneRef.current?.celebrate,
           reducedMotionRef.current,
-          performance.now(),
+          nowMs,
         );
       }
 
@@ -242,7 +328,7 @@ export function LessonLearningMirror({
           setTooClose(frame.tooClose);
         }
         setFaceMissing(!frame.detected);
-        if (frame.costumeDrawn) setCostumeReady(true);
+        if (frame.costumeDrawn) setCanvasCostumeReady(true);
       }
 
       rafRef.current = requestAnimationFrame(tick);
@@ -306,12 +392,12 @@ export function LessonLearningMirror({
     } catch {
       /* still show camera + DOM stickers */
     }
-    if (costume) {
+    if (costume && isCanvasLessonCostume(costume)) {
       try {
         await ensureLessonMirrorImage(costume);
-        if (gen === sessionGenRef.current) setCostumeReady(true);
+        if (gen === sessionGenRef.current) setCanvasCostumeReady(true);
       } catch {
-        /* portrait stickers still show the animal */
+        /* portrait stickers / companions still show the object */
       }
     }
     if (gen !== sessionGenRef.current) return;
@@ -319,8 +405,16 @@ export function LessonLearningMirror({
     try {
       landmarkerRef.current = await getFaceLandmarker();
     } catch {
-      // Camera still works — portrait fallback keeps Fish/Frog/Flower on screen.
+      // Camera still works — portrait fallback keeps props on screen.
       landmarkerRef.current = null;
+    }
+    // Lazy pose model only when jacket (body-wear) may need shoulders.
+    if (costume?.style === "body-wear") {
+      try {
+        poseLandmarkerRef.current = await getPoseLandmarker();
+      } catch {
+        poseLandmarkerRef.current = null;
+      }
     }
     if (gen !== sessionGenRef.current) return;
 
@@ -391,16 +485,102 @@ export function LessonLearningMirror({
       </span>
     ) : null;
 
+  const companionMode = isSceneLessonCostume(costume);
+  const reactClass =
+    !reducedMotion && mood === "success" && activeItem
+      ? `lesson-mirror-react lesson-mirror-react--${activeItem.art}`
+      : "";
+
+  /** Sheet-style accessory tiles for this letter — active one pops like the AR preview. */
+  const accessoryTour =
+    items.length > 0 ? (
+      <div
+        className="lesson-mirror-accessory-tour"
+        data-testid="lesson-mirror-accessory-tour"
+        aria-hidden
+      >
+        {items.map((entry, i) => {
+          const tileCostume = lessonMirrorCostumeForArt(entry.art);
+          const active = i === index;
+          const src =
+            tileCostume &&
+            isCanvasLessonCostume(tileCostume) &&
+            tileCostume.assetPath
+              ? tileCostume.assetPath
+              : null;
+          return (
+            <div
+              key={`${entry.art}-${i}`}
+              className={`lesson-mirror-accessory-tile ${
+                active ? "lesson-mirror-accessory-tile--active" : ""
+              } ${!reducedMotion && active ? "lesson-mirror-accessory-tile--pop" : ""}`}
+              data-active={active ? "true" : "false"}
+              data-art={entry.art}
+            >
+              <div className="lesson-mirror-accessory-tile__art">
+                {src ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- local AR accessory PNG/SVG
+                  <img src={src} alt="" draggable={false} />
+                ) : (
+                  <LetterArt id={entry.art} className="h-full w-full" />
+                )}
+              </div>
+              <span className="lesson-mirror-accessory-tile__label">
+                {entry.word}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    ) : null;
+
   const associationStickers =
-    activeItem && mirror === "live" ? (
+    activeItem && mirror === "live" && !companionMode ? (
       <div
         className={`pointer-events-none absolute right-1.5 top-1.5 z-[3] ${
           stageLayout ? "h-10 w-10" : "h-11 w-11 sm:h-12 sm:w-12"
-        } ${reducedMotion ? "" : offSceneMotion}`}
+        } ${reducedMotion ? "" : offSceneMotion} ${reactClass}`}
         data-testid="lesson-mirror-sticker-right"
         aria-hidden
       >
-        <LetterArt id={activeItem.art} className="h-full w-full drop-shadow-md" />
+        {costume && isCanvasLessonCostume(costume) && costume.assetPath ? (
+          // eslint-disable-next-line @next/next/no-img-element -- local AR accessory
+          <img
+            src={costume.assetPath}
+            alt=""
+            className="h-full w-full object-contain drop-shadow-md"
+            draggable={false}
+          />
+        ) : (
+          <LetterArt id={activeItem.art} className="h-full w-full drop-shadow-md" />
+        )}
+      </div>
+    ) : null;
+
+  /** Face-relative LetterArt props when no dedicated wearable exists. */
+  const companionProps =
+    activeItem && mirror === "live" && companionMode ? (
+      <div
+        className={`pointer-events-none absolute inset-0 z-[3] ${reactClass}`}
+        data-testid="lesson-mirror-companion"
+        data-companion-art={activeItem.art}
+        aria-hidden
+      >
+        <div
+          className={`lesson-mirror-companion lesson-mirror-companion--left ${
+            reducedMotion ? "" : offSceneMotion
+          }`}
+        >
+          <LetterArt id={activeItem.art} className="h-full w-full drop-shadow-md" />
+        </div>
+        <div
+          className={`lesson-mirror-companion lesson-mirror-companion--right ${
+            reducedMotion ? "" : offSceneMotion
+          }`}
+          style={{ animationDelay: reducedMotion ? undefined : "0.35s" }}
+        >
+          <LetterArt id={activeItem.art} className="h-full w-full drop-shadow-md" />
+        </div>
       </div>
     ) : null;
 
@@ -420,11 +600,16 @@ export function LessonLearningMirror({
         className={`h-full w-full object-contain ${mirror === "live" ? "block" : "hidden"}`}
       />
       {associationStickers}
+      {companionProps}
       {mirror === "live" ? (
         <div
           className={`pointer-events-none absolute inset-0 rounded-[28px] ${
             mood === "success" && !reducedMotion ? "lesson-mirror-win" : ""
-          } ${mood === "retry" && !reducedMotion ? "lesson-mirror-miss" : ""}`}
+          } ${mood === "retry" && !reducedMotion ? "lesson-mirror-miss" : ""} ${
+            !reducedMotion && mood === "success" && costume && !companionMode
+              ? `lesson-mirror-react lesson-mirror-react--${costume.art}`
+              : ""
+          }`}
           aria-hidden
         />
       ) : null}
@@ -454,6 +639,8 @@ export function LessonLearningMirror({
       className={shellClass}
       data-testid="lesson-learning-mirror"
       data-mirror-art={costume?.art ?? ""}
+      data-mirror-style={costume?.style ?? ""}
+      data-mirror-experience={experience.id}
       data-mirror-live={mirror === "live" ? "true" : "false"}
       data-mirror-fallback={costume?.fallback ? "true" : "false"}
     >
@@ -471,13 +658,23 @@ export function LessonLearningMirror({
           >
             {activeItem ? (
               <div
-                className={`shrink-0 ${
-                  stageLayout ? "h-14 w-14" : "h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem]"
+                className={`lesson-mirror-preview-tile shrink-0 ${
+                  stageLayout ? "h-16 w-16" : "h-[4.5rem] w-[4.5rem] sm:h-20 sm:w-20"
                 } ${reducedMotion ? "" : offSceneMotion}`}
                 data-testid="lesson-mirror-preview-art"
                 aria-hidden
               >
-                <LetterArt id={activeItem.art} className="h-full w-full" />
+                {costume && isCanvasLessonCostume(costume) && costume.assetPath ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- local AR accessory
+                  <img
+                    src={costume.assetPath}
+                    alt=""
+                    className="h-full w-full object-contain"
+                    draggable={false}
+                  />
+                ) : (
+                  <LetterArt id={activeItem.art} className="h-full w-full" />
+                )}
               </div>
             ) : null}
             <p
@@ -487,9 +684,11 @@ export function LessonLearningMirror({
             >
               {mirror === "starting"
                 ? "Waking mirror…"
-                : costume
-                  ? `Become a ${costume.name}!`
-                  : "See yourself!"}
+                : experience.id !== "default-play"
+                  ? experience.feelLine
+                  : costume
+                    ? `Become a ${costume.name}!`
+                    : "See yourself!"}
             </p>
             {errorMessage ? (
               <p className="max-w-xs text-[10px] leading-snug" data-testid="lesson-mirror-error">
@@ -523,7 +722,7 @@ export function LessonLearningMirror({
               className="pointer-events-none absolute bottom-3 left-3 z-[2] max-w-[70%] truncate rounded-full bg-white/95 px-2.5 py-1 font-[family-name:var(--font-display)] text-[11px] font-bold text-[#7048D7] shadow"
               data-testid="lesson-mirror-costume-name"
             >
-              {costume ? `You are a ${costume.name}!` : "Looking magical!"}
+              {experience.feelLine}
             </p>
             <button
               type="button"
@@ -537,44 +736,27 @@ export function LessonLearningMirror({
         ) : null}
       </div>
 
-      {!stageLayout ? (
-        <div className="mt-1 flex w-full flex-col items-center gap-0.5 px-0.5">
-          {items.length > 1 ? (
-            <div
-              className="flex items-center justify-center gap-1"
-              data-testid="mirror-tour-dots"
-              aria-hidden
+      <div className="mt-1 flex w-full flex-col items-center gap-1 px-0.5">
+        {accessoryTour}
+        {!stageLayout && mirror === "live" ? (
+          <div className="flex w-full items-center justify-center gap-1.5">
+            <p
+              className="min-w-0 truncate font-[family-name:var(--font-display)] text-xs font-bold text-[#7048D7] sm:text-sm"
+              data-testid="lesson-mirror-costume-name"
             >
-              {items.map((entry, i) => (
-                <span
-                  key={`${entry.art}-${i}`}
-                  className={`h-1.5 w-1.5 rounded-full transition-transform ${
-                    i === index ? "scale-125 bg-[#7657E8]" : "bg-[#C5C9E0]"
-                  }`}
-                />
-              ))}
-            </div>
-          ) : null}
-          {mirror === "live" ? (
-            <div className="flex w-full items-center justify-center gap-1.5">
-              <p
-                className="min-w-0 truncate font-[family-name:var(--font-display)] text-xs font-bold text-[#7048D7] sm:text-sm"
-                data-testid="lesson-mirror-costume-name"
-              >
-                {costume ? `You're the ${costume.name}!` : "Looking magical!"}
-              </p>
-              <button
-                type="button"
-                data-testid="lesson-mirror-stop"
-                onClick={tearDown}
-                className="pressable min-h-8 shrink-0 rounded-full bg-white px-3 font-[family-name:var(--font-display)] text-xs font-bold text-[#7048D7] shadow"
-              >
-                Stop
-              </button>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+              {experience.feelLine}
+            </p>
+            <button
+              type="button"
+              data-testid="lesson-mirror-stop"
+              onClick={tearDown}
+              className="pressable min-h-8 shrink-0 rounded-full bg-white px-3 font-[family-name:var(--font-display)] text-xs font-bold text-[#7048D7] shadow"
+            >
+              Stop
+            </button>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

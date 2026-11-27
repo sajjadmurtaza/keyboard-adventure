@@ -87,7 +87,7 @@ function WordLabel({
 }) {
   const display = word.toUpperCase();
   return (
-    <p className={className}>
+    <p className={className} data-testid="association-word">
       {living ? highlightLetterInWord(display, letter.toUpperCase()) : display}
     </p>
   );

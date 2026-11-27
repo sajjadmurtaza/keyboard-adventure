@@ -37,3 +37,17 @@ if (!existsSync(modelDest)) {
 } else {
   console.log("Model already present:", modelDest);
 }
+
+/**
+ * Optional Pose Landmarker (jacket shoulders). Not downloaded by default —
+ * place pose_landmarker_lite.task under public/mediapipe/ to enable.
+ * Until then, jacket try-on uses face-derived shoulder estimates.
+ */
+const poseDest = join(root, "public/mediapipe/pose_landmarker_lite.task");
+if (existsSync(poseDest)) {
+  console.log("Pose model present:", poseDest);
+} else {
+  console.log(
+    "Pose model not bundled (optional). Jacket uses face-shoulder fallback.",
+  );
+}

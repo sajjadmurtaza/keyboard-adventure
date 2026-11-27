@@ -22,4 +22,9 @@ describe("livingScenes", () => {
     }
     expect(Object.keys(LIVING_SCENES).length).toBeGreaterThanOrEqual(6);
   });
+
+  it("returns null for missing or unknown arts", () => {
+    expect(livingSceneForArt(undefined)).toBeNull();
+    expect(livingSceneForArt("zz-unknown" as never)).toBeNull();
+  });
 });

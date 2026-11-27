@@ -54,6 +54,7 @@ describe("faceOverlay + pose", () => {
       restore: vi.fn(),
       translate: vi.fn(),
       rotate: vi.fn(),
+      scale: vi.fn(),
       drawImage: vi.fn(),
     } as unknown as CanvasRenderingContext2D;
     const image = { naturalWidth: 240, naturalHeight: 260 } as CanvasImageSource;
@@ -64,6 +65,14 @@ describe("faceOverlay + pose", () => {
       height: 120,
       rotation: 0.2,
       crownY: 100,
+      leftEyeX: 170,
+      leftEyeY: 160,
+      rightEyeX: 230,
+      rightEyeY: 160,
+      eyeSpan: 60,
+      shoulderCx: 200,
+      shoulderCy: 260,
+      shoulderWidth: 210,
     };
     drawCostumeOverlay(ctx, null, DRESS_UP_COSTUMES[0], image);
     expect(ctx.drawImage).not.toHaveBeenCalled();
@@ -82,6 +91,14 @@ describe("faceOverlay + pose", () => {
       height: 90,
       rotation: 0,
       crownY: 60,
+      leftEyeX: 80,
+      leftEyeY: 90,
+      rightEyeX: 120,
+      rightEyeY: 90,
+      eyeSpan: 40,
+      shoulderCx: 100,
+      shoulderCy: 160,
+      shoulderWidth: 170,
     };
     const b = { ...a, cx: 140, cy: 120 };
     expect(smoother.next(a)?.cx).toBe(100);

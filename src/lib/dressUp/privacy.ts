@@ -47,6 +47,10 @@ export function looksLikeCameraExfiltration(probe: DressUpNetworkProbe): boolean
 export const LOCAL_MEDIAPIPE_PATHS = {
   wasmRoot: "/mediapipe/wasm",
   model: "/mediapipe/face_landmarker.task",
+  /** Optional — jacket try-on uses face shoulders until this is synced locally. */
+  poseModel: "/mediapipe/pose_landmarker_lite.task",
+  /** Optional — underwater person cutout when synced locally. */
+  segmenterModel: "/mediapipe/selfie_segmenter.tflite",
 } as const;
 
 export function isLocalMediapipeUrl(url: string): boolean {

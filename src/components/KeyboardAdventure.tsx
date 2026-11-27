@@ -33,6 +33,7 @@ import {
   type CostumeId,
 } from "@/data/costumes";
 import { associationsFor } from "@/data/letterAssociations";
+import { livingSceneForArt } from "@/data/livingScenes";
 import { getSuccessPraise } from "@/data/letterPraise";
 import { useKeyboardInput } from "@/hooks/useKeyboardInput";
 import {
@@ -1055,6 +1056,16 @@ function Play({
     mood === "success" ? successLine : mood === "retry" ? wrongLine : idleLine;
   const hasArt = associationsFor(target).length > 0;
   const showMirror = settings.cameraLessonMirror && !tightKb;
+  const { audio: playAudio } = useAudio();
+  const assocStep = useSyncExternalStore(
+    playAudio?.subscribeAssociation ?? (() => () => undefined),
+    () => playAudio?.getAssociation() ?? { key: "", index: 0 },
+    () => ({ key: "", index: 0 }),
+  );
+  const focusItems = associationsFor(target);
+  const focusIndex = assocStep.key === target ? assocStep.index : 0;
+  const focusArt = focusItems[focusIndex]?.art ?? focusItems[0]?.art;
+  const focusScene = livingSceneForArt(focusArt);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
@@ -1086,7 +1097,7 @@ function Play({
   );
 
   const keyboardBlock = !compact ? (
-    <div className="mb-1 mt-auto flex w-full shrink-0 flex-col items-center self-end">
+    <div className="play-keyboard flex w-full shrink-0 flex-col items-center">
       {settings.keyboardHighlight ? (
         <VirtualKeyboard
           target={target}
@@ -1116,7 +1127,7 @@ function Play({
       className={`play-board relative grid min-h-0 flex-1 justify-items-center overflow-hidden ${
         tightKb
           ? "mobile-keyboard-open content-start grid-rows-[auto_minmax(0,1fr)_auto]"
-          : "content-start grid-rows-[auto_auto_auto_minmax(0,1fr)]"
+          : "play-board-packed"
       }`}
       style={{ gap: "var(--lesson-gap)" }}
       data-testid="play-stage"
@@ -1158,23 +1169,52 @@ function Play({
         </button>
       </div>
       <div className="target-group relative z-[3] min-h-0 w-full">
-        {/* One balanced focus band: Picture | Letter | Mirror */}
+        {/* Balanced focus band: [Picture + Letter] | Mirror — fills width on every screen. */}
         <div
           className="lesson-focus min-w-0"
           data-has-mirror={showMirror ? "true" : "false"}
         >
-          <div className="lesson-focus-art">{association}</div>
-          <div className="lesson-focus-letter">
-            <TargetLetter
-              key={`${step}-${target}`}
-              target={target}
-              mood={reducedMotion && mood === "idle" ? "idle" : mood}
-              reducedMotion={reducedMotion}
-              burst={mood === "success" && !reducedMotion}
-              burstLevel={tightKb ? 1 : burstLevel}
-              size={tightKb ? "compact" : compact ? "mobile" : "desktop"}
-            />
-          </div>
+          {showMirror ? (
+            <div
+              className="lesson-focus-pair"
+              style={
+                focusScene
+                  ? {
+                      background: focusScene.tint,
+                      borderColor: focusScene.border,
+                    }
+                  : undefined
+              }
+            >
+              <div className="lesson-focus-art">{association}</div>
+              <div className="lesson-focus-letter">
+                <TargetLetter
+                  key={`${step}-${target}`}
+                  target={target}
+                  mood={reducedMotion && mood === "idle" ? "idle" : mood}
+                  reducedMotion={reducedMotion}
+                  burst={mood === "success" && !reducedMotion}
+                  burstLevel={tightKb ? 1 : burstLevel}
+                  size={tightKb ? "compact" : "stage"}
+                />
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="lesson-focus-art">{association}</div>
+              <div className="lesson-focus-letter">
+                <TargetLetter
+                  key={`${step}-${target}`}
+                  target={target}
+                  mood={reducedMotion && mood === "idle" ? "idle" : mood}
+                  reducedMotion={reducedMotion}
+                  burst={mood === "success" && !reducedMotion}
+                  burstLevel={tightKb ? 1 : burstLevel}
+                  size={tightKb ? "compact" : compact ? "mobile" : "desktop"}
+                />
+              </div>
+            </>
+          )}
           {showMirror ? (
             <div className="adventure-mirror" data-testid="adventure-mirror">
               <LessonLearningMirror

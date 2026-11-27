@@ -14,7 +14,14 @@ export const DRESS_UP_IDS = [
 
 export type DressUpId = (typeof DRESS_UP_IDS)[number];
 
-export type DressUpAnchor = "helmet" | "mane" | "hat" | "crown";
+export type DressUpAnchor =
+  | "helmet"
+  | "mane"
+  | "hat"
+  | "crown"
+  | "mouth"
+  | "torso"
+  | "eyes";
 
 /** Bump when replacing files under public/dress-up/ so browsers skip stale Cache-Control copies. */
 export const DRESS_UP_ASSET_VERSION = "5";

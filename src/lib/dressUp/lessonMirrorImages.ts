@@ -7,6 +7,7 @@ import type { LetterArtId } from "@/data/letterAssociations";
 type MirrorImage = HTMLImageElement | HTMLCanvasElement;
 
 const cache = new Map<LetterArtId, MirrorImage>();
+const pathByArt = new Map<LetterArtId, string>();
 let preloadPromise: Promise<void> | null = null;
 
 export function getCachedLessonMirrorImage(
@@ -40,6 +41,12 @@ function bakeImage(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
 }
 
 function loadOne(costume: LessonMirrorCostume): Promise<MirrorImage> {
+  const priorPath = pathByArt.get(costume.art);
+  if (priorPath && priorPath !== costume.assetPath) {
+    cache.delete(costume.art);
+  }
+  pathByArt.set(costume.art, costume.assetPath);
+
   const existing = cache.get(costume.art);
   if (existing instanceof HTMLCanvasElement && existing.width > 0) {
     return Promise.resolve(existing);
@@ -67,10 +74,13 @@ function loadOne(costume: LessonMirrorCostume): Promise<MirrorImage> {
   });
 }
 
-/** Load one costume (dedicated SVG or data-URI fallback) into the cache. */
+/** Load one canvas wearable. Companion props (empty assetPath) skip the network. */
 export function ensureLessonMirrorImage(
   costume: LessonMirrorCostume,
-): Promise<MirrorImage> {
+): Promise<MirrorImage | null> {
+  if (!costume.assetPath || costume.style === "companion") {
+    return Promise.resolve(null);
+  }
   return loadOne(costume);
 }
 
@@ -87,5 +97,6 @@ export function preloadLessonMirrorImages(): Promise<void> {
 
 export function resetLessonMirrorImageCache(): void {
   cache.clear();
+  pathByArt.clear();
   preloadPromise = null;
 }

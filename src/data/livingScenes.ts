@@ -73,6 +73,22 @@ export const LIVING_SCENES: Record<string, LivingScene> = {
     celebrate: "stars",
     invite: "Can you find my letter?",
   },
+  sun: {
+    art: "sun",
+    place: "Sunny Sky",
+    tint: "#FFF6D0",
+    border: "#F5A623",
+    celebrate: "sparkles",
+    invite: "Feel the warm sunshine!",
+  },
+  drum: {
+    art: "drum",
+    place: "Music Room",
+    tint: "#FFE8E4",
+    border: "#E53935",
+    celebrate: "stars",
+    invite: "Boom boom — play along!",
+  },
   "stop-sign": {
     art: "stop-sign",
     place: "Pause Plaza",

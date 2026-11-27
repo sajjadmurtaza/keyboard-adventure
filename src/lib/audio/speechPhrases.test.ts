@@ -59,6 +59,11 @@ describe("speech phrases", () => {
     expect(getTargetInstruction(",")).toBe("Type the comma.");
     expect(getTargetInstruction("1", "Ada")).toBe("Ada, type 1.");
     expect(getTargetInstruction("1")).toBe("Type 1.");
+    expect(getTargetTourLines("1", "Ada")).toEqual(["Ada, type 1."]);
+    expect(getTargetTourLines("1", "Ada", { review: true })).toEqual([
+      "You know this!",
+      "Ada, type 1.",
+    ]);
   });
 
   it("paces wrong-key help", () => {

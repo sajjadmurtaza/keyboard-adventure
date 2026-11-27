@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" width="320" height="320">
+  <defs>
+    <linearGradient id="dgFur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFCC80"/>
+      <stop offset="55%" stop-color="#FFB74D"/>
+      <stop offset="100%" stop-color="#EF6C00"/>
+    </linearGradient>
+  </defs>
+  <!-- Floppy ears -->
+  <ellipse cx="64" cy="120" rx="36" ry="58" fill="url(#dgFur)" stroke="#E65100" stroke-width="5" transform="rotate(-18 64 120)"/>
+  <ellipse cx="256" cy="120" rx="36" ry="58" fill="url(#dgFur)" stroke="#E65100" stroke-width="5" transform="rotate(18 256 120)"/>
+  <ellipse cx="64" cy="124" rx="16" ry="30" fill="#FFE0B2" opacity="0.85" transform="rotate(-18 64 124)"/>
+  <ellipse cx="256" cy="124" rx="16" ry="30" fill="#FFE0B2" opacity="0.85" transform="rotate(18 256 124)"/>
+  <!-- Hood with open face -->
+  <path fill="url(#dgFur)" fill-rule="evenodd" stroke="#E65100" stroke-width="6" d="
+    M160 44c74 0 124 52 124 124 0 80-50 128-124 128S36 248 36 168C36 96 86 44 160 44z
+    M160 100c-48 0-82 36-82 74s34 74 82 74 82-36 82-74-34-74-82-74z"/>
+  <ellipse cx="160" cy="178" rx="78" ry="70" fill="none" stroke="#FFE0B2" stroke-width="5" opacity="0.55"/>
+  <circle cx="112" cy="84" r="7" fill="#FFFFFF" opacity="0.7"/>
+</svg>

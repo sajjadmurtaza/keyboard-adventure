@@ -41,6 +41,7 @@ export function portraitFallbackPose(
   const faceH = faceW * 1.15;
   const cx = pad + videoW / 2;
   const cy = pad + videoH * 0.48;
+  const eyeSpan = faceW * 0.38;
   return {
     cx,
     cy,
@@ -48,6 +49,14 @@ export function portraitFallbackPose(
     height: faceH,
     rotation: 0,
     crownY: cy - faceH * 0.42,
+    leftEyeX: cx - eyeSpan / 2,
+    leftEyeY: cy - faceH * 0.08,
+    rightEyeX: cx + eyeSpan / 2,
+    rightEyeY: cy - faceH * 0.08,
+    eyeSpan,
+    shoulderCx: cx,
+    shoulderCy: cy + faceH * 0.72,
+    shoulderWidth: faceW * 2.15,
   };
 }
 
@@ -65,6 +74,17 @@ export function drawLiveMirrorFrame(opts: {
   stagePad?: number;
   /** Fill color for the padded stage around the video. */
   stageFill?: string;
+  /** 0–1 pop when the association accessory changes. */
+  costumeEntrance?: number;
+  /** Extra vertical bob in face-height units (juice sip, drum bounce). */
+  costumeActionBob?: number;
+  /** Optional shoulder override from Pose Landmarker (jacket). */
+  shoulderOverride?: {
+    cx: number;
+    cy: number;
+    width: number;
+    rotation?: number;
+  } | null;
 }): LiveMirrorFrameResult {
   const {
     video,
@@ -75,6 +95,9 @@ export function drawLiveMirrorFrame(opts: {
     costumeImage,
     stagePad = 0,
     stageFill = "#1a1a2e",
+    costumeEntrance = 1,
+    costumeActionBob = 0,
+    shoulderOverride = null,
   } = opts;
 
   const w = video.videoWidth;
@@ -141,13 +164,23 @@ export function drawLiveMirrorFrame(opts: {
   // Always paint the association prop: track the face when we have it,
   // otherwise park a portrait-sized hood so kids still see Fish/Frog/Flower.
   if (costume && costumeImage) {
-    const drawPose = pose ?? portraitFallbackPose(w, h, pad);
-    drawCostumeOverlay(
-      ctx,
-      pose ? mirrorFacePose(drawPose, canvasW) : drawPose,
-      costume,
-      costumeImage,
-    );
+    let drawPose = pose ?? portraitFallbackPose(w, h, pad);
+    if (shoulderOverride) {
+      drawPose = {
+        ...drawPose,
+        shoulderCx: shoulderOverride.cx + (pose ? pad : 0),
+        shoulderCy: shoulderOverride.cy + (pose ? pad : 0),
+        shoulderWidth: shoulderOverride.width,
+        rotation: shoulderOverride.rotation ?? drawPose.rotation,
+      };
+    }
+    const mirrored = pose ? mirrorFacePose(drawPose, canvasW) : drawPose;
+    drawCostumeOverlay(ctx, mirrored, costume, costumeImage, {
+      nowMs: performance.now(),
+      animate: true,
+      entrance: costumeEntrance,
+      actionBob: costumeActionBob,
+    });
     costumeDrawn = true;
   }
 
