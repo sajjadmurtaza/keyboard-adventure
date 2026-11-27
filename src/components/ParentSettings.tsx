@@ -191,9 +191,9 @@ export function ParentSettingsPanel({
           }
         />
       </label>
-      <p className="font-[family-name:var(--font-nunito)] font-semibold">Magic Dress-Up</p>
+      <p className="font-[family-name:var(--font-nunito)] font-semibold">Magic Mirror cameras</p>
       <label className="flex items-center justify-between text-lg">
-        Allow Magic Mirror camera
+        Allow Magic Dress-Up camera
         <input
           type="checkbox"
           data-testid="camera-dress-up"
@@ -203,11 +203,22 @@ export function ParentSettingsPanel({
           }
         />
       </label>
+      <label className="flex items-center justify-between text-lg">
+        Allow Learning Mirror in F/J lessons
+        <input
+          type="checkbox"
+          data-testid="camera-lesson-mirror"
+          checked={settings.cameraLessonMirror}
+          onChange={(event) =>
+            onChange({ ...settings, cameraLessonMirror: event.target.checked })
+          }
+        />
+      </label>
       <p className="text-sm text-[#5A5C72]">
-        Off by default. Turning this on does <strong>not</strong> open the camera —
-        your child still taps <strong>Start</strong> in Magic Dress-Up or the optional
-        Learning Mirror during F/J typing. Video stays on this device; nothing is
-        recorded or uploaded. Microphone stays blocked.
+        Both off by default. Turning either on does <strong>not</strong> open the camera —
+        your child still taps <strong>Start</strong>. Dress-Up and Learning Mirror are
+        separate choices. Video stays on this device; nothing is recorded or uploaded.
+        Microphone stays blocked. Lessons work fully without any camera.
       </p>
       <p className="font-[family-name:var(--font-nunito)] font-semibold">Audio</p>
       <label className="flex items-center justify-between text-lg">

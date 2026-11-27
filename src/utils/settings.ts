@@ -43,6 +43,12 @@ export type ParentSettings = {
    * Default false. Enabling never auto-starts getUserMedia — child must tap Start Magic Mirror.
    */
   cameraDressUp: boolean;
+  /**
+   * Parent allows the optional in-lesson Learning Mirror (F/J experiment).
+   * Independent of Magic Dress-Up — dress-up consent never silently enables lesson camera use.
+   * Default false. Enabling never auto-starts getUserMedia — child must tap Start camera.
+   */
+  cameraLessonMirror: boolean;
 };
 
 export const defaultSettings: ParentSettings = {
@@ -70,6 +76,7 @@ export const defaultSettings: ParentSettings = {
   keyboardLayout: "auto",
   difficulty: "beginner",
   cameraDressUp: false,
+  cameraLessonMirror: false,
 };
 
 function asBool(value: unknown, fallback: boolean): boolean {
@@ -144,6 +151,11 @@ export function loadSettings(): ParentSettings {
       keyboardLayout: parseKeyboardLayout(parsed.keyboardLayout),
       difficulty: parseDifficulty(parsed.difficulty),
       cameraDressUp: asBool(parsed.cameraDressUp, defaultSettings.cameraDressUp),
+      // Never migrate dress-up consent into lesson mirror consent
+      cameraLessonMirror: asBool(
+        parsed.cameraLessonMirror,
+        defaultSettings.cameraLessonMirror,
+      ),
     };
   } catch {
     return defaultSettings;

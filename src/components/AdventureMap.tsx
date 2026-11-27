@@ -69,9 +69,17 @@ export function AdventureMap({
         {upcomingId ? (
           <SoftLesson
             lesson={getLesson(upcomingId)!}
-            kind="soon"
-            onPlay={() => undefined}
-            clickable={false}
+            kind={
+              isLessonUnlocked(upcomingId, progress.completedLessons, unlockAll)
+                ? "open"
+                : "soon"
+            }
+            onPlay={() => onPlay(upcomingId)}
+            clickable={isLessonUnlocked(
+              upcomingId,
+              progress.completedLessons,
+              unlockAll,
+            )}
           />
         ) : null}
       </div>
@@ -122,7 +130,10 @@ export function AdventureMap({
                     onClick={() => onPlay(id)}
                     className="mt-2 block w-full rounded-2xl bg-[#F4FBFF] px-3 py-2 text-left disabled:opacity-50"
                   >
-                    Lesson {id}: {lesson.title}
+                    {lesson.title}
+                    <span className="mt-0.5 block text-xs text-[#8B90A5]">
+                      {lesson.description}
+                    </span>
                   </button>
                 );
               })}
@@ -164,8 +175,11 @@ function CurrentCard({
           <MiniKeys keys={[...reviewKeys]} compact />
         </div>
       ) : null}
-      <p className="mt-4 font-[family-name:var(--font-display)] text-2xl font-bold">
+      <p className="mt-4 font-[family-name:var(--font-display)] text-2xl font-bold text-[#34364A]">
         {lesson.description}
+      </p>
+      <p className="mt-1 text-sm font-semibold text-[#5A5C72]">
+        Keys shuffle each play — old friends may visit again!
       </p>
       <button
         type="button"
@@ -211,7 +225,7 @@ function SoftLesson({
   clickable,
 }: {
   lesson: Lesson;
-  kind: "done" | "soon";
+  kind: "done" | "soon" | "open";
   onPlay: () => void;
   clickable: boolean;
 }) {
@@ -221,23 +235,36 @@ function SoftLesson({
       onClick={onPlay}
       disabled={!clickable}
       className={`w-full rounded-[22px] px-4 py-3 text-left min-[501px]:min-w-44 ${
-        kind === "done" ? "bg-[#E9FBE9]" : "bg-[#F3F4F8] text-[#8B90A5]"
+        kind === "done"
+          ? "bg-[#E9FBE9]"
+          : kind === "open"
+            ? "bg-[#FFF6C8] text-[#34364A]"
+            : "bg-[#F3F4F8] text-[#8B90A5]"
       }`}
     >
       {kind === "done" ? (
         <>
           <p className="text-sm">⭐ ⭐ ⭐</p>
-          <p className="font-bold">Lesson {lesson.id}</p>
-          <p className="text-sm">{lesson.title}</p>
-          <p className="text-sm text-[#2F9E5C]">COMPLETED! 🎉</p>
+          <p className="font-bold">{lesson.title}</p>
+          <p className="text-sm">{lesson.description}</p>
+          <p className="text-sm text-[#2F9E5C]">You did it! 🎉</p>
+        </>
+      ) : kind === "open" ? (
+        <>
+          <p className="text-sm font-semibold uppercase tracking-wide text-[#7657E8]">
+            Also open
+          </p>
+          <p className="font-bold">{lesson.title}</p>
+          <p className="text-sm">{lesson.description}</p>
+          <p className="text-sm font-semibold text-[#7657E8]">Tap to play ▶</p>
         </>
       ) : (
         <>
           <p className="text-sm font-semibold uppercase tracking-wide">
-            Coming next
+            Coming soon
           </p>
-          <p className="font-bold">Lesson {lesson.id}</p>
-          <p className="text-sm">{lesson.title}</p>
+          <p className="font-bold">{lesson.title}</p>
+          <p className="text-sm">{lesson.description}</p>
         </>
       )}
     </button>

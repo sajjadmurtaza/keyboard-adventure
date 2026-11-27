@@ -16,9 +16,8 @@ test.use({ viewport: { width: 390, height: 430 } });
 test("keyboard-open HUD does not overlap core lesson pieces", async ({ page }) => {
   await seedChild(page);
   await page.goto("/");
-  await page.getByRole("button", { name: "⭐ START! ⭐" }).click();
-  await page.getByRole("button", { name: "PLAY ▶" }).click();
-  await expect(page.locator("[data-testid=play-stage]")).toBeVisible();
+  await page.getByTestId("lets-play").click();
+    await expect(page.locator("[data-testid=play-stage]")).toBeVisible();
   await expect(page.locator("[data-testid=play-stage]")).toHaveClass(/mobile-keyboard-open/);
   await expect(page.getByRole("button", { name: /START TYPING/i })).toHaveCount(0);
 

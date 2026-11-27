@@ -10,8 +10,11 @@ describe("progress storage", () => {
     const fresh = loadProgress();
     expect(fresh.completedLessons).toEqual([]);
     expect(isLessonUnlocked(1, [])).toBe(true);
-    expect(isLessonUnlocked(2, [])).toBe(false);
+    expect(isLessonUnlocked(2, [])).toBe(true); // soft unlock: one step ahead
+    expect(isLessonUnlocked(3, [])).toBe(false);
     expect(isLessonUnlocked(2, [1])).toBe(true);
+    expect(isLessonUnlocked(3, [1])).toBe(true); // furthest 1 → open through 3
+    expect(isLessonUnlocked(4, [1])).toBe(false);
     expect(isLessonUnlocked(3, [1], true)).toBe(true);
   });
 
@@ -68,6 +71,34 @@ describe("progress storage", () => {
     expect(loadProgress().starsEarned).toBe(3);
     expect(resetProgress("Ada").childName).toBe("Ada");
     expect(loadProgress().completedLessons).toEqual([]);
+  });
+
+  it("persists and sanitizes key practice stats", () => {
+    saveProgress({
+      ...loadProgress(),
+      keyPractice: {
+        f: { hits: 3, misses: 1, lastShown: 9 },
+        nope: { hits: 1, misses: 0, lastShown: 1 },
+      } as never,
+    });
+    expect(loadProgress().keyPractice).toEqual({
+      f: { hits: 3, misses: 1, lastShown: 9 },
+    });
+    window.localStorage.setItem(
+      "keyboard-adventure-progress-v1",
+      JSON.stringify({
+        keyPractice: {
+          F: { hits: 2, misses: 0, lastShown: 4 },
+          bad: "nope",
+          z: { hits: -1, misses: 0, lastShown: 1 },
+          " ": { hits: 1, misses: 2, lastShown: 3 },
+        },
+      }),
+    );
+    expect(loadProgress().keyPractice).toEqual({
+      f: { hits: 2, misses: 0, lastShown: 4 },
+      " ": { hits: 1, misses: 2, lastShown: 3 },
+    });
   });
 
   it("persists wardrobe unlocks and backfills from letters", () => {

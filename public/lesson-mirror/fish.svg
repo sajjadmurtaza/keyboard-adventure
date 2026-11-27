@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 300" width="280" height="300">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" width="320" height="320">
   <defs>
     <linearGradient id="fiShell" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#7ED6FF"/>
@@ -13,18 +13,13 @@
       <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#0D3A5C" flood-opacity="0.3"/>
     </filter>
   </defs>
-  <!-- side fins -->
-  <path d="M18 150 Q8 90 48 70 Q78 100 52 160 Z" fill="url(#fiFin)" stroke="#C45E00" stroke-width="4" filter="url(#fiSoft)"/>
-  <path d="M262 150 Q272 90 232 70 Q202 100 228 160 Z" fill="url(#fiFin)" stroke="#C45E00" stroke-width="4" filter="url(#fiSoft)"/>
-  <!-- fish hood with open face -->
-  <path fill="url(#fiShell)" fill-rule="evenodd" stroke="#155A86" stroke-width="5" filter="url(#fiSoft)" d="
-    M140 26c68 0 116 50 116 120 0 80-48 128-116 128S24 226 24 146C24 76 72 26 140 26z
-    M140 94c-46 0-78 34-78 74s32 74 78 74 78-34 78-74-32-74-78-74z"/>
-  <!-- top fin crest -->
-  <path d="M100 42 Q140 8 180 42 Q150 58 140 52 Q130 58 100 42 Z" fill="url(#fiFin)" stroke="#C45E00" stroke-width="3"/>
-  <!-- bubble accents -->
-  <circle cx="96" cy="58" r="7" fill="#FFD85A" stroke="#C67C00" stroke-width="2"/>
-  <circle cx="184" cy="58" r="7" fill="#FFD85A" stroke="#C67C00" stroke-width="2"/>
-  <ellipse cx="140" cy="168" rx="78" ry="74" fill="none" stroke="#155A86" stroke-width="6" opacity="0.85"/>
-  <ellipse cx="140" cy="168" rx="78" ry="74" fill="none" stroke="#B8E8FF" stroke-width="2.5" opacity="0.65"/>
+  <path d="M12 160 Q4 90 52 68 Q88 110 48 178 Z" fill="url(#fiFin)" stroke="#C45E00" stroke-width="4" filter="url(#fiSoft)"/>
+  <path d="M308 160 Q316 90 268 68 Q232 110 272 178 Z" fill="url(#fiFin)" stroke="#C45E00" stroke-width="4" filter="url(#fiSoft)"/>
+  <path fill="url(#fiShell)" fill-rule="evenodd" stroke="#155A86" stroke-width="6" filter="url(#fiSoft)" d="
+    M160 26c76 0 130 54 130 134 0 86-54 134-130 134S30 246 30 160C30 80 84 26 160 26z
+    M160 98c-48 0-82 36-82 76s34 76 82 76 82-36 82-76-34-76-82-76z"/>
+  <path d="M110 40 Q160 4 210 40 Q178 62 160 56 Q142 62 110 40 Z" fill="url(#fiFin)" stroke="#C45E00" stroke-width="3"/>
+  <circle cx="108" cy="64" r="8" fill="#FFD85A" stroke="#C67C00" stroke-width="2"/>
+  <circle cx="212" cy="64" r="8" fill="#FFD85A" stroke="#C67C00" stroke-width="2"/>
+  <ellipse cx="160" cy="174" rx="82" ry="76" fill="none" stroke="#B8E8FF" stroke-width="4" opacity="0.55"/>
 </svg>

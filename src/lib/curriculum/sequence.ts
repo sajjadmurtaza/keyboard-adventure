@@ -33,8 +33,10 @@ export function planLesson(
   const reviewPool = reviewPoolFor(lesson, completedIds, newKeys);
 
   if (newKeys.length === 0) {
+    const allowed = lesson.keys.map(normalizeTarget);
+    const base = lesson.sequence.map(normalizeTarget);
     return {
-      turns: repairDuplicates(lesson.sequence.map(normalizeTarget), lesson.keys.map(normalizeTarget)),
+      turns: repairDuplicates(seed === 0 ? base : shuffleNoAdjacent(base, allowed, seed), allowed),
       newKeys,
       reviewPool: [],
       reviewVisits: [],
@@ -54,10 +56,12 @@ export function planLesson(
     };
   }
 
+  // Rotate which new key opens so each PLAY feels fresh (seed 0 keeps classic order).
+  const orderedNew = rotate(newKeys, seed);
   const visits = takeDistinct(reviewPool, reviewCountFor(lesson.id, reviewPool.length), seed);
   return {
-    turns: weave(newKeys, visits, PAIR_TURNS),
-    newKeys,
+    turns: weave(orderedNew, visits, PAIR_TURNS),
+    newKeys: orderedNew,
     reviewPool,
     reviewVisits: visits,
   };
@@ -202,4 +206,28 @@ function unique(keys: readonly string[]): string[] {
     out.push(key);
   }
   return out;
+}
+
+function rotate(keys: readonly string[], seed: number): string[] {
+  if (keys.length <= 1) return [...keys];
+  const start = Math.abs(seed) % keys.length;
+  return [...keys.slice(start), ...keys.slice(0, start)];
+}
+
+/** Deterministic shuffle that avoids back-to-back duplicates when possible. */
+function shuffleNoAdjacent(
+  turns: readonly string[],
+  allowed: readonly string[],
+  seed: number,
+): string[] {
+  const next = [...turns];
+  let state = Math.abs(seed) * 2654435761 + 1;
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    const swapAt = state % (index + 1);
+    const temp = next[index]!;
+    next[index] = next[swapAt]!;
+    next[swapAt] = temp;
+  }
+  return repairDuplicates(next, allowed);
 }

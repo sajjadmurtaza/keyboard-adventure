@@ -4,6 +4,7 @@ import {
   unlockedFromLetters,
   type CostumeId,
 } from "@/data/costumes";
+import type { KeyPractice, KeyStat } from "@/lib/curriculum/adventure";
 import { keysFromLessons } from "@/lib/curriculum/sequence";
 import { parseChildName } from "@/utils/childName";
 import { normalizeTarget } from "@/utils/keys";
@@ -12,6 +13,7 @@ const STORAGE_KEY = "keyboard-adventure-progress-v1";
 const MAX_LESSON = 32;
 const MAX_COMPLETED = 32;
 const MAX_EQUIPPED = 3;
+const MAX_KEY_STATS = 64;
 
 export type Progress = {
   childName: string;
@@ -23,6 +25,8 @@ export type Progress = {
   lessonBestResults: Record<string, number>;
   newlyUnlocked: number | null;
   introducedKeys: string[];
+  /** Lightweight per-key practice for adaptive play. */
+  keyPractice: KeyPractice;
   /** Wardrobe unlocks (letter intros) — device-local only. */
   unlockedCostumes: CostumeId[];
   /** Worn accessories on the mascot (subset of unlocked). */
@@ -41,6 +45,7 @@ const emptyProgress = (): Progress => ({
   lessonBestResults: {},
   newlyUnlocked: null,
   introducedKeys: [],
+  keyPractice: {},
   unlockedCostumes: [],
   equippedCostumes: [],
   newlyUnlockedCostume: null,
@@ -88,6 +93,28 @@ function asKeyList(value: unknown): string[] | null {
   return [...new Set(keys)].slice(0, 64);
 }
 
+function asKeyPractice(value: unknown): KeyPractice {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const out: KeyPractice = {};
+  for (const [rawKey, rawStat] of Object.entries(value as Record<string, unknown>)) {
+    const key = normalizeTarget(rawKey);
+    if (key !== " " && key.length !== 1) continue;
+    if (!rawStat || typeof rawStat !== "object" || Array.isArray(rawStat)) continue;
+    const stat = rawStat as Partial<KeyStat>;
+    const hits = Math.floor(Number(stat.hits));
+    const misses = Math.floor(Number(stat.misses));
+    const lastShown = Math.floor(Number(stat.lastShown));
+    if (![hits, misses, lastShown].every((n) => Number.isFinite(n) && n >= 0)) continue;
+    out[key] = {
+      hits: Math.min(hits, 1_000_000),
+      misses: Math.min(misses, 1_000_000),
+      lastShown: Math.min(lastShown, 1_000_000),
+    };
+    if (Object.keys(out).length >= MAX_KEY_STATS) break;
+  }
+  return out;
+}
+
 export function loadProgress(): Progress {
   if (typeof window === "undefined") return emptyProgress();
   try {
@@ -124,6 +151,7 @@ export function loadProgress(): Progress {
       lessonBestResults: asBestResults(parsed.lessonBestResults),
       newlyUnlocked: typeof newly === "number" ? asLessonId(newly) : null,
       introducedKeys,
+      keyPractice: asKeyPractice(parsed.keyPractice),
       unlockedCostumes,
       equippedCostumes,
       newlyUnlockedCostume: newlyCostume,
@@ -162,5 +190,8 @@ export function isLessonUnlocked(
   unlockAll = false,
 ) {
   if (unlockAll || lessonId <= 1) return true;
-  return completed.includes(lessonId - 1);
+  // Soft gate: keep a couple of adventures open ahead so kids never feel
+  // walled behind "Lesson 1" — curriculum still advances behind the scenes.
+  const furthest = completed.reduce((max, id) => Math.max(max, id), 0);
+  return lessonId <= furthest + 2;
 }

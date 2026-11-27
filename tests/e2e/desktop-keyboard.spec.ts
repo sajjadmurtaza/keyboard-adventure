@@ -6,9 +6,8 @@ test.use({ viewport: { width: 1440, height: 900 } });
 test("desktop lesson keyboard looks like a keyboard", async ({ page }) => {
   await seedChild(page);
   await page.goto("/");
-  await page.getByRole("button", { name: "⭐ START! ⭐" }).click();
-  await page.getByRole("button", { name: "PLAY ▶" }).click();
-  await expect(page.getByTestId("play-stage")).toHaveAttribute("data-lesson-phase", "ready");
+  await page.getByTestId("lets-play").click();
+    await expect(page.getByTestId("play-stage")).toHaveAttribute("data-lesson-phase", "ready");
 
   await expect(page.getByTestId("global-mute")).toHaveCount(1);
   await expect(page.getByTestId("parent-settings")).toHaveCount(1);
@@ -51,9 +50,8 @@ test("desktop lesson keyboard looks like a keyboard", async ({ page }) => {
 test("keyboard and letter stay put on success and miss", async ({ page }) => {
   await seedChild(page);
   await page.goto("/");
-  await page.getByRole("button", { name: "⭐ START! ⭐" }).click();
-  await page.getByRole("button", { name: "PLAY ▶" }).click();
-  await expect(page.getByTestId("play-stage")).toHaveAttribute("data-lesson-phase", "ready");
+  await page.getByTestId("lets-play").click();
+    await expect(page.getByTestId("play-stage")).toHaveAttribute("data-lesson-phase", "ready");
 
   const letter = page.getByTestId("target-letter");
   const board = page.getByTestId("visual-keyboard");
@@ -73,7 +71,8 @@ test("keyboard and letter stay put on success and miss", async ({ page }) => {
     if (!shell) return 0;
     return window.innerHeight - shell.getBoundingClientRect().bottom;
   });
-  expect(idleGap).toBeGreaterThanOrEqual(12);
+  // Single-screen shell keeps a small safe inset; do not require large dead space.
+  expect(idleGap).toBeGreaterThanOrEqual(4);
 
   await page.keyboard.press("a");
   await expect(letter).toContainText("F");
@@ -106,9 +105,9 @@ test("finger hint sits under the target key, not under space", async ({ page }) 
     );
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "⭐ START! ⭐" }).click();
+  await page.getByTestId("more-adventures").click();
   await page.getByRole("button", { name: "View all lessons" }).click();
-  await page.getByRole("button", { name: "Lesson 3: D and K" }).click();
+  await page.getByRole("button", { name: /D and K/ }).click();
   await expect(page.getByTestId("play-stage")).toHaveAttribute("data-lesson-phase", "ready");
   await expect(page.getByTestId("association")).toContainText(/DOG/i);
   await expect(page.getByTestId("finger-guide")).toHaveAttribute("data-hand", "left");

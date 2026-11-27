@@ -22,12 +22,11 @@ import {
   measureCostumeSwitchPaint,
   type DressUpPerfSnapshot,
 } from "@/lib/dressUp/dressUpPerf";
-import { drawCostumeOverlay } from "@/lib/dressUp/faceOverlay";
 import {
   getFaceLandmarker,
   isFaceLandmarkerWarm,
 } from "@/lib/dressUp/faceLandmarker";
-import { facePoseFromLandmarks, mirrorFacePose } from "@/lib/dressUp/facePose";
+import { drawLiveMirrorFrame } from "@/lib/dressUp/liveMirrorFrame";
 import { mirrorChildStatus } from "@/lib/dressUp/mirrorChildStatus";
 import { FacePoseSmoother } from "@/lib/dressUp/smoothing";
 
@@ -223,58 +222,25 @@ export function MagicDressUp({
         perfRef.current?.noteVideoSize(w, h);
       }
 
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        perfRef.current?.noteFrame({ detected: false });
-        rafRef.current = requestAnimationFrame(tick);
-        return;
-      }
-
-      ctx.save();
-      ctx.translate(canvas.width, 0);
-      ctx.scale(-1, 1);
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      ctx.restore();
-
       const costumeNow =
         DRESS_UP_COSTUMES.find((c) => c.id === selectedRef.current) ?? DRESS_UP_COSTUMES[0];
       const image = getCachedCostumeImage(costumeNow.id);
 
-      if (landmarker) {
-        const noteFaceMissing = (missing: boolean) => {
-          setFaceMissing((prev) => (prev === missing ? prev : missing));
-        };
-        try {
-          const detectStart = PERF_ENABLED ? performance.now() : 0;
-          const result = landmarker.detectForVideo(video, performance.now());
-          const detectMs = PERF_ENABLED ? performance.now() - detectStart : undefined;
-          perfRef.current?.noteFrame({ detected: true, detectMs });
-          const landmarks = result.faceLandmarks[0];
-          if (!landmarks) {
-            smootherRef.current.reset();
-            noteFaceMissing(true);
-          } else {
-            const raw = facePoseFromLandmarks(landmarks, canvas.width, canvas.height);
-            const smoothed = smootherRef.current.next(raw);
-            if (!smoothed) {
-              noteFaceMissing(true);
-            } else {
-              noteFaceMissing(false);
-              drawCostumeOverlay(
-                ctx,
-                mirrorFacePose(smoothed, canvas.width),
-                costumeNow,
-                image,
-              );
-            }
-          }
-        } catch {
-          perfRef.current?.noteFrame({ detected: false });
-          noteFaceMissing(true);
-        }
-      } else {
-        perfRef.current?.noteFrame({ detected: false });
-      }
+      const detectStart = PERF_ENABLED ? performance.now() : 0;
+      const frame = drawLiveMirrorFrame({
+        video,
+        canvas,
+        landmarker,
+        smoother: smootherRef.current,
+        costume: costumeNow,
+        costumeImage: image,
+      });
+      const detectMs = PERF_ENABLED ? performance.now() - detectStart : undefined;
+      perfRef.current?.noteFrame({ detected: frame.detected, detectMs });
+      setFaceMissing((prev) => {
+        const missing = !frame.detected;
+        return prev === missing ? prev : missing;
+      });
 
       if (PERF_ENABLED && perfRef.current) {
         const now = performance.now();

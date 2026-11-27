@@ -7,7 +7,7 @@ test("home is indexable and playable", async ({ page }) => {
   await expect(page).toHaveTitle(/Keyboard Adventure/);
   const description = page.locator('meta[name="description"]');
   await expect(description).toHaveAttribute("content", /typing adventure for children/i);
-  await expect(page.getByRole("button", { name: "⭐ START! ⭐" })).toBeVisible();
+  await expect(page.getByTestId("lets-play")).toBeVisible();
   await expect(page.getByRole("button", { name: "Open parent settings" })).toBeVisible();
 });
 

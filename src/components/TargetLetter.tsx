@@ -8,7 +8,7 @@ type TargetLetterProps = {
   reducedMotion: boolean;
   burst: boolean;
   burstLevel?: 1 | 2 | 3;
-  size?: "desktop" | "mobile" | "compact";
+  size?: "desktop" | "mobile" | "compact" | "stage";
 };
 
 export function TargetLetter({
@@ -21,8 +21,9 @@ export function TargetLetter({
 }: TargetLetterProps) {
   const label = displayKey(target);
   const hint = tinyHint(target);
-  const compact = size !== "desktop";
+  const compact = size !== "desktop" && size !== "stage";
   const hud = size === "compact";
+  const stage = size === "stage";
   const motion = reducedMotion
     ? ""
     : mood === "idle"
@@ -38,14 +39,18 @@ export function TargetLetter({
       ? "clamp(72px, 22vw, 96px)"
       : size === "mobile"
         ? "clamp(130px, 38vw, 185px)"
-        : "var(--target-size)";
+        : size === "stage"
+          ? "clamp(72px, 12vh, 140px)"
+          : "var(--target-size)";
 
   const letterColor =
     mood === "success"
       ? "text-[#38D978]"
       : mood === "retry"
-        ? "text-[#FF4D5E]"
-        : "text-[#34364A]";
+        ? "text-[#7048D7]"
+        : stage
+          ? "text-[#303047]"
+          : "text-[#34364A]";
 
   const letterShadow =
     mood === "success"
@@ -56,7 +61,9 @@ export function TargetLetter({
 
   return (
     <div
-      className="target-wrapper relative z-[3] flex min-h-0 flex-col items-center justify-center"
+      className={`target-wrapper relative z-[3] flex min-h-0 flex-col items-center justify-center ${
+        stage ? "min-w-[2.75rem] shrink-0 px-1" : ""
+      }`}
       data-testid="target-letter"
     >
       {mood === "retry" ? <div className="target-halo-miss" /> : null}
@@ -76,7 +83,7 @@ export function TargetLetter({
       >
         {label}
       </p>
-      {hud ? null : (
+      {hud || stage ? null : (
         <p className={`mt-0.5 h-5 text-sm font-semibold leading-5 text-[#7657E8] ${hint ? "" : "invisible"}`}>
           {hint ?? "space"}
         </p>

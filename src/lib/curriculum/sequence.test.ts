@@ -56,12 +56,22 @@ describe("lesson sequence", () => {
     expect(run.turns.filter((key) => !run.newKeys.includes(key))).toEqual(run.reviewVisits);
   });
 
-  it("rotates which finished keys visit without changing the opening letter", () => {
+  it("rotates which finished keys visit and can swap which new key opens", () => {
     const lesson = getLesson(3)!;
     const first = planLesson(lesson, [1, 2], 0);
     const later = planLesson(lesson, [1, 2], 1);
-    expect(later.turns[0]).toBe(first.turns[0]);
+    expect(first.turns[0]).toBe("d");
+    expect(later.turns[0]).toBe("k");
     expect(later.reviewVisits).not.toEqual(first.reviewVisits);
+  });
+
+  it("shuffles pair order so each play feels different", () => {
+    const lesson = getLesson(1)!;
+    const a = planLesson(lesson, [], 0);
+    const b = planLesson(lesson, [], 1);
+    expect(a.turns[0]).toBe("f");
+    expect(b.turns[0]).toBe("j");
+    expect(a.turns).not.toEqual(b.turns);
   });
 
   it("raises later lessons toward two fifths review and keeps lesson 6 a home-row mix", () => {

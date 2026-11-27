@@ -19,6 +19,7 @@ export default defineConfig({
         "src/lib/audio/speechPhrases.ts",
         "src/lib/audio/voiceSelect.ts",
         "src/lib/lessonPhase.ts",
+        "src/lib/curriculum/adventure.ts",
       ],
       exclude: ["**/*.test.ts", "src/utils/audio.ts"],
       reporter: ["text", "lcov", "html"],

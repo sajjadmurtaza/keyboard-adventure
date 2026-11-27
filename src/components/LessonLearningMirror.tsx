@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { associationsFor } from "@/data/letterAssociations";
 import { lessonMirrorCostumeForArt } from "@/data/lessonMirrorCostumes";
+import { livingSceneForArt } from "@/data/livingScenes";
 import {
   startCameraSession,
   stopCameraTracks,
@@ -11,30 +12,34 @@ import {
   getCachedLessonMirrorImage,
   preloadLessonMirrorImages,
 } from "@/lib/dressUp/lessonMirrorImages";
-import { drawCostumeOverlay } from "@/lib/dressUp/faceOverlay";
 import { getFaceLandmarker } from "@/lib/dressUp/faceLandmarker";
-import { facePoseFromLandmarks, mirrorFacePose } from "@/lib/dressUp/facePose";
+import { drawLiveMirrorFrame } from "@/lib/dressUp/liveMirrorFrame";
+import { drawLivingMirrorMood } from "@/lib/dressUp/livingMirrorEffects";
 import { FacePoseSmoother } from "@/lib/dressUp/smoothing";
+import { LetterArt } from "@/components/illustrations/LetterArt";
 import { useAudio } from "@/hooks/useAudio";
 
 type MirrorMood = "idle" | "success" | "retry";
 
 type LessonLearningMirrorProps = {
-  /** Current lesson target letter (e.g. f / j). */
   letter: string;
   cameraAllowedByParent: boolean;
   mood: MirrorMood;
   reducedMotion?: boolean;
   onOpenParentSettings: () => void;
+  /** Wider stage layout for Magic Learning Stage */
+  stageLayout?: boolean;
 };
 
 type MirrorState = "off" | "starting" | "live" | "error";
 
 const EMPTY_STEP = { key: "", index: 0 };
+/** Headroom around video so petal rings / hoods are not clipped. */
+const LESSON_STAGE_PAD = 0.28;
 
 /**
- * Optional in-lesson Magic Mirror — costume auto-follows the active
- * letter association (Fish/Frog/Flower…); no manual picker while typing.
+ * Optional in-lesson Magic Mirror — continuous live face + association costume.
+ * Layers: (1) live video (2) tracked costume (3) typing effects.
  */
 export function LessonLearningMirror({
   letter,
@@ -42,9 +47,11 @@ export function LessonLearningMirror({
   mood,
   reducedMotion = false,
   onOpenParentSettings,
+  stageLayout = true,
 }: LessonLearningMirrorProps) {
   const [mirror, setMirror] = useState<MirrorState>("off");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [tooClose, setTooClose] = useState(false);
 
   const { audio } = useAudio();
   const assocStep = useSyncExternalStore(
@@ -57,6 +64,7 @@ export function LessonLearningMirror({
   const index = assocStep.key === letter ? assocStep.index : 0;
   const activeItem = items[index] ?? items[0];
   const costume = lessonMirrorCostumeForArt(activeItem?.art);
+  const scene = livingSceneForArt(activeItem?.art);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -68,13 +76,21 @@ export function LessonLearningMirror({
   const runningRef = useRef(false);
   const sessionGenRef = useRef(0);
   const costumeRef = useRef(costume);
+  const sceneRef = useRef(scene);
   const parentAllowedRef = useRef(cameraAllowedByParent);
+  const reducedMotionRef = useRef(reducedMotion);
   const smootherRef = useRef(new FacePoseSmoother(0.38));
   const moodRef = useRef(mood);
+  const tooCloseRef = useRef(false);
+  const lastHintPublishRef = useRef(0);
 
   useEffect(() => {
     costumeRef.current = costume;
   }, [costume]);
+
+  useEffect(() => {
+    sceneRef.current = scene;
+  }, [scene]);
 
   useEffect(() => {
     parentAllowedRef.current = cameraAllowedByParent;
@@ -83,6 +99,14 @@ export function LessonLearningMirror({
   useEffect(() => {
     moodRef.current = mood;
   }, [mood]);
+
+  useEffect(() => {
+    reducedMotionRef.current = reducedMotion;
+  }, [reducedMotion]);
+
+  useEffect(() => {
+    void preloadLessonMirrorImages().catch(() => undefined);
+  }, []);
 
   const tearDown = useCallback(() => {
     sessionGenRef.current += 1;
@@ -96,8 +120,20 @@ export function LessonLearningMirror({
     const video = videoRef.current;
     if (video) video.srcObject = null;
     smootherRef.current.reset();
+    tooCloseRef.current = false;
+    setTooClose(false);
     setMirror("off");
     setErrorMessage(null);
+  }, []);
+
+  const releaseLandmarker = useCallback(() => {
+    if (!landmarkerRef.current) return;
+    try {
+      landmarkerRef.current.close();
+    } catch {
+      /* ignore */
+    }
+    landmarkerRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -116,16 +152,9 @@ export function LessonLearningMirror({
     return () => {
       document.removeEventListener("visibilitychange", onVis);
       tearDown();
-      if (landmarkerRef.current) {
-        try {
-          landmarkerRef.current.close();
-        } catch {
-          /* ignore */
-        }
-        landmarkerRef.current = null;
-      }
+      releaseLandmarker();
     };
-  }, [tearDown]);
+  }, [tearDown, releaseLandmarker]);
 
   useEffect(() => {
     if (mirror !== "live") return;
@@ -138,80 +167,46 @@ export function LessonLearningMirror({
       }
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      const landmarker = landmarkerRef.current;
       if (!video || !canvas || video.readyState < 2) {
         rafRef.current = requestAnimationFrame(tick);
         return;
       }
-
-      const w = video.videoWidth;
-      const h = video.videoHeight;
-      if (w && h && (canvas.width !== w || canvas.height !== h)) {
-        canvas.width = w;
-        canvas.height = h;
-      }
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        rafRef.current = requestAnimationFrame(tick);
-        return;
-      }
-
-      ctx.save();
-      ctx.translate(canvas.width, 0);
-      ctx.scale(-1, 1);
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      ctx.restore();
 
       const costumeNow = costumeRef.current;
       const image = costumeNow
         ? getCachedLessonMirrorImage(costumeNow.art)
         : null;
 
-      if (landmarker && costumeNow) {
-        try {
-          const result = landmarker.detectForVideo(video, performance.now());
-          const landmarks = result.faceLandmarks[0];
-          if (landmarks) {
-            const raw = facePoseFromLandmarks(landmarks, canvas.width, canvas.height);
-            const smoothed = smootherRef.current.next(raw);
-            if (smoothed) {
-              drawCostumeOverlay(
-                ctx,
-                mirrorFacePose(smoothed, canvas.width),
-                costumeNow,
-                image,
-              );
-            }
-          } else {
-            smootherRef.current.reset();
-          }
-        } catch {
-          smootherRef.current.reset();
-        }
+      const frame = drawLiveMirrorFrame({
+        video,
+        canvas,
+        landmarker: landmarkerRef.current,
+        smoother: smootherRef.current,
+        costume: costumeNow,
+        costumeImage: image,
+        stagePad: LESSON_STAGE_PAD,
+        stageFill: sceneRef.current?.tint ?? "#BBDDF5",
+      });
+
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        drawLivingMirrorMood(
+          ctx,
+          canvas.width,
+          canvas.height,
+          moodRef.current,
+          sceneRef.current?.celebrate,
+          reducedMotionRef.current,
+          performance.now(),
+        );
       }
 
-      const flash = moodRef.current;
-      if (flash === "success") {
-        ctx.fillStyle = "rgba(255, 216, 90, 0.18)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        if (!reducedMotion) {
-          ctx.fillStyle = "rgba(255, 216, 90, 0.9)";
-          for (let i = 0; i < 6; i += 1) {
-            const x = (canvas.width * (i + 1)) / 7;
-            const y = canvas.height * 0.12 + (i % 2) * 18;
-            ctx.beginPath();
-            ctx.arc(x, y, 4, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-      } else if (flash === "retry") {
-        ctx.fillStyle = "rgba(118, 87, 232, 0.12)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        if (!reducedMotion) {
-          ctx.font = "28px sans-serif";
-          ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-          ctx.fillText("?", canvas.width * 0.72, canvas.height * 0.22);
+      const now = performance.now();
+      if (now - lastHintPublishRef.current > 400) {
+        lastHintPublishRef.current = now;
+        if (tooCloseRef.current !== frame.tooClose) {
+          tooCloseRef.current = frame.tooClose;
+          setTooClose(frame.tooClose);
         }
       }
 
@@ -224,12 +219,12 @@ export function LessonLearningMirror({
       runningRef.current = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [mirror, tearDown, reducedMotion]);
+  }, [mirror, tearDown]);
 
   async function startMirror() {
     if (!cameraAllowedByParent) {
       setMirror("error");
-      setErrorMessage("Ask a grown-up to allow Magic Mirror in Parent settings.");
+      setErrorMessage("Ask a grown-up to allow Learning Mirror in Parent settings.");
       return;
     }
     tearDown();
@@ -289,100 +284,185 @@ export function LessonLearningMirror({
     setMirror("live");
   }
 
+  const shellClass = stageLayout
+    ? "magic-mirror-shell"
+    : "flex w-full max-w-[12rem] flex-col items-center gap-1.5";
+
+  const frameClass = stageLayout
+    ? "magic-mirror-frame relative overflow-hidden rounded-[20px] shadow-[0_8px_20px_rgba(48,48,71,0.12)]"
+    : "relative aspect-[4/3] w-full overflow-hidden rounded-[22px] shadow-[0_10px_28px_rgba(48,48,71,0.12)]";
+
+  const offSceneMotion =
+    reducedMotion || !activeItem
+      ? ""
+      : `art-idle-${activeItem.motion}`;
+
   if (!cameraAllowedByParent) {
     return (
       <div
-        className="flex w-full max-w-[11rem] flex-col items-center gap-1 rounded-2xl border-2 border-dashed border-[#D8E7FF] bg-white/80 p-2 text-center"
+        className={shellClass}
         data-testid="lesson-mirror-gated"
       >
-        <p className="font-[family-name:var(--font-display)] text-xs font-bold text-[#5A5C72]">
-          Learning Mirror
-        </p>
-        <button
-          type="button"
-          className="text-xs font-semibold text-[#7657E8] underline"
-          onClick={onOpenParentSettings}
+        <div
+          className={`${frameClass} flex flex-col items-center justify-center gap-1 p-2 text-center`}
+          style={{ background: scene?.tint ?? "#E8F6FF" }}
         >
-          Grown-ups: allow camera
-        </button>
+          {activeItem ? (
+            <div
+              className={`mb-1 h-[62%] w-[62%] max-h-44 max-w-44 ${offSceneMotion}`}
+              aria-hidden
+            >
+              <LetterArt id={activeItem.art} className="h-full w-full" />
+            </div>
+          ) : null}
+          <p className="font-[family-name:var(--font-display)] text-sm font-bold leading-tight text-[#303047]">
+            {scene?.place ?? "Magic Scene"}
+          </p>
+          {costume ? (
+            <p className="text-xs font-semibold leading-tight text-[#7048D7]">
+              Meet the {costume.name}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            className="mt-0.5 text-[10px] font-semibold text-[#7048D7] underline"
+            onClick={onOpenParentSettings}
+          >
+            Grown-ups: allow Learning Mirror
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div
-      className="flex w-full max-w-[12rem] flex-col items-center gap-1.5"
+      className={shellClass}
       data-testid="lesson-learning-mirror"
       data-mirror-art={costume?.art ?? ""}
+      data-mirror-live={mirror === "live" ? "true" : "false"}
     >
       <div
-        className={`relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-[#1a1a2e] shadow-md ${
-          mood === "success" && !reducedMotion ? "lesson-mirror-win" : ""
-        } ${mood === "retry" && !reducedMotion ? "lesson-mirror-miss" : ""}`}
+        className={frameClass}
+        style={{ background: scene?.tint ?? "#BBDDF5" }}
       >
+        {mirror === "live" ? (
+          <div className="pointer-events-none absolute left-2 top-2 z-[2] flex max-w-[85%] items-center gap-1.5">
+            <span className="truncate rounded-full bg-white/90 px-2 py-0.5 font-[family-name:var(--font-nunito)] text-[10px] font-bold text-[#303047] shadow sm:text-[11px] sm:px-2.5">
+              {scene ? `🌷 ${scene.place}` : "Magic Mirror"}
+            </span>
+            <span
+              className="shrink-0 rounded-full bg-[#2AA85A] px-2 py-0.5 font-[family-name:var(--font-nunito)] text-[10px] font-bold text-white shadow"
+              data-testid="lesson-mirror-live-badge"
+            >
+              ● Live
+            </span>
+          </div>
+        ) : null}
+
         <video
           ref={videoRef}
           className="pointer-events-none absolute h-px w-px opacity-0"
           playsInline
           muted
+          autoPlay
           aria-hidden
         />
         <canvas
           ref={canvasRef}
           data-testid="lesson-mirror-canvas"
-          className={`h-full w-full object-cover ${mirror === "live" ? "block" : "hidden"}`}
+          className={`h-full w-full object-contain ${mirror === "live" ? "block" : "hidden"}`}
         />
+        {mirror === "live" ? (
+          <div
+            className={`pointer-events-none absolute inset-0 rounded-[22px] ${
+              mood === "success" && !reducedMotion ? "lesson-mirror-win" : ""
+            } ${mood === "retry" && !reducedMotion ? "lesson-mirror-miss" : ""}`}
+            aria-hidden
+          />
+        ) : null}
+
+        {mirror === "live" && tooClose ? (
+          <p
+            className="pointer-events-none absolute bottom-12 left-1/2 z-[2] w-[90%] -translate-x-1/2 rounded-full bg-white/95 px-3 py-1.5 text-center font-[family-name:var(--font-nunito)] text-xs font-bold text-[#7048D7] shadow"
+            data-testid="lesson-mirror-too-close"
+          >
+            A little farther back — let&apos;s fit your whole costume!
+          </p>
+        ) : null}
+
         {mirror !== "live" ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-b from-[#7657E8] to-[#9B7BFF] p-3 text-center text-white">
-            <p className="font-[family-name:var(--font-display)] text-sm font-bold">
+          <div
+            className={`absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#7048D7]/90 to-[#9B7BFF]/90 text-center text-white ${
+              stageLayout ? "gap-1 p-2" : "gap-1.5 p-3"
+            }`}
+          >
+            <p
+              className={`font-[family-name:var(--font-display)] font-bold ${
+                stageLayout ? "text-sm leading-tight" : "text-base sm:text-lg"
+              }`}
+            >
               {mirror === "starting" ? "Waking mirror…" : "See yourself!"}
             </p>
-            {costume ? (
-              <p className="text-[10px] font-semibold opacity-90">
+            {costume && !stageLayout ? (
+              <p className="text-xs font-semibold opacity-95 sm:text-sm">
+                Become a {costume.name}
+                {scene ? ` · ${scene.place}` : ""}
+              </p>
+            ) : null}
+            {costume && stageLayout ? (
+              <p className="max-w-full truncate px-1 text-[10px] font-semibold opacity-95">
                 Become a {costume.name}
               </p>
             ) : null}
             {errorMessage ? (
-              <p className="text-[10px] leading-snug" data-testid="lesson-mirror-error">
+              <p className="max-w-xs text-[10px] leading-snug" data-testid="lesson-mirror-error">
                 {errorMessage}
               </p>
             ) : null}
+            {mirror !== "starting" ? (
+              <button
+                type="button"
+                data-testid="lesson-mirror-start"
+                onClick={() => void startMirror()}
+                className={`pressable rounded-full bg-white font-[family-name:var(--font-display)] font-bold text-[#7048D7] shadow ${
+                  stageLayout
+                    ? "mt-0.5 min-h-8 px-3 text-xs"
+                    : "mt-1 min-h-9 px-4 text-sm"
+                }`}
+              >
+                ✨ Start camera
+              </button>
+            ) : null}
+            {!stageLayout ? (
+              <p className="text-[10px] font-semibold text-white/90">
+                🔒 Stays on this device
+              </p>
+            ) : (
+              <p className="text-[9px] font-semibold text-white/85">🔒 This device</p>
+            )}
           </div>
         ) : null}
+
+        {mirror === "live" ? (
+          <>
+            <p
+              className="pointer-events-none absolute bottom-3 left-3 z-[2] max-w-[70%] truncate rounded-full bg-white/95 px-2.5 py-1 font-[family-name:var(--font-display)] text-[11px] font-bold text-[#7048D7] shadow"
+              data-testid="lesson-mirror-costume-name"
+            >
+              {costume ? `You are a ${costume.name}!` : "Looking magical!"}
+            </p>
+            <button
+              type="button"
+              data-testid="lesson-mirror-stop"
+              onClick={tearDown}
+              className="pressable absolute bottom-3 right-3 z-[2] min-h-8 rounded-full bg-white/95 px-3 font-[family-name:var(--font-display)] text-xs font-bold text-[#7048D7] shadow"
+            >
+              Stop camera
+            </button>
+          </>
+        ) : null}
       </div>
-
-      {mirror === "live" ? (
-        <>
-          <p
-            className="font-[family-name:var(--font-display)] text-xs font-bold text-[#7657E8]"
-            data-testid="lesson-mirror-costume-name"
-          >
-            {costume ? `You are a ${costume.name}!` : "Looking magical!"}
-          </p>
-          <button
-            type="button"
-            data-testid="lesson-mirror-stop"
-            onClick={tearDown}
-            className="pressable min-h-9 rounded-full bg-white px-3 font-[family-name:var(--font-display)] text-xs font-bold text-[#7657E8] shadow"
-          >
-            Stop camera
-          </button>
-        </>
-      ) : (
-        <button
-          type="button"
-          data-testid="lesson-mirror-start"
-          onClick={() => void startMirror()}
-          disabled={mirror === "starting"}
-          className="pressable min-h-9 rounded-full bg-[#7657E8] px-3 font-[family-name:var(--font-display)] text-xs font-bold text-white shadow disabled:opacity-60"
-        >
-          ✨ Start camera
-        </button>
-      )}
-
-      <p className="text-[10px] font-semibold text-[#5A5C72]">
-        🔒 Stays on this device
-      </p>
     </div>
   );
 }

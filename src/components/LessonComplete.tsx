@@ -99,7 +99,9 @@ export function LessonComplete({
                 onClick={onNext}
                 className="pressable min-h-16 rounded-full bg-[#7657E8] px-10 font-[family-name:var(--font-display)] text-2xl font-bold text-white shadow-lg"
               >
-                Next: {nextLabel} →
+                {nextLabel === "Keep playing"
+                  ? "▶ Keep playing!"
+                  : `Next adventure: ${nextLabel} →`}
               </button>
             ) : null}
             <button
@@ -107,7 +109,7 @@ export function LessonComplete({
               onClick={onAgain}
               className="pressable min-h-14 rounded-full bg-white px-8 font-[family-name:var(--font-display)] text-xl font-bold text-[#7657E8] shadow-md"
             >
-              Play Again
+              {nextLabel === "Keep playing" ? "Play again" : "Shuffle & play again"}
             </button>
           </div>
         ) : (

@@ -6,6 +6,7 @@ import {
   associationsFor,
   type LetterAssociation,
 } from "@/data/letterAssociations";
+import { livingSceneForArt } from "@/data/livingScenes";
 import { useAudio } from "@/hooks/useAudio";
 import { highlightLetterInWord } from "@/lib/letterHighlight";
 
@@ -22,6 +23,8 @@ type LetterAssociationCloudProps = {
   reducedMotion?: boolean;
   /** Living Alphabet enhancements (F/J experiment): highlight + idle loops */
   living?: boolean;
+  /** Compact card for Magic Learning Stage (no invite line). */
+  stage?: boolean;
   onWord?: (word: string) => void;
 };
 
@@ -98,6 +101,7 @@ export function LetterAssociationCloud({
   inline = false,
   reducedMotion = false,
   living = false,
+  stage = false,
   onWord,
 }: LetterAssociationCloudProps) {
   const items = associationsFor(letter);
@@ -113,6 +117,7 @@ export function LetterAssociationCloud({
   const reaction = resolveReaction(reactionProp, mode);
   const motionClass = motionClassFor(item, reaction, reducedMotion, living);
   const slideClass = reducedMotion ? "" : "assoc-slide";
+  const scene = living ? livingSceneForArt(item?.art) : null;
   const frameClass =
     reaction === "reward"
       ? "assoc-frame-happy"
@@ -132,6 +137,7 @@ export function LetterAssociationCloud({
         className="association-area association-inline pointer-events-none flex h-[55px] w-full max-w-[11rem] items-center justify-center gap-1.5"
         data-testid="association"
         data-reaction={reaction}
+        data-scene={scene?.art ?? ""}
         aria-hidden
       >
         <div className={`h-8 w-8 shrink-0 ${slideClass}`} key={item?.art ?? fallback}>
@@ -150,14 +156,28 @@ export function LetterAssociationCloud({
   if (badge) {
     return (
       <div
-        className={`association-area pointer-events-none flex h-[100px] w-[130px] flex-col items-center justify-center gap-1 rounded-[28px] border-2 border-[#D8E7FF] bg-white px-2 shadow ${
+        className={`association-area pointer-events-none flex h-[100px] w-[130px] flex-col items-center justify-center gap-0.5 rounded-[28px] border-2 px-2 shadow ${
           reducedMotion ? "" : "assoc-cloud-in"
         } ${frameClass}`}
+        style={
+          scene
+            ? { background: scene.tint, borderColor: scene.border }
+            : { background: "#fff", borderColor: "#D8E7FF" }
+        }
         data-testid="association"
         data-reaction={reaction}
+        data-scene={scene?.art ?? ""}
         aria-hidden
       >
-        <div className={`h-[58px] w-[58px] shrink-0 ${slideClass}`} key={item?.art ?? fallback}>
+        {scene ? (
+          <p
+            className="max-w-full truncate font-[family-name:var(--font-nunito)] text-[9px] font-semibold text-[#5A5C72]"
+            data-testid="association-place"
+          >
+            {scene.place}
+          </p>
+        ) : null}
+        <div className={`h-[52px] w-[52px] shrink-0 ${slideClass}`} key={item?.art ?? fallback}>
           <Picture item={item} motionClass={motionClass} fallback={fallback} />
         </div>
         <WordLabel
@@ -173,19 +193,36 @@ export function LetterAssociationCloud({
   return (
     <div
       className={`association-area association-card pointer-events-none flex flex-col items-center ${
-        reducedMotion ? "" : "assoc-cloud-in"
-      }`}
+        stage ? "association-stage" : ""
+      } ${reducedMotion ? "" : "assoc-cloud-in"}`}
       aria-hidden
       data-testid="association"
       data-reaction={reaction}
+      data-scene={scene?.art ?? ""}
     >
       <div
-        className={`flex h-full w-full flex-col items-center justify-center rounded-[32px] border-[3px] border-[#D8E7FF] bg-white px-3 py-2 shadow-[0_10px_24px_rgba(118,87,232,0.12)] ${frameClass}`}
+        className={`flex h-full w-full flex-col items-center justify-center rounded-[32px] border-[3px] px-3 py-2 shadow-[0_10px_24px_rgba(118,87,232,0.12)] ${frameClass}`}
+        style={
+          scene
+            ? { background: scene.tint, borderColor: scene.border }
+            : { background: "#fff", borderColor: "#D8E7FF" }
+        }
       >
+        {scene ? (
+          <p
+            className="mb-0.5 font-[family-name:var(--font-nunito)] text-[10px] font-semibold tracking-wide text-[#5A5C72]"
+            data-testid="association-place"
+          >
+            {scene.place}
+          </p>
+        ) : null}
         <div
           key={`${item?.art ?? fallback}-${reaction}`}
           className={slideClass}
-          style={{ width: compact ? 64 : living ? 104 : 88, height: compact ? 64 : living ? 104 : 88 }}
+          style={{
+            width: compact ? 64 : stage ? "clamp(56px, 10vh, 84px)" : living ? 104 : 88,
+            height: compact ? 64 : stage ? "clamp(56px, 10vh, 84px)" : living ? 104 : 88,
+          }}
         >
           <Picture item={item} motionClass={motionClass} fallback={fallback} />
         </div>
@@ -193,8 +230,15 @@ export function LetterAssociationCloud({
           word={item?.word ?? fallback}
           letter={letter}
           living={living}
-          className="mt-1 w-full truncate text-center font-[family-name:var(--font-display)] text-sm font-bold text-[#7657E8] max-[500px]:text-xs"
+          className={`mt-1 w-full truncate text-center font-[family-name:var(--font-display)] font-bold text-[#7048D7] ${
+            stage ? "text-lg" : "text-sm max-[500px]:text-xs"
+          }`}
         />
+        {living && scene && reaction === "idle" && !stage ? (
+          <p className="mt-0.5 text-center font-[family-name:var(--font-nunito)] text-[10px] font-semibold text-[#7657E8]">
+            {scene.invite}
+          </p>
+        ) : null}
       </div>
     </div>
   );

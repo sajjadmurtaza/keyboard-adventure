@@ -52,10 +52,14 @@ import {
 import {
   lessonRun,
   visitTone,
-  recallWord,
   type LessonRun,
   type VisitTone,
 } from "@/lib/curriculum/sequence";
+import {
+  lessonsReadyToComplete,
+  planPlaySession,
+  recordKeyResult,
+} from "@/lib/curriculum/adventure";
 import type { MascotMood } from "@/components/mascot/types";
 import { useAudio } from "@/hooks/useAudio";
 import {
@@ -106,7 +110,11 @@ function mascotMoodFor(mood: Mood, streak: number): MascotMood {
 
 const emptyRun: LessonRun = { turns: [], newKeys: [], reviewPool: [], reviewVisits: [] };
 
-function learnedLabel(run: LessonRun, lessonId: number): string {
+function learnedLabel(run: LessonRun, lessonId: number, adventure: boolean): string {
+  if (adventure) {
+    const keys = [...new Set(run.turns.map((key) => displayKey(key)))];
+    return keys.length ? keys.join(" · ") : "Letters";
+  }
   if (lessonId === 0) return "Practice";
   if (run.newKeys.length > 0) return run.newKeys.map((key) => displayKey(key)).join(" + ");
   return getLesson(lessonId)?.title ?? "This lesson";
@@ -153,7 +161,11 @@ export function KeyboardAdventure() {
   const [introduced, setIntroduced] = useState<string[]>([]);
   const [playSeed, setPlaySeed] = useState(0);
   const [activeRun, setActiveRun] = useState<LessonRun>(emptyRun);
+  const [adventureSession, setAdventureSession] = useState(false);
   const introducedRef = useRef<string[]>([]);
+  const assocCursorRef = useRef<Record<string, number>>({});
+  const practiceTickRef = useRef(0);
+  const progressRef = useRef<Progress | null>(null);
   const mobileInputRef = useRef<HTMLInputElement>(null);
   const { audio, voices, speechAvailable } = useAudio();
   const reducedMotion = usePrefersReducedMotion();
@@ -226,11 +238,17 @@ export function KeyboardAdventure() {
       const previous = index > 0 ? sequence[index - 1] : undefined;
       const shortened = Boolean(previous && keysMatch(previous, target));
       const tone = visitTone(target, activeRun.newKeys, introduced);
+      const normalized = normalizeTarget(target);
+      const items = associationsFor(normalized);
+      const last = assocCursorRef.current[normalized] ?? -1;
+      const nextIdx = items.length ? (last + 1) % items.length : 0;
+      if (items.length) assocCursorRef.current[normalized] = nextIdx;
+      const word = items[nextIdx]?.word;
       audio?.notify({
         type: "TARGET_SHOWN",
         key: target,
         shortened,
-        word: tone === "introduce" ? undefined : recallWord(target, index),
+        word,
         review: tone === "review",
       });
     }
@@ -246,6 +264,7 @@ export function KeyboardAdventure() {
     /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage once */
     setSettings(loadSettings());
     const saved = loadProgress();
+    progressRef.current = saved;
     setProgress(saved);
     setIntroduced(saved.introducedKeys);
     introducedRef.current = saved.introducedKeys;
@@ -275,6 +294,7 @@ export function KeyboardAdventure() {
   }, [settings.keyboardLayout]);
 
   function persistProgress(next: Progress) {
+    progressRef.current = next;
     setProgress(next);
     saveProgress(next);
   }
@@ -310,7 +330,7 @@ export function KeyboardAdventure() {
     setView("wardrobe");
   }
 
-  function startSequence(keys: string[], id: number, preserve = false) {
+  function startSequence(keys: string[], id: number, preserve = false, adventure = false) {
     let seq = keys;
     if (!preserve && id > 0 && settings.difficulty === "growing") {
       seq = [...keys, ...keys].slice(0, settings.questionCount);
@@ -320,6 +340,7 @@ export function KeyboardAdventure() {
     clearSuccessTimer();
     lessonGenRef.current += 1;
     successTokenRef.current += 1;
+    setAdventureSession(adventure);
     setLessonId(id);
     setSequence(seq.length ? seq : keys);
     setIndex(0);
@@ -350,6 +371,18 @@ export function KeyboardAdventure() {
     beginLesson(id);
   }
 
+  function startAdventure() {
+    const run = planPlaySession({
+      introducedKeys: introducedRef.current,
+      keyPractice: progress?.keyPractice ?? {},
+      seed: playSeed,
+    });
+    setPlaySeed((value) => value + 1);
+    setActiveRun(run);
+    startSequence([...run.turns], 0, true, true);
+    if (narrow) focusMobileType();
+  }
+
   function startPractice() {
     const seq = buildPracticeSequence(practiceKeys, settings.questionCount);
     setActiveRun({
@@ -358,7 +391,7 @@ export function KeyboardAdventure() {
       reviewPool: [],
       reviewVisits: [],
     });
-    startSequence(seq, 0);
+    startSequence(seq, 0, false, false);
     if (narrow) focusMobileType();
   }
 
@@ -366,40 +399,99 @@ export function KeyboardAdventure() {
     const run = lessonRun(id, progress?.completedLessons ?? [], playSeed);
     setPlaySeed((value) => value + 1);
     setActiveRun(run);
-    startSequence([...run.turns], id, true);
+    startSequence([...run.turns], id, true, false);
     if (narrow) focusMobileType();
   }
 
+  const patchKeyPractice = useCallback((key: string, result: "hit" | "miss") => {
+    const current = progressRef.current;
+    if (!current) return;
+    practiceTickRef.current += 1;
+    const keyPractice = recordKeyResult(
+      current.keyPractice ?? {},
+      key,
+      result,
+      practiceTickRef.current,
+    );
+    progressRef.current = { ...current, keyPractice };
+    setProgress(progressRef.current);
+    saveProgress(progressRef.current);
+  }, []);
+
   const finishLesson = useCallback(() => {
     audio?.notify({ type: "LESSON_COMPLETE" });
-    if (lessonId > 0 && progress) {
-      const completed = progress.completedLessons.includes(lessonId)
-        ? progress.completedLessons
-        : [...progress.completedLessons, lessonId];
-      const nextId = lessonId + 1;
-      persistProgress({
-        ...progress,
-        childName,
-        completedLessons: completed,
-        currentLesson: nextId,
-        starsEarned: progress.starsEarned + 1,
-        correctAttempts: progress.correctAttempts + correct,
-        incorrectAttempts: progress.incorrectAttempts + wrong,
-        introducedKeys: introducedRef.current,
-        lessonBestResults: {
-          ...progress.lessonBestResults,
-          [String(lessonId)]: Math.max(
-            progress.lessonBestResults[String(lessonId)] ?? 0,
-            correct,
-          ),
-        },
-        newlyUnlocked: getLesson(nextId) ? nextId : null,
-      });
+    if (progress) {
+      if (adventureSession) {
+        const soft = lessonsReadyToComplete(
+          progress.completedLessons,
+          introducedRef.current,
+          progress.keyPractice ?? {},
+        );
+        const completed = [...new Set([...progress.completedLessons, ...soft])].sort(
+          (a, b) => a - b,
+        );
+        const furthest = completed.reduce((max, id) => Math.max(max, id), 0);
+        persistProgress({
+          ...progress,
+          childName,
+          completedLessons: completed,
+          currentLesson: Math.max(progress.currentLesson, furthest + 1),
+          starsEarned: progress.starsEarned + 1,
+          correctAttempts: progress.correctAttempts + correct,
+          incorrectAttempts: progress.incorrectAttempts + wrong,
+          introducedKeys: introducedRef.current,
+        });
+      } else if (lessonId > 0) {
+        const completed = progress.completedLessons.includes(lessonId)
+          ? progress.completedLessons
+          : [...progress.completedLessons, lessonId];
+        const nextId = lessonId + 1;
+        persistProgress({
+          ...progress,
+          childName,
+          completedLessons: completed,
+          currentLesson: nextId,
+          starsEarned: progress.starsEarned + 1,
+          correctAttempts: progress.correctAttempts + correct,
+          incorrectAttempts: progress.incorrectAttempts + wrong,
+          introducedKeys: introducedRef.current,
+          lessonBestResults: {
+            ...progress.lessonBestResults,
+            [String(lessonId)]: Math.max(
+              progress.lessonBestResults[String(lessonId)] ?? 0,
+              correct,
+            ),
+          },
+          newlyUnlocked: getLesson(nextId) ? nextId : null,
+        });
+      }
     }
     setView("complete");
     setPhase("complete");
     blurMobileType();
-  }, [audio, childName, correct, lessonId, progress, wrong]);
+  }, [adventureSession, audio, childName, correct, lessonId, progress, wrong]);
+
+  const skipCurrentLetter = useCallback(() => {
+    if (view !== "play" || lockRef.current) return;
+    const wanted = sequence[index];
+    if (!wanted) return;
+    // Skip never grants mastery credit — record as a miss and requeue later.
+    patchKeyPractice(wanted, "miss");
+    const after = sequence.slice(index + 1);
+    const before = sequence.slice(0, index);
+    clearSuccessTimer();
+    const gen = lessonGenRef.current;
+    if (after.length === 0) {
+      lockRef.current = false;
+      finishLesson();
+      return;
+    }
+    setSequence([...before, ...after, wanted]);
+    setHelpLevel(0);
+    setMood("idle");
+    setMissedKey(null);
+    scheduleReady(gen);
+  }, [finishLesson, index, patchKeyPractice, scheduleReady, sequence, view]);
 
   const onKey = useCallback(
     (pressed: string) => {
@@ -423,6 +515,7 @@ export function KeyboardAdventure() {
         setHelpLevel((value) => Math.min(value + 1, 4));
         setMood("retry");
         setMissedKey(pressed);
+        patchKeyPractice(wanted, "miss");
         window.setTimeout(() => setMissedKey(null), wrongFeedbackMs(quiet));
         audio?.notify({ type: "TARGET_WRONG", key: wanted, attempts: helpLevel + 1 });
         window.setTimeout(() => {
@@ -437,6 +530,7 @@ export function KeyboardAdventure() {
       const nextStreak = streak + 1;
       const tone = visitTone(wanted, activeRun.newKeys, introducedRef.current);
       const normalizedWanted = normalizeTarget(wanted);
+      patchKeyPractice(wanted, "hit");
       if (!introducedRef.current.includes(normalizedWanted)) {
         introducedRef.current = [...introducedRef.current, normalizedWanted];
         setIntroduced(introducedRef.current);
@@ -518,6 +612,7 @@ export function KeyboardAdventure() {
       finishLesson,
       helpLevel,
       index,
+      patchKeyPractice,
       quiet,
       progress,
       scheduleReady,
@@ -553,14 +648,16 @@ export function KeyboardAdventure() {
   }
 
   return (
-    <div className={`relative flex flex-col px-4 text-[#34364A] ${
+    <div className={`relative flex flex-col text-[#34364A] ${
+      view === "play" ? "px-2 sm:px-4" : "px-4"
+    } ${
       view === "play" && mood === "retry"
         ? "scene-miss bg-[#F4FBFF]"
         : view === "play" && mood === "success"
           ? "scene-win bg-[#F4FBFF]"
           : "bg-[#F4FBFF]"
-    } ${view === "play" ? "h-[var(--visual-viewport-height,100dvh)] overflow-hidden pb-[max(1rem,env(safe-area-inset-bottom))]" : "min-h-dvh overflow-x-hidden overflow-y-auto pb-3"}`}
-    style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+    } ${view === "play" ? "h-[var(--visual-viewport-height,100dvh)] overflow-hidden pb-[max(0.35rem,env(safe-area-inset-bottom))]" : "min-h-dvh overflow-x-hidden overflow-y-auto pb-3"}`}
+    style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top))" }}
     >
       <Decor dim={narrow && keyboardOpen} hidden={narrow && keyboardOpen} />
       {narrow ? (
@@ -571,7 +668,7 @@ export function KeyboardAdventure() {
           onFocus={() => undefined}
         />
       ) : null}
-      <header className="relative z-10 flex h-11 shrink-0 items-center justify-between gap-2 max-[500px]:h-10">
+      <header className="relative z-10 flex h-10 shrink-0 items-center justify-between gap-2 max-[500px]:h-9 [@media(max-height:650px)]:h-9">
         {view === "play" ? (
           <button
             type="button"
@@ -638,12 +735,16 @@ export function KeyboardAdventure() {
         </p>
       ) : null}
 
-      <main className="relative z-10 flex flex-1 flex-col">
+      <main className="relative z-10 flex min-h-0 flex-1 flex-col">
         {view === "home" ? (
           <Home
             name={childName}
             accessories={(progress?.equippedCostumes ?? []).map((id) => getCostume(id).emoji)}
             onStart={() => {
+              audio?.unlock();
+              startAdventure();
+            }}
+            onMoreAdventures={() => {
               audio?.unlock();
               setView("lessons");
             }}
@@ -680,7 +781,10 @@ export function KeyboardAdventure() {
             reducedMotion={quiet}
             onEquip={(ids) => persistProgress({ ...progress, equippedCostumes: ids })}
             onBack={goHome}
-            onContinueTyping={() => setView("lessons")}
+            onContinueTyping={() => {
+              audio?.unlock();
+              startAdventure();
+            }}
           />
         ) : null}
 
@@ -733,6 +837,7 @@ export function KeyboardAdventure() {
             showTypeButton={coarse && !keyboardOpen}
             onStartTyping={focusMobileType}
             onRepeat={() => audio?.repeatTarget(target)}
+            onSkip={helpLevel >= 3 ? skipCurrentLetter : undefined}
             progressTotal={sequence.length}
             progressFilled={index + (mood === "success" ? 1 : 0)}
             layout={resolvedLayout}
@@ -744,20 +849,28 @@ export function KeyboardAdventure() {
         {view === "complete" ? (
           <LessonComplete
             onAgain={() =>
-              lessonId === 0 ? startPractice() : startLesson(lessonId)
+              adventureSession
+                ? startAdventure()
+                : lessonId === 0
+                  ? startPractice()
+                  : startLesson(lessonId)
             }
             onNext={() => {
+              if (adventureSession) {
+                startAdventure();
+                return;
+              }
               const nextId = lessonId + 1;
               if (getLesson(nextId)) {
                 startLesson(nextId);
                 return;
               }
-              setView("lessons");
+              startAdventure();
             }}
-            hasNext={lessonId > 0 && Boolean(getLesson(lessonId + 1))}
-            learned={learnedLabel(activeRun, lessonId)}
+            hasNext={adventureSession || (lessonId > 0 && Boolean(getLesson(lessonId + 1)))}
+            learned={learnedLabel(activeRun, lessonId, adventureSession)}
             remembered={activeRun.reviewVisits.map((key) => displayKey(key))}
-            nextLabel={nextLessonLabel(lessonId)}
+            nextLabel={adventureSession ? "Keep playing" : nextLessonLabel(lessonId)}
             childName={childName}
             reducedMotion={quiet}
             costumeUnlock={
@@ -812,6 +925,7 @@ function Home({
   name,
   accessories,
   onStart,
+  onMoreAdventures,
   onPractice,
   onWardrobe,
   onDressUp,
@@ -819,35 +933,30 @@ function Home({
   name: string;
   accessories: string[];
   onStart: () => void;
+  onMoreAdventures: () => void;
   onPractice: () => void;
   onWardrobe: () => void;
   onDressUp: () => void;
 }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
       <Mascot
-        line={name ? `Ready, ${name}?` : "Ready to type?"}
+        line={name ? `Ready, ${name}?` : "Ready for an adventure?"}
         accessories={accessories}
       />
       <h1 className="font-[family-name:var(--font-display)] text-5xl font-bold text-[#7657E8] sm:text-7xl">
-        Keyboard Adventure
+        ⭐ Keyboard Adventure
       </h1>
       <p className="font-[family-name:var(--font-display)] text-2xl font-semibold">
-        Let&apos;s learn to type!
+        Ready for an adventure?
       </p>
       <button
         type="button"
         onClick={onStart}
+        data-testid="lets-play"
         className="pressable min-h-20 w-[min(20rem,92%)] rounded-full bg-[#7657E8] font-[family-name:var(--font-display)] text-3xl font-bold text-white shadow-[0_10px_24px_rgba(118,87,232,0.35)]"
       >
-        ⭐ START! ⭐
-      </button>
-      <button
-        type="button"
-        onClick={onPractice}
-        className="pressable min-h-14 w-[min(16rem,80%)] rounded-full bg-[#FFD85A] font-[family-name:var(--font-display)] text-xl font-bold text-[#34364A] shadow-md"
-      >
-        Practice
+        ▶ Let&apos;s Play!
       </button>
       <button
         type="button"
@@ -855,7 +964,7 @@ function Home({
         onClick={onDressUp}
         className="pressable min-h-14 w-[min(16rem,80%)] rounded-full bg-[#7ED6A5] font-[family-name:var(--font-display)] text-xl font-bold text-[#34364A] shadow-md"
       >
-        🌈 Magic Dress-Up
+        🪄 Magic Dress-Up
       </button>
       <button
         type="button"
@@ -863,8 +972,25 @@ function Home({
         onClick={onWardrobe}
         className="pressable min-h-12 w-[min(16rem,80%)] rounded-full bg-white font-[family-name:var(--font-display)] text-lg font-bold text-[#7657E8] shadow-md"
       >
-        🎁 Treasure Hats
+        🏆 My Treasures
       </button>
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={onPractice}
+          className="pressable min-h-10 rounded-full px-4 font-[family-name:var(--font-display)] text-base font-semibold text-[#7657E8] underline-offset-2 hover:underline"
+        >
+          Practice
+        </button>
+        <button
+          type="button"
+          data-testid="more-adventures"
+          onClick={onMoreAdventures}
+          className="pressable min-h-10 rounded-full px-4 font-[family-name:var(--font-display)] text-base font-semibold text-[#9AA0B8] underline-offset-2 hover:underline"
+        >
+          More adventures
+        </button>
+      </div>
     </div>
   );
 }
@@ -890,6 +1016,7 @@ function Play({
   showTypeButton,
   onStartTyping,
   onRepeat,
+  onSkip,
   progressTotal,
   progressFilled,
   layout,
@@ -917,6 +1044,7 @@ function Play({
   showTypeButton: boolean;
   onStartTyping: () => void;
   onRepeat: () => void;
+  onSkip?: () => void;
   progressTotal: number;
   progressFilled: number;
   layout: KeyboardLayoutId;
@@ -928,7 +1056,7 @@ function Play({
   const foundLine = `You found ${label}!`;
   const successLine = tone === "review" ? "You remembered!" : foundLine;
   const idleLine = tone === "review" ? "You know this!" : instruction;
-  const findLine = tightKb ? `Type ${label}` : `Find ${label} 👇`;
+  const findLine = tightKb ? `Type ${label}` : `Find the letter ${label}!`;
   const mascotLine =
     mood === "retry"
       ? `Try ${label} again!`
@@ -947,6 +1075,8 @@ function Play({
   const wrongLine = wrongLines[Math.min(helpLevel - 1, wrongLines.length - 1)] ?? wrongLines[0];
   const copyLine =
     mood === "success" ? successLine : mood === "retry" ? wrongLine : idleLine;
+  const hasArt = associationsFor(target).length > 0;
+  const showMirror = settings.cameraLessonMirror && !tightKb;
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
@@ -957,7 +1087,6 @@ function Play({
     }
   }, [density, compact, keyboardOpen, target, mood]);
 
-  const living = target === "f" || target === "j";
   const associationReaction: AssociationReaction =
     mood === "success"
       ? "reward"
@@ -970,12 +1099,38 @@ function Play({
     <LetterAssociationCloud
       letter={target}
       reaction={associationReaction}
-      living={living}
+      living={hasArt}
+      stage={false}
       badge={compact && !tightKb}
       inline={tightKb}
       reducedMotion={reducedMotion}
     />
   );
+
+  const keyboardBlock = !compact ? (
+    <div className="mb-1 flex w-full shrink-0 flex-col items-center">
+      {settings.keyboardHighlight ? (
+        <VirtualKeyboard
+          target={target}
+          highlightOn
+          mood={mood}
+          helpLevel={helpLevel}
+          missedKey={missedKey}
+          fingerHints={settings.fingerHints}
+          layout={layout}
+          compactHint
+          arrive={lessonPhase === "preparing"}
+        />
+      ) : null}
+    </div>
+  ) : compact && !tightKb ? (
+    <div className="flex shrink-0 flex-col items-center" data-testid="mini-key">
+      <MiniKeyHint target={target} pulse={helpLevel >= 1} />
+      {showTypeButton ? (
+        <StartTypingButton miss={mood === "retry"} onPress={onStartTyping} />
+      ) : null}
+    </div>
+  ) : null;
 
   return (
     <div
@@ -988,7 +1143,7 @@ function Play({
       style={{ gap: "var(--lesson-gap)" }}
       data-testid="play-stage"
       data-lesson-phase={lessonPhase}
-      data-living={living ? "true" : "false"}
+      data-living={hasArt ? "true" : "false"}
     >
       {mood === "success" ? (
         <Celebration
@@ -999,12 +1154,11 @@ function Play({
         />
       ) : null}
       <PreloadLessonArt keys={sequence} />
-      <div className="relative z-[1] mt-2 flex w-full shrink-0 flex-col items-center justify-center gap-1 min-[501px]:flex-row min-[501px]:justify-center min-[501px]:gap-6" style={{ minHeight: "calc(var(--mascot-size) + 8px)" }}>
-        <ProgressStars
-          total={progressTotal}
-          filled={progressFilled}
-          compact
-        />
+      <div
+        className="relative z-[1] mt-1 flex w-full shrink-0 flex-col items-center justify-center gap-1 min-[501px]:flex-row min-[501px]:justify-center min-[501px]:gap-4"
+        style={{ minHeight: "calc(var(--mascot-size) + 4px)" }}
+      >
+        <ProgressStars total={progressTotal} filled={progressFilled} compact />
         {streakNote && density === "tall" && !tightKb ? (
           <p className="pointer-events-none absolute top-0 right-2 star-pop font-[family-name:var(--font-display)] text-xl font-bold text-[#7657E8] max-[500px]:text-lg">
             {streakNote}
@@ -1038,36 +1192,33 @@ function Play({
           </button>
         </div>
       </div>
-      <div
-        className={`target-group relative z-[3] min-h-0 w-full ${
-          living && !tightKb
-            ? "flex flex-col items-center gap-3 min-[701px]:flex-row min-[701px]:items-start min-[701px]:justify-center"
-            : ""
-        }`}
-      >
-        <div className="flex min-w-0 flex-1 flex-col items-center">
-          {association}
-          <TargetLetter
-            key={`${step}-${target}`}
-            target={target}
-            mood={reducedMotion && mood === "idle" ? "idle" : mood}
-            reducedMotion={reducedMotion}
-            burst={mood === "success" && !reducedMotion}
-            burstLevel={tightKb ? 1 : burstLevel}
-            size={tightKb ? "compact" : compact ? "mobile" : "desktop"}
-          />
-        </div>
-        {living && !tightKb ? (
-          <div className="shrink-0 px-1">
-            <LessonLearningMirror
-              letter={target}
-              cameraAllowedByParent={settings.cameraDressUp}
-              mood={mood}
+      <div className="target-group relative z-[3] min-h-0 w-full">
+        <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center justify-center gap-3 sm:gap-5">
+          <div className="flex min-w-0 flex-col items-center">
+            {association}
+            <TargetLetter
+              key={`${step}-${target}`}
+              target={target}
+              mood={reducedMotion && mood === "idle" ? "idle" : mood}
               reducedMotion={reducedMotion}
-              onOpenParentSettings={onOpenParentSettings}
+              burst={mood === "success" && !reducedMotion}
+              burstLevel={tightKb ? 1 : burstLevel}
+              size={tightKb ? "compact" : compact ? "mobile" : "desktop"}
             />
           </div>
-        ) : null}
+          {showMirror ? (
+            <div className="adventure-mirror shrink-0" data-testid="adventure-mirror">
+              <LessonLearningMirror
+                letter={target}
+                cameraAllowedByParent={settings.cameraLessonMirror}
+                mood={mood}
+                reducedMotion={reducedMotion}
+                onOpenParentSettings={onOpenParentSettings}
+                stageLayout={false}
+              />
+            </div>
+          ) : null}
+        </div>
       </div>
       {compact ? (
         <p
@@ -1084,31 +1235,17 @@ function Play({
           kind={mood === "retry" ? "retry" : mood === "success" ? "success" : "idle"}
         />
       )}
-      {compact && !tightKb ? (
-        <div className="flex shrink-0 flex-col items-center" data-testid="mini-key">
-          <MiniKeyHint target={target} pulse={helpLevel >= 1} />
-          {showTypeButton ? (
-            <StartTypingButton miss={mood === "retry"} onPress={onStartTyping} />
-          ) : null}
-        </div>
+      {onSkip && mood === "retry" ? (
+        <button
+          type="button"
+          data-testid="try-another-letter"
+          onClick={onSkip}
+          className="pressable mb-1 shrink-0 rounded-full bg-white px-4 py-1.5 font-[family-name:var(--font-display)] text-sm font-semibold text-[#7657E8] shadow-sm"
+        >
+          Try another letter
+        </button>
       ) : null}
-      {!compact ? (
-        <div className="mb-1 flex w-full shrink-0 flex-col items-center">
-          {settings.keyboardHighlight ? (
-            <VirtualKeyboard
-              target={target}
-              highlightOn
-              mood={mood}
-              helpLevel={helpLevel}
-              missedKey={missedKey}
-              fingerHints={settings.fingerHints}
-              layout={layout}
-              compactHint
-              arrive={lessonPhase === "preparing"}
-            />
-          ) : null}
-        </div>
-      ) : null}
+      {keyboardBlock}
     </div>
   );
 }

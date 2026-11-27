@@ -33,7 +33,7 @@
   :root {
     --lesson-gap: 16px;
     --target-size: clamp(180px, 24vh, 280px);
-    --key-size: 56px;
+    --key-size: 62px;
     --key-gap: 8px;
     --row-offset-2: 22px;
     --row-offset-3: 45px;
@@ -409,6 +409,13 @@ html.lesson-play body {
   height: 132px;
   min-width: 130px;
   min-height: 132px;
+}
+
+.association-area.association-card.association-stage {
+  width: 148px;
+  height: auto;
+  min-height: 148px;
+  min-width: 148px;
 }
 
 @media (max-width: 500px) {
@@ -879,6 +886,23 @@ html.lesson-play body {
   animation: title-bounce 0.8s cubic-bezier(0.2, 1.3, 0.3, 1);
 }
 
+/* Secondary Magic Mirror — never compete with letter + keyboard */
+.adventure-mirror {
+  width: min(11.5rem, 22vw);
+  max-width: 11.5rem;
+}
+
+.adventure-mirror [data-testid="lesson-learning-mirror"],
+.adventure-mirror [data-testid="lesson-mirror-gated"] {
+  width: 100%;
+}
+
+@media (max-width: 500px) {
+  .adventure-mirror {
+    width: min(8.5rem, 34vw);
+  }
+}
+
 .play-board {
   --mascot-size: 52px;
 }
@@ -965,7 +989,7 @@ html.lesson-play body {
   border: 2px solid #e7dfff;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(0.85rem, 2vh, 1.25rem);
+  font-size: clamp(0.95rem, 2.2vh, 1.35rem);
   transform-origin: center;
 }
 
@@ -1134,6 +1158,305 @@ html.lesson-play body {
 
 .lesson-mirror-miss {
   box-shadow: 0 0 0 3px #c4b8e8, 0 8px 16px rgba(118, 87, 232, 0.25);
+}
+
+/*
+ * Single-screen living lesson shell.
+ * Priority: BIG keyboard + big target letter (child must see them).
+ * Shrink mirror / padding first — never shrink keys to unusable sizes.
+ */
+.magic-learning-board {
+  /* Match (or beat) the classic big lesson keyboard kids already know */
+  --key-size: clamp(54px, 6vw, 72px);
+  --key-gap: clamp(6px, 0.75vw, 10px);
+  --row-offset-2: clamp(18px, 1.7vw, 26px);
+  --row-offset-3: clamp(36px, 3.4vw, 52px);
+  --space-width: clamp(280px, 32vw, 380px);
+
+  max-width: 1200px;
+  margin-inline: auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  padding-inline: clamp(4px, 1vw, 16px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  /* Progress + compact stage up top; instruction+BIG keyboard below */
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas:
+    "progress"
+    "stage"
+    "bottom";
+  align-content: stretch;
+  justify-items: center;
+  gap: clamp(4px, 0.8vh, 10px);
+  overflow: hidden;
+}
+
+.magic-progress-row {
+  grid-area: progress;
+  min-height: 0;
+  width: 100%;
+}
+
+.magic-bottom-stack {
+  grid-area: bottom;
+  display: flex;
+  min-height: 0;
+  width: 100%;
+  max-width: 56rem;
+  flex-direction: column;
+  align-items: center;
+  /* Keep instruction + big keyboard as one block near the bottom */
+  justify-content: flex-end;
+  gap: clamp(6px, 1vh, 12px);
+  padding-bottom: clamp(4px, 0.8vh, 10px);
+}
+
+.magic-instruction-row {
+  min-height: 0;
+  width: 100%;
+}
+
+.magic-learning-keyboard {
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.magic-learning-keyboard .keyboard-shell {
+  padding: clamp(8px, 1vh, 14px) clamp(10px, 1.2vw, 16px) clamp(8px, 1vh, 14px);
+}
+
+.magic-learning-keyboard .mb-1 {
+  margin-bottom: 0;
+}
+
+.magic-learning-keyboard .keyboard-stage {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+  padding-bottom: 0;
+}
+
+/* Bigger lettering on the keycaps — catchy for kids */
+.magic-learning-keyboard .keycap {
+  font-size: clamp(1.05rem, 2.4vh, 1.45rem);
+}
+
+.magic-learning-keyboard .keycap-space {
+  font-size: clamp(1.1rem, 2.6vh, 1.55rem);
+}
+
+.magic-learning-keyboard .finger-guide-track {
+  height: clamp(1.35rem, 2.8vh, 1.75rem);
+}
+
+.magic-instruction-row p {
+  font-size: clamp(1.125rem, 2.4vh, 1.5rem) !important;
+  line-height: 1.2;
+}
+
+.magic-learning-stage {
+  grid-area: stage;
+  display: grid;
+  min-height: 0;
+  min-width: 0;
+  width: fit-content;
+  max-width: 100%;
+  height: auto;
+  /* Compact stage — leave room for the big keyboard */
+  max-height: min(32dvh, 260px);
+  align-self: start;
+  grid-template-columns: auto auto;
+  grid-template-areas: "lesson mirror";
+  align-items: center;
+  justify-items: center;
+  gap: clamp(8px, 1.2vw, 16px);
+  padding: clamp(6px, 0.9vh, 10px);
+  border-radius: clamp(16px, 2vh, 24px);
+  overflow: hidden;
+}
+
+.magic-stage-lesson {
+  grid-area: lesson;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 1vw, 14px);
+  padding: clamp(6px, 0.8vh, 10px);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.85);
+  box-shadow: 0 4px 12px rgb(48 48 71 / 0.08);
+}
+
+.magic-stage-mirror {
+  grid-area: mirror;
+  display: flex;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.magic-learning-board .association-area.association-card.association-stage {
+  width: clamp(100px, 13vh, 132px);
+  min-width: clamp(100px, 13vh, 132px);
+  min-height: 0;
+  height: auto;
+  max-height: 100%;
+}
+
+/*
+ * Mirror stays secondary to the big keyboard.
+ * Never size with percentage-of-fit-content (collapses to 0).
+ */
+.magic-mirror-shell {
+  display: flex;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.magic-mirror-frame {
+  aspect-ratio: 4 / 3;
+  box-sizing: border-box;
+  width: min(34vw, calc(min(26dvh, 220px) * 4 / 3));
+  height: auto;
+  max-height: min(26dvh, 220px);
+  min-width: 180px;
+  min-height: 135px;
+  flex-shrink: 0;
+}
+
+/* Mobile portrait: compact mirror, still-readable keys */
+@media (max-width: 779px) {
+  .magic-learning-board {
+    --key-size: clamp(40px, 9.5vw, 48px);
+    --key-gap: 4px;
+    --row-offset-2: clamp(8px, 2vw, 14px);
+    --row-offset-3: clamp(16px, 4vw, 28px);
+    --space-width: min(72vw, 260px);
+  }
+
+  .magic-learning-keyboard .keycap {
+    font-size: clamp(0.95rem, 3.2vw, 1.2rem);
+  }
+
+  .magic-learning-stage {
+    width: min(100%, 24rem);
+    max-height: none;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "mirror"
+      "lesson";
+    gap: clamp(4px, 0.8vh, 8px);
+    padding: clamp(4px, 0.8vh, 8px);
+  }
+
+  .magic-stage-lesson {
+    width: 100%;
+    max-width: 100%;
+    justify-content: center;
+  }
+
+  .magic-mirror-frame {
+    width: min(70vw, calc(min(20dvh, 160px) * 4 / 3));
+    max-height: min(20dvh, 160px);
+    min-width: 148px;
+    min-height: 111px;
+  }
+
+  .magic-learning-board .association-area.association-card.association-stage {
+    width: clamp(84px, 20vw, 108px);
+    min-width: clamp(84px, 20vw, 108px);
+  }
+}
+
+@media (max-height: 759px) {
+  .magic-mirror-frame {
+    width: min(30vw, calc(min(22dvh, 180px) * 4 / 3));
+    max-height: min(22dvh, 180px);
+  }
+
+  .magic-learning-board {
+    --key-size: clamp(48px, 5.2vw, 58px);
+  }
+
+  .magic-learning-stage {
+    max-height: min(28dvh, 220px);
+  }
+}
+
+@media (max-height: 649px) {
+  .magic-learning-board {
+    gap: 2px;
+    /* Still keep keys chunky — shrink mirror, not the keyboard */
+    --key-size: clamp(42px, 5vw, 52px);
+  }
+
+  .magic-mirror-frame {
+    width: min(26vw, calc(min(18dvh, 140px) * 4 / 3));
+    max-height: min(18dvh, 140px);
+    min-width: 132px;
+    min-height: 99px;
+  }
+
+  .magic-learning-stage {
+    max-height: min(24dvh, 180px);
+  }
+}
+
+/* Short landscape: learning scene beside big keyboard */
+@media (orientation: landscape) and (max-height: 500px) {
+  .magic-learning-board {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "progress progress"
+      "stage bottom";
+    gap: 4px;
+    --key-size: clamp(36px, 7.5vh, 48px);
+  }
+
+  .magic-learning-stage {
+    grid-template-columns: auto auto;
+    grid-template-rows: auto;
+    grid-template-areas: "lesson mirror";
+    max-height: none;
+  }
+
+  .magic-bottom-stack {
+    justify-content: center;
+  }
+
+  .magic-mirror-frame {
+    width: min(24vw, calc(min(42dvh, 140px) * 4 / 3));
+    max-height: min(42dvh, 140px);
+    min-width: 120px;
+    min-height: 90px;
+  }
 }
 
 .mirror-frame {
