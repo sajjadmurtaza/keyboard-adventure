@@ -13,6 +13,9 @@ type LessonCompleteProps = {
   nextLabel: string | null;
   childName: string;
   reducedMotion: boolean;
+  /** Optional wardrobe reward — never gates next lesson. */
+  costumeUnlock?: { name: string; emoji: string } | null;
+  onVisitWardrobe?: () => void;
 };
 
 export function LessonComplete({
@@ -24,6 +27,8 @@ export function LessonComplete({
   nextLabel,
   childName,
   reducedMotion,
+  costumeUnlock = null,
+  onVisitWardrobe,
 }: LessonCompleteProps) {
   const [stars, setStars] = useState(reducedMotion ? 5 : 0);
   const [showButtons, setShowButtons] = useState(reducedMotion);
@@ -68,8 +73,26 @@ export function LessonComplete({
             You also remembered {remembered.join(" · ")}
           </p>
         ) : null}
+        {costumeUnlock ? (
+          <p
+            className="rounded-2xl bg-white px-5 py-3 font-[family-name:var(--font-display)] text-xl font-bold text-[#7657E8] shadow-md"
+            data-testid="costume-unlock-banner"
+          >
+            {costumeUnlock.emoji} You unlocked {costumeUnlock.name}!
+          </p>
+        ) : null}
         {showButtons ? (
           <div className="relative z-[4] flex flex-wrap justify-center gap-4">
+            {costumeUnlock && onVisitWardrobe ? (
+              <button
+                type="button"
+                data-testid="visit-wardrobe"
+                onClick={onVisitWardrobe}
+                className="pressable min-h-16 rounded-full bg-[#FFD85A] px-10 font-[family-name:var(--font-display)] text-2xl font-bold text-[#34364A] shadow-lg"
+              >
+                Visit Magic Mirror ✨
+              </button>
+            ) : null}
             {hasNext && nextLabel ? (
               <button
                 type="button"

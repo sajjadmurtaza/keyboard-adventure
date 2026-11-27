@@ -58,6 +58,14 @@ describe("settings", () => {
     expect(loaded.voiceURI).toBe("");
     expect(loaded.childName).toBe("");
     expect(loaded.keyboardLayout).toBe("auto");
+    expect(loaded.cameraDressUp).toBe(false);
+  });
+
+  it("keeps Magic Mirror camera off by default", () => {
+    expect(defaultSettings.cameraDressUp).toBe(false);
+    expect(loadSettings().cameraDressUp).toBe(false);
+    saveSettings({ ...defaultSettings, cameraDressUp: true });
+    expect(loadSettings().cameraDressUp).toBe(true);
   });
 
   it("drops scam-like settings payloads", () => {

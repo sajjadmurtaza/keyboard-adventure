@@ -9,4 +9,6 @@ export type MascotViewProps = {
   mood: MascotMood;
   compact?: boolean;
   tiny?: boolean;
+  /** Wardrobe emoji accessories (Phase 1 — no camera). */
+  accessories?: string[];
 };

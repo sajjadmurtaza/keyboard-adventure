@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <defs>
+    <radialGradient id="lTuft" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#FFE08A"/>
+      <stop offset="55%" stop-color="#F0A34A"/>
+      <stop offset="100%" stop-color="#C45E1A"/>
+    </radialGradient>
+    <radialGradient id="lTuft2" cx="45%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FFD27A"/>
+      <stop offset="100%" stop-color="#B34A12"/>
+    </radialGradient>
+    <filter id="lSoft" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#5A2A08" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <!-- layered mane tufts (open center for face) -->
+  <g filter="url(#lSoft)">
+    <circle cx="150" cy="34" r="36" fill="url(#lTuft)"/>
+    <circle cx="78" cy="52" r="34" fill="url(#lTuft2)"/>
+    <circle cx="222" cy="52" r="34" fill="url(#lTuft2)"/>
+    <circle cx="42" cy="110" r="32" fill="url(#lTuft)"/>
+    <circle cx="258" cy="110" r="32" fill="url(#lTuft)"/>
+    <circle cx="38" cy="178" r="30" fill="url(#lTuft2)"/>
+    <circle cx="262" cy="178" r="30" fill="url(#lTuft2)"/>
+    <circle cx="72" cy="240" r="30" fill="url(#lTuft)"/>
+    <circle cx="228" cy="240" r="30" fill="url(#lTuft)"/>
+    <circle cx="150" cy="262" r="32" fill="url(#lTuft2)"/>
+    <circle cx="108" cy="48" r="22" fill="#E76F3C"/>
+    <circle cx="192" cy="48" r="22" fill="#E76F3C"/>
+    <circle cx="56" cy="148" r="18" fill="#F4B860"/>
+    <circle cx="244" cy="148" r="18" fill="#F4B860"/>
+    <circle cx="112" cy="250" r="18" fill="#E07A32"/>
+    <circle cx="188" cy="250" r="18" fill="#E07A32"/>
+  </g>
+  <!-- soft ears -->
+  <g filter="url(#lSoft)">
+    <ellipse cx="68" cy="58" rx="22" ry="28" fill="#F6BD60" stroke="#C45E1A" stroke-width="3"/>
+    <ellipse cx="68" cy="62" rx="12" ry="16" fill="#F4A27A"/>
+    <ellipse cx="232" cy="58" rx="22" ry="28" fill="#F6BD60" stroke="#C45E1A" stroke-width="3"/>
+    <ellipse cx="232" cy="62" rx="12" ry="16" fill="#F4A27A"/>
+  </g>
+  <!-- inner mane ring (keeps face open) -->
+  <path fill="#D9782A" fill-opacity="0.55" fill-rule="evenodd" d="
+    M150 58c48 0 86 36 86 86s-38 86-86 86-86-36-86-86 38-86 86-86z
+    M150 86c-34 0-58 26-58 58s24 58 58 58 58-26 58-58-24-58-58-58z"/>
+  <!-- fur tip highlights -->
+  <circle cx="150" cy="28" r="10" fill="#FFF0C0" opacity="0.55"/>
+  <circle cx="48" cy="100" r="8" fill="#FFF0C0" opacity="0.4"/>
+  <circle cx="252" cy="100" r="8" fill="#FFF0C0" opacity="0.4"/>
+</svg>

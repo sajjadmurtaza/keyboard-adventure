@@ -3,6 +3,7 @@ import {
   preferredEnglishLang,
   rankVoices,
   scoreVoice,
+  voicesForPrivacy,
   type RankableVoice,
 } from "@/lib/audio/voiceSelect";
 import { describe, expect, it } from "vitest";
@@ -42,5 +43,23 @@ describe("friendly voice ranking", () => {
       scoreVoice(voice({ name: "Samantha Compact", lang: "en-US" }), "en-us", true),
     );
     expect(preferredEnglishLang("en-GB")).toBe("en-GB");
+  });
+
+  it("enforces local-only when preferLocal is on (privacy: child name)", () => {
+    const local = voice({ name: "Samantha", lang: "en-US", localService: true });
+    const remote = voice({
+      name: "Google US English Female Online (Natural)",
+      lang: "en-US",
+      localService: false,
+      voiceURI: "remote-neural",
+    });
+    const pool = [remote, local];
+    expect(voicesForPrivacy(pool, true).map((v) => v.name)).toEqual(["Samantha"]);
+    expect(rankVoices(pool, true)[0]?.name).toBe("Samantha");
+    // Saved remote URI must not win while preferLocal is on
+    expect(pickFriendlyVoice(pool, "remote-neural", true)?.name).toBe("Samantha");
+    // With preferLocal off, remote URI is honored
+    expect(pickFriendlyVoice(pool, "remote-neural", false)?.name).toContain("Google");
+    expect(pickFriendlyVoice([remote], "", true)).toBeNull();
   });
 });

@@ -69,4 +69,34 @@ describe("progress storage", () => {
     expect(resetProgress("Ada").childName).toBe("Ada");
     expect(loadProgress().completedLessons).toEqual([]);
   });
+
+  it("persists wardrobe unlocks and backfills from letters", () => {
+    saveProgress({
+      ...loadProgress(),
+      introducedKeys: ["f", "d"],
+      unlockedCostumes: ["fish-hat"],
+      equippedCostumes: ["fish-hat"],
+      newlyUnlockedCostume: "fish-hat",
+    });
+    const loaded = loadProgress();
+    expect(loaded.unlockedCostumes).toEqual(
+      expect.arrayContaining(["fish-hat", "dino-spikes"]),
+    );
+    expect(loaded.equippedCostumes).toEqual(["fish-hat"]);
+    expect(loaded.newlyUnlockedCostume).toBe("fish-hat");
+
+    window.localStorage.setItem(
+      "keyboard-adventure-progress-v1",
+      JSON.stringify({
+        introducedKeys: ["c"],
+        unlockedCostumes: ["bogus"],
+        equippedCostumes: ["fish-hat", "bogus"],
+        newlyUnlockedCostume: "bogus",
+      }),
+    );
+    const repaired = loadProgress();
+    expect(repaired.unlockedCostumes).toEqual(["cat-ears"]);
+    expect(repaired.equippedCostumes).toEqual([]);
+    expect(repaired.newlyUnlockedCostume).toBeNull();
+  });
 });

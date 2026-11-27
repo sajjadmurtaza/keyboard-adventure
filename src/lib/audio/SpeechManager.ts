@@ -45,7 +45,8 @@ export class SpeechManager {
   }
 
   list(): VoiceOption[] {
-    return rankVoices(this.voices, true).map((voice) => ({
+    // Parent picker shows all voices, but marks local — speak() enforces preferLocal.
+    return rankVoices(this.voices, false).map((voice) => ({
       uri: voice.voiceURI,
       name: voice.name,
       lang: voice.lang,
@@ -64,12 +65,22 @@ export class SpeechManager {
     if (options.priority !== "high" && now - this.lastSpokeAt < cooldownMs) {
       return false;
     }
+    // Voices often arrive after start(); refresh before local-only enforcement.
+    if (!this.voices.length) {
+      this.voices = window.speechSynthesis.getVoices();
+    }
+    const voice = this.pickVoice(options.voiceURI, options.preferLocal);
+    // Strict local-only: never fall back to the browser default voice (may be remote).
+    // Silence is preferable to transmitting the child's name via cloud TTS.
+    if (options.preferLocal && (!voice || !voice.localService)) {
+      onEnd?.();
+      return false;
+    }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(stripForSpeech(text));
     utterance.rate = Math.min(1.08, Math.max(0.9, options.rate));
     utterance.pitch = Math.min(1.08, Math.max(1, options.pitch));
     utterance.volume = Math.max(0, Math.min(1, options.volume));
-    const voice = this.pickVoice(options.voiceURI, options.preferLocal);
     if (voice) utterance.voice = voice;
     utterance.lang = voice?.lang ?? preferredEnglishLang();
     let settled = false;

@@ -10,6 +10,7 @@ type MascotProps = {
   mood?: MascotMood;
   compact?: boolean;
   tiny?: boolean;
+  accessories?: string[];
 };
 
 export function Mascot({
@@ -17,10 +18,11 @@ export function Mascot({
   mood = "idle",
   compact = false,
   tiny = false,
+  accessories,
 }: MascotProps) {
   return (
     <div className="flex items-center justify-center gap-2">
-      <EmojiBear mood={mood} compact={compact} tiny={tiny} />
+      <EmojiBear mood={mood} compact={compact} tiny={tiny} accessories={accessories} />
       {tiny ? null : (
         <p
           className={`flex h-10 min-w-[10.5rem] max-w-sm items-center justify-center overflow-hidden rounded-[22px] bg-white text-center font-[family-name:var(--font-display)] font-semibold text-[#34364A] shadow-[0_8px_24px_rgba(118,87,232,0.12)] ${

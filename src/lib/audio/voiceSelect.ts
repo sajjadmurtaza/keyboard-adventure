@@ -31,9 +31,22 @@ export function preferredEnglishLang(locale = typeof navigator !== "undefined" ?
   return /^en/i.test(locale) ? locale : "en-US";
 }
 
+/**
+ * When preferLocal is true, remote/cloud voices are excluded (privacy: child's name).
+ * Ranking among local voices still prefers friendly English labels.
+ */
+export function voicesForPrivacy(
+  voices: RankableVoice[],
+  preferLocal: boolean,
+): RankableVoice[] {
+  if (!preferLocal) return voices;
+  return voices.filter((voice) => voice.localService);
+}
+
 export function rankVoices(voices: RankableVoice[], preferLocal: boolean, locale = preferredEnglishLang()) {
   const lang = locale.toLowerCase();
-  return [...voices].sort(
+  const pool = voicesForPrivacy(voices, preferLocal);
+  return [...pool].sort(
     (a, b) => scoreVoice(b, lang, preferLocal) - scoreVoice(a, lang, preferLocal),
   );
 }
@@ -43,9 +56,11 @@ export function pickFriendlyVoice(
   uri: string,
   preferLocal: boolean,
 ): RankableVoice | null {
-  if (!voices.length) return null;
+  const pool = voicesForPrivacy(voices, preferLocal);
+  if (!pool.length) return null;
   if (uri) {
-    const selected = voices.find((voice) => voice.voiceURI === uri);
+    const selected = pool.find((voice) => voice.voiceURI === uri);
+    // Parent may have saved a remote URI — ignore it when preferLocal is on
     if (selected) return selected;
   }
   return rankVoices(voices, preferLocal)[0] ?? null;
@@ -59,7 +74,12 @@ export function scoreVoice(voice: RankableVoice, locale: string, preferLocal: bo
   if (lang === locale) score += 6;
   else if (lang.startsWith("en")) score += 3;
   if (preferLocal && voice.localService) score += 8;
-  if (/enhanced|premium|neural|natural|online \(natural\)/.test(name)) score += 12;
+  // Do not boost cloud/neural labels when enforcing local-only privacy
+  if (!preferLocal && /enhanced|premium|neural|natural|online \(natural\)/.test(name)) {
+    score += 12;
+  } else if (preferLocal && /enhanced|premium/.test(name) && !/online|neural|cloud/.test(name)) {
+    score += 6;
+  }
   if (/\bgoogle\b/.test(name) && /us|uk|english/.test(name)) score += 6;
   if (FRIENDLY_VOICE_HINTS.some((hint) => name.includes(hint))) score += 16;
   if (/female/.test(name)) score += 10;

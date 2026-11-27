@@ -14,9 +14,11 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "check:keys": "npx tsx scripts/keys.check.ts",
+    "sync:mediapipe": "node scripts/sync-mediapipe.mjs",
     "verify": "npm run lint && npm run typecheck && npm run test:coverage && npm run build"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.21",
     "@vercel/analytics": "^2.0.1",
     "howler": "^2.2.4",
     "next": "16.3.5",

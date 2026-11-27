@@ -1,3 +1,9 @@
+import {
+  isCostumeId,
+  parseCostumeIds,
+  unlockedFromLetters,
+  type CostumeId,
+} from "@/data/costumes";
 import { keysFromLessons } from "@/lib/curriculum/sequence";
 import { parseChildName } from "@/utils/childName";
 import { normalizeTarget } from "@/utils/keys";
@@ -5,6 +11,7 @@ import { normalizeTarget } from "@/utils/keys";
 const STORAGE_KEY = "keyboard-adventure-progress-v1";
 const MAX_LESSON = 32;
 const MAX_COMPLETED = 32;
+const MAX_EQUIPPED = 3;
 
 export type Progress = {
   childName: string;
@@ -16,6 +23,12 @@ export type Progress = {
   lessonBestResults: Record<string, number>;
   newlyUnlocked: number | null;
   introducedKeys: string[];
+  /** Wardrobe unlocks (letter intros) — device-local only. */
+  unlockedCostumes: CostumeId[];
+  /** Worn accessories on the mascot (subset of unlocked). */
+  equippedCostumes: CostumeId[];
+  /** One-shot wardrobe celebration after a new unlock. */
+  newlyUnlockedCostume: CostumeId | null;
 };
 
 const emptyProgress = (): Progress => ({
@@ -28,6 +41,9 @@ const emptyProgress = (): Progress => ({
   lessonBestResults: {},
   newlyUnlocked: null,
   introducedKeys: [],
+  unlockedCostumes: [],
+  equippedCostumes: [],
+  newlyUnlockedCostume: null,
 });
 
 function asCount(value: unknown, fallback = 0): number {
@@ -84,6 +100,20 @@ export function loadProgress(): Progress {
     const newly = parsed.newlyUnlocked;
     const completedLessons = asLessonIds(parsed.completedLessons);
     const introduced = asKeyList(parsed.introducedKeys);
+    const introducedKeys = introduced ?? keysFromLessons(completedLessons);
+    const unlockedCostumes = mergeUnlocked(
+      parseCostumeIds(parsed.unlockedCostumes),
+      unlockedFromLetters(introducedKeys),
+    );
+    const newlyCostume =
+      typeof parsed.newlyUnlockedCostume === "string" &&
+      isCostumeId(parsed.newlyUnlockedCostume) &&
+      unlockedCostumes.includes(parsed.newlyUnlockedCostume)
+        ? parsed.newlyUnlockedCostume
+        : null;
+    const equippedCostumes = parseCostumeIds(parsed.equippedCostumes, MAX_EQUIPPED).filter(
+      (id) => unlockedCostumes.includes(id),
+    );
     return {
       childName: parseChildName(parsed.childName) ?? "",
       completedLessons,
@@ -93,11 +123,18 @@ export function loadProgress(): Progress {
       incorrectAttempts: asCount(parsed.incorrectAttempts),
       lessonBestResults: asBestResults(parsed.lessonBestResults),
       newlyUnlocked: typeof newly === "number" ? asLessonId(newly) : null,
-      introducedKeys: introduced ?? keysFromLessons(completedLessons),
+      introducedKeys,
+      unlockedCostumes,
+      equippedCostumes,
+      newlyUnlockedCostume: newlyCostume,
     };
   } catch {
     return emptyProgress();
   }
+}
+
+function mergeUnlocked(stored: CostumeId[], fromLetters: CostumeId[]): CostumeId[] {
+  return [...new Set([...stored, ...fromLetters])];
 }
 
 export function saveProgress(progress: Progress) {

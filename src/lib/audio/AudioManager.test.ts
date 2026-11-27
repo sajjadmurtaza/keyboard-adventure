@@ -65,7 +65,15 @@ function installSpeech() {
         current = item;
       },
       getVoices() {
-        return [];
+        return [
+          {
+            default: true,
+            lang: "en-US",
+            localService: true,
+            name: "Test Local Voice",
+            voiceURI: "test-local",
+          },
+        ] as SpeechSynthesisVoice[];
       },
       addEventListener() {},
       removeEventListener() {},

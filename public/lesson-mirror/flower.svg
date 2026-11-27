@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280" width="280" height="280">
+  <defs>
+    <radialGradient id="flPetal" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#FF8A9B"/>
+      <stop offset="100%" stop-color="#E5395B"/>
+    </radialGradient>
+    <radialGradient id="flCenter" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FFE082"/>
+      <stop offset="100%" stop-color="#F9A825"/>
+    </radialGradient>
+    <filter id="flSoft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#6A1B2A" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <!-- petal crown — open center for child's face -->
+  <g filter="url(#flSoft)">
+    <ellipse cx="140" cy="36" rx="26" ry="38" fill="url(#flPetal)" stroke="#B71C3A" stroke-width="3"/>
+    <ellipse cx="72" cy="68" rx="38" ry="26" fill="url(#flPetal)" stroke="#B71C3A" stroke-width="3" transform="rotate(-40 72 68)"/>
+    <ellipse cx="208" cy="68" rx="38" ry="26" fill="url(#flPetal)" stroke="#B71C3A" stroke-width="3" transform="rotate(40 208 68)"/>
+    <ellipse cx="54" cy="130" rx="34" ry="24" fill="url(#flPetal)" stroke="#B71C3A" stroke-width="3" transform="rotate(-10 54 130)"/>
+    <ellipse cx="226" cy="130" rx="34" ry="24" fill="url(#flPetal)" stroke="#B71C3A" stroke-width="3" transform="rotate(10 226 130)"/>
+    <ellipse cx="80" cy="52" rx="28" ry="32" fill="url(#flPetal)" stroke="#B71C3A" stroke-width="3" transform="rotate(-55 80 52)"/>
+    <ellipse cx="200" cy="52" rx="28" ry="32" fill="url(#flPetal)" stroke="#B71C3A" stroke-width="3" transform="rotate(55 200 52)"/>
+  </g>
+  <!-- soft yellow halo ring (not a solid disc over the face) -->
+  <circle cx="140" cy="148" r="88" fill="none" stroke="url(#flCenter)" stroke-width="14" opacity="0.95"/>
+  <circle cx="140" cy="148" r="78" fill="none" stroke="#C67C00" stroke-width="3" opacity="0.55"/>
+  <circle cx="104" cy="70" r="5" fill="#FFFFFF" opacity="0.75"/>
+  <circle cx="176" cy="66" r="4" fill="#FFFFFF" opacity="0.65"/>
+</svg>

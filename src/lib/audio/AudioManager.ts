@@ -148,6 +148,12 @@ export class AudioManager {
     if (!settings?.sound) return;
 
     switch (event.type) {
+      case "DRESS_UP_LINE":
+        this.sounds.play("button");
+        if (settings.voiceGuidance && event.phrase) {
+          this.say("high", "celebration", 0, event.phrase);
+        }
+        return;
       case "BUTTON_TAP":
         this.sounds.play("button");
         return;

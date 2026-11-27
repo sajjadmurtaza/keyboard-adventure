@@ -19,8 +19,20 @@ test.describe("README screenshots", () => {
     await page.goto("/");
     await expect(page.getByRole("button", { name: "⭐ START! ⭐" })).toBeVisible();
     await expect(page.getByText("Ready, Fatima?")).toBeVisible();
+    await expect(page.getByTestId("open-dress-up")).toBeVisible();
+    await expect(page.getByTestId("open-wardrobe")).toBeVisible();
     await snap(page, "home.png");
 
+    await page.getByTestId("open-dress-up").click();
+    await expect(page.getByRole("heading", { name: "Magic Mirror" })).toBeVisible();
+    await expect(page.getByTestId("dress-up-astronaut")).toBeVisible();
+    await snap(page, "dress-up.png");
+
+    await page.getByRole("button", { name: /Treasure Hats/i }).click();
+    await expect(page.getByText(/treasures/i)).toBeVisible();
+    await snap(page, "treasure-hats.png");
+
+    await page.goto("/");
     await page.getByRole("button", { name: "⭐ START! ⭐" }).click();
     await expect(page.getByRole("button", { name: "PLAY ▶" })).toBeVisible();
     await snap(page, "map.png");

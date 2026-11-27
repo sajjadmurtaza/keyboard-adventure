@@ -38,6 +38,11 @@ export type ParentSettings = {
   keyboardHighlight: boolean;
   keyboardLayout: KeyboardLayoutPreference;
   difficulty: Difficulty;
+  /**
+   * Parent allows Magic Dress-Up to request the camera.
+   * Default false. Enabling never auto-starts getUserMedia — child must tap Start Magic Mirror.
+   */
+  cameraDressUp: boolean;
 };
 
 export const defaultSettings: ParentSettings = {
@@ -64,6 +69,7 @@ export const defaultSettings: ParentSettings = {
   keyboardHighlight: true,
   keyboardLayout: "auto",
   difficulty: "beginner",
+  cameraDressUp: false,
 };
 
 function asBool(value: unknown, fallback: boolean): boolean {
@@ -137,6 +143,7 @@ export function loadSettings(): ParentSettings {
       keyboardHighlight: asBool(parsed.keyboardHighlight, defaultSettings.keyboardHighlight),
       keyboardLayout: parseKeyboardLayout(parsed.keyboardLayout),
       difficulty: parseDifficulty(parsed.difficulty),
+      cameraDressUp: asBool(parsed.cameraDressUp, defaultSettings.cameraDressUp),
     };
   } catch {
     return defaultSettings;

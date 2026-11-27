@@ -12,15 +12,26 @@ import { ParentSettingsPanel } from "@/components/ParentSettings";
 import { ProgressStars } from "@/components/ProgressStars";
 import { TargetLetter } from "@/components/TargetLetter";
 import { LetterArt } from "@/components/illustrations/LetterArt";
-import { LetterAssociationCloud } from "@/components/LetterAssociationCloud";
+import {
+  LetterAssociationCloud,
+  type AssociationReaction,
+} from "@/components/LetterAssociationCloud";
+import { LessonLearningMirror } from "@/components/LessonLearningMirror";
 import { MiniKeyHint } from "@/components/MiniKeyHint";
 import { MobileTypingField, StartTypingButton } from "@/components/MobileTypePad";
 import { VirtualKeyboard } from "@/components/VirtualKeyboard";
+import { MagicDressUp } from "@/components/MagicDressUp";
+import { Wardrobe } from "@/components/Wardrobe";
 import {
   buildPracticeSequence,
   getLesson,
   PRACTICE_KEY_OPTIONS,
 } from "@/data/lessons";
+import {
+  getCostume,
+  grantOnLetterIntro,
+  type CostumeId,
+} from "@/data/costumes";
 import { associationsFor } from "@/data/letterAssociations";
 import { getSuccessPraise } from "@/data/letterPraise";
 import { useKeyboardInput } from "@/hooks/useKeyboardInput";
@@ -75,7 +86,15 @@ import {
   type Progress,
 } from "@/utils/storage";
 
-type View = "home" | "lessons" | "practice" | "play" | "complete" | "parent";
+type View =
+  | "home"
+  | "lessons"
+  | "practice"
+  | "play"
+  | "complete"
+  | "parent"
+  | "wardrobe"
+  | "dress-up";
 type Mood = "idle" | "success" | "retry";
 
 function mascotMoodFor(mood: Mood, streak: number): MascotMood {
@@ -112,6 +131,8 @@ export function KeyboardAdventure() {
   const [helpLevel, setHelpLevel] = useState(0);
   const [streak, setStreak] = useState(0);
   const [streakNote, setStreakNote] = useState<string | null>(null);
+  const [costumeNote, setCostumeNote] = useState<string | null>(null);
+  const [sessionCostumeUnlock, setSessionCostumeUnlock] = useState<CostumeId | null>(null);
   const [celebrationSeed, setCelebrationSeed] = useState(1);
   const [missedKey, setMissedKey] = useState<string | null>(null);
   const [practiceKeys, setPracticeKeys] = useState<string[]>(["f", "j", " "]);
@@ -279,6 +300,16 @@ export function KeyboardAdventure() {
     setView("home");
   }
 
+  function openWardrobe() {
+    blurMobileType();
+    if (progress?.newlyUnlockedCostume) {
+      persistProgress({ ...progress, newlyUnlockedCostume: null });
+    }
+    setSessionCostumeUnlock(null);
+    setCostumeNote(null);
+    setView("wardrobe");
+  }
+
   function startSequence(keys: string[], id: number, preserve = false) {
     let seq = keys;
     if (!preserve && id > 0 && settings.difficulty === "growing") {
@@ -298,6 +329,8 @@ export function KeyboardAdventure() {
     setHelpLevel(0);
     setStreak(0);
     setStreakNote(null);
+    setCostumeNote(null);
+    setSessionCostumeUnlock(null);
     setView("play");
     setSeenLetters([]);
     scheduleReady(lessonGenRef.current);
@@ -407,8 +440,25 @@ export function KeyboardAdventure() {
       if (!introducedRef.current.includes(normalizedWanted)) {
         introducedRef.current = [...introducedRef.current, normalizedWanted];
         setIntroduced(introducedRef.current);
+        const granted = grantOnLetterIntro(
+          normalizedWanted,
+          progress?.unlockedCostumes ?? [],
+        );
         if (progress) {
-          persistProgress({ ...progress, introducedKeys: introducedRef.current });
+          if (granted) {
+            const unlockedCostumes = [...progress.unlockedCostumes, granted.id];
+            setSessionCostumeUnlock(granted.id);
+            setCostumeNote(`🎁 You unlocked ${granted.name}! Visit Magic Mirror`);
+            window.setTimeout(() => setCostumeNote(null), celebrationMs(settings, quiet, nextStreak) + 800);
+            persistProgress({
+              ...progress,
+              introducedKeys: introducedRef.current,
+              unlockedCostumes,
+              newlyUnlockedCostume: granted.id,
+            });
+          } else {
+            persistProgress({ ...progress, introducedKeys: introducedRef.current });
+          }
         }
       }
       const firstLook = !seenLetters.includes(normalizedWanted);
@@ -503,13 +553,13 @@ export function KeyboardAdventure() {
   }
 
   return (
-    <div className={`relative flex flex-col overflow-hidden px-4 text-[#34364A] ${
+    <div className={`relative flex flex-col px-4 text-[#34364A] ${
       view === "play" && mood === "retry"
         ? "scene-miss bg-[#F4FBFF]"
         : view === "play" && mood === "success"
           ? "scene-win bg-[#F4FBFF]"
           : "bg-[#F4FBFF]"
-    } ${view === "play" ? "h-[var(--visual-viewport-height,100dvh)] overflow-hidden pb-[max(1rem,env(safe-area-inset-bottom))]" : "min-h-dvh pb-3"}`}
+    } ${view === "play" ? "h-[var(--visual-viewport-height,100dvh)] overflow-hidden pb-[max(1rem,env(safe-area-inset-bottom))]" : "min-h-dvh overflow-x-hidden overflow-y-auto pb-3"}`}
     style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
     >
       <Decor dim={narrow && keyboardOpen} hidden={narrow && keyboardOpen} />
@@ -592,11 +642,45 @@ export function KeyboardAdventure() {
         {view === "home" ? (
           <Home
             name={childName}
+            accessories={(progress?.equippedCostumes ?? []).map((id) => getCostume(id).emoji)}
             onStart={() => {
               audio?.unlock();
               setView("lessons");
             }}
             onPractice={() => setView("practice")}
+            onWardrobe={() => {
+              audio?.unlock();
+              openWardrobe();
+            }}
+            onDressUp={() => {
+              audio?.unlock();
+              setView("dress-up");
+            }}
+          />
+        ) : null}
+
+        {view === "dress-up" ? (
+          <MagicDressUp
+            cameraAllowedByParent={settings.cameraDressUp}
+            voiceGuidance={settings.voiceGuidance}
+            soundOn={settings.sound}
+            reducedMotion={quiet}
+            onSpeak={(phrase) => audio?.notify({ type: "DRESS_UP_LINE", phrase })}
+            onBack={goHome}
+            onOpenWardrobe={openWardrobe}
+            onOpenParentSettings={() => setView("parent")}
+          />
+        ) : null}
+
+        {view === "wardrobe" && progress ? (
+          <Wardrobe
+            unlocked={progress.unlockedCostumes}
+            equipped={progress.equippedCostumes}
+            childName={childName}
+            reducedMotion={quiet}
+            onEquip={(ids) => persistProgress({ ...progress, equippedCostumes: ids })}
+            onBack={goHome}
+            onContinueTyping={() => setView("lessons")}
           />
         ) : null}
 
@@ -638,6 +722,7 @@ export function KeyboardAdventure() {
             settings={settings}
             reducedMotion={quiet}
             streakNote={streakNote}
+            costumeNote={costumeNote}
             celebrationSeed={celebrationSeed}
             streak={streak}
             helpLevel={helpLevel}
@@ -652,6 +737,7 @@ export function KeyboardAdventure() {
             progressFilled={index + (mood === "success" ? 1 : 0)}
             layout={resolvedLayout}
             tone={visitTone(normalizeTarget(target), activeRun.newKeys, introduced)}
+            onOpenParentSettings={() => setView("parent")}
           />
         ) : null}
 
@@ -674,6 +760,16 @@ export function KeyboardAdventure() {
             nextLabel={nextLessonLabel(lessonId)}
             childName={childName}
             reducedMotion={quiet}
+            costumeUnlock={
+              sessionCostumeUnlock || progress?.newlyUnlockedCostume
+                ? (() => {
+                    const id = sessionCostumeUnlock ?? progress!.newlyUnlockedCostume!;
+                    const c = getCostume(id);
+                    return { name: c.name, emoji: c.emoji };
+                  })()
+                : null
+            }
+            onVisitWardrobe={openWardrobe}
           />
         ) : null}
 
@@ -714,16 +810,25 @@ export function KeyboardAdventure() {
 
 function Home({
   name,
+  accessories,
   onStart,
   onPractice,
+  onWardrobe,
+  onDressUp,
 }: {
   name: string;
+  accessories: string[];
   onStart: () => void;
   onPractice: () => void;
+  onWardrobe: () => void;
+  onDressUp: () => void;
 }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-      <Mascot line={name ? `Ready, ${name}?` : "Ready to type?"} />
+      <Mascot
+        line={name ? `Ready, ${name}?` : "Ready to type?"}
+        accessories={accessories}
+      />
       <h1 className="font-[family-name:var(--font-display)] text-5xl font-bold text-[#7657E8] sm:text-7xl">
         Keyboard Adventure
       </h1>
@@ -744,6 +849,22 @@ function Home({
       >
         Practice
       </button>
+      <button
+        type="button"
+        data-testid="open-dress-up"
+        onClick={onDressUp}
+        className="pressable min-h-14 w-[min(16rem,80%)] rounded-full bg-[#7ED6A5] font-[family-name:var(--font-display)] text-xl font-bold text-[#34364A] shadow-md"
+      >
+        🌈 Magic Dress-Up
+      </button>
+      <button
+        type="button"
+        data-testid="open-wardrobe"
+        onClick={onWardrobe}
+        className="pressable min-h-12 w-[min(16rem,80%)] rounded-full bg-white font-[family-name:var(--font-display)] text-lg font-bold text-[#7657E8] shadow-md"
+      >
+        🎁 Treasure Hats
+      </button>
     </div>
   );
 }
@@ -758,6 +879,7 @@ function Play({
   settings,
   reducedMotion,
   streakNote,
+  costumeNote,
   celebrationSeed,
   streak,
   helpLevel,
@@ -772,6 +894,7 @@ function Play({
   progressFilled,
   layout,
   tone,
+  onOpenParentSettings,
 }: {
   step: number;
   target: string;
@@ -782,6 +905,7 @@ function Play({
   settings: ParentSettings;
   reducedMotion: boolean;
   streakNote: string | null;
+  costumeNote: string | null;
   celebrationSeed: number;
   streak: number;
   helpLevel: number;
@@ -789,6 +913,7 @@ function Play({
   compact: boolean;
   density: "tall" | "normal" | "compact" | "tight";
   keyboardOpen: boolean;
+  onOpenParentSettings: () => void;
   showTypeButton: boolean;
   onStartTyping: () => void;
   onRepeat: () => void;
@@ -832,10 +957,20 @@ function Play({
     }
   }, [density, compact, keyboardOpen, target, mood]);
 
+  const living = target === "f" || target === "j";
+  const associationReaction: AssociationReaction =
+    mood === "success"
+      ? "reward"
+      : mood === "retry"
+        ? "encourage"
+        : helpLevel >= 2
+          ? "thinking"
+          : "idle";
   const association = (
     <LetterAssociationCloud
       letter={target}
-      mode={mood === "success" ? "reward" : "intro"}
+      reaction={associationReaction}
+      living={living}
       badge={compact && !tightKb}
       inline={tightKb}
       reducedMotion={reducedMotion}
@@ -853,6 +988,7 @@ function Play({
       style={{ gap: "var(--lesson-gap)" }}
       data-testid="play-stage"
       data-lesson-phase={lessonPhase}
+      data-living={living ? "true" : "false"}
     >
       {mood === "success" ? (
         <Celebration
@@ -872,6 +1008,14 @@ function Play({
         {streakNote && density === "tall" && !tightKb ? (
           <p className="pointer-events-none absolute top-0 right-2 star-pop font-[family-name:var(--font-display)] text-xl font-bold text-[#7657E8] max-[500px]:text-lg">
             {streakNote}
+          </p>
+        ) : null}
+        {costumeNote && !tightKb ? (
+          <p
+            className="pointer-events-none absolute top-0 left-2 max-w-[11rem] star-pop font-[family-name:var(--font-display)] text-sm font-bold text-[#7657E8] max-[500px]:text-xs"
+            data-testid="costume-unlock-toast"
+          >
+            {costumeNote}
           </p>
         ) : null}
         <div className="flex items-center gap-1">
@@ -894,17 +1038,36 @@ function Play({
           </button>
         </div>
       </div>
-      <div className="target-group relative z-[3] min-h-0 w-full">
-        {association}
-        <TargetLetter
-          key={`${step}-${target}`}
-          target={target}
-          mood={reducedMotion && mood === "idle" ? "idle" : mood}
-          reducedMotion={reducedMotion}
-          burst={mood === "success" && !reducedMotion}
-          burstLevel={tightKb ? 1 : burstLevel}
-          size={tightKb ? "compact" : compact ? "mobile" : "desktop"}
-        />
+      <div
+        className={`target-group relative z-[3] min-h-0 w-full ${
+          living && !tightKb
+            ? "flex flex-col items-center gap-3 min-[701px]:flex-row min-[701px]:items-start min-[701px]:justify-center"
+            : ""
+        }`}
+      >
+        <div className="flex min-w-0 flex-1 flex-col items-center">
+          {association}
+          <TargetLetter
+            key={`${step}-${target}`}
+            target={target}
+            mood={reducedMotion && mood === "idle" ? "idle" : mood}
+            reducedMotion={reducedMotion}
+            burst={mood === "success" && !reducedMotion}
+            burstLevel={tightKb ? 1 : burstLevel}
+            size={tightKb ? "compact" : compact ? "mobile" : "desktop"}
+          />
+        </div>
+        {living && !tightKb ? (
+          <div className="shrink-0 px-1">
+            <LessonLearningMirror
+              letter={target}
+              cameraAllowedByParent={settings.cameraDressUp}
+              mood={mood}
+              reducedMotion={reducedMotion}
+              onOpenParentSettings={onOpenParentSettings}
+            />
+          </div>
+        ) : null}
       </div>
       {compact ? (
         <p

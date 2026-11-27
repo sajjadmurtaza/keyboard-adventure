@@ -504,6 +504,148 @@ html.lesson-play body {
   animation: art-wiggle 0.6s ease-in-out 2;
 }
 
+/* Living Alphabet — continuous idle (F/J experiment) */
+.art-idle-swim {
+  animation: art-idle-swim 2.4s ease-in-out infinite;
+}
+
+.art-idle-bounce {
+  animation: art-idle-bounce 1.8s ease-in-out infinite;
+}
+
+.art-idle-float {
+  animation: art-idle-float 2.2s ease-in-out infinite;
+}
+
+.art-idle-pulse {
+  animation: art-idle-pulse 2s ease-in-out infinite;
+}
+
+.art-idle-wiggle {
+  animation: art-idle-wiggle 2s ease-in-out infinite;
+}
+
+.art-react-happy {
+  animation: art-react-happy 0.7s cubic-bezier(0.2, 1.4, 0.3, 1) both;
+}
+
+.art-react-encourage {
+  animation: art-react-encourage 0.55s ease both;
+}
+
+.art-react-think {
+  animation: art-react-think 1.4s ease-in-out infinite;
+}
+
+.letter-highlight {
+  color: #7657e8;
+  background: linear-gradient(180deg, #ffe08a 0%, #ffd85a 100%);
+  border-radius: 0.35em;
+  padding: 0 0.12em;
+  box-decoration-break: clone;
+}
+
+.assoc-frame-happy {
+  border-color: #7ed6a5 !important;
+  box-shadow: 0 10px 24px rgba(56, 217, 120, 0.22);
+}
+
+.assoc-frame-encourage {
+  border-color: #c4b8e8 !important;
+}
+
+.assoc-frame-think {
+  border-color: #ffd85a !important;
+}
+
+@keyframes art-idle-swim {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  50% {
+    transform: translateX(5px) rotate(-3deg);
+  }
+}
+
+@keyframes art-idle-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes art-idle-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(2deg);
+  }
+}
+
+@keyframes art-idle-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+@keyframes art-idle-wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-3deg);
+  }
+  75% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes art-react-happy {
+  0% {
+    transform: scale(0.92) translateY(4px);
+  }
+  45% {
+    transform: scale(1.12) translateY(-10px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes art-react-encourage {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  30% {
+    transform: translateX(-4px) rotate(-2deg);
+  }
+  60% {
+    transform: translateX(4px) rotate(2deg);
+  }
+}
+
+@keyframes art-react-think {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(-4deg);
+  }
+}
+
 @keyframes art-swim {
   50% {
     transform: translateX(6px) rotate(-4deg);
@@ -970,6 +1112,37 @@ html.lesson-play body {
   }
 }
 
+@keyframes mirror-face-guide-pulse {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+.mirror-face-guide-pulse {
+  animation: mirror-face-guide-pulse 1.8s ease-in-out infinite;
+}
+
+.lesson-mirror-win {
+  box-shadow: 0 0 0 3px #7ed6a5, 0 8px 20px rgba(56, 217, 120, 0.35);
+}
+
+.lesson-mirror-miss {
+  box-shadow: 0 0 0 3px #c4b8e8, 0 8px 16px rgba(118, 87, 232, 0.25);
+}
+
+.mirror-frame {
+  box-shadow:
+    0 0 0 4px #fff,
+    0 0 0 10px #c4b8e8,
+    0 12px 28px rgba(118, 87, 232, 0.28);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-pop,
   .animate-wiggle,
@@ -1004,7 +1177,16 @@ html.lesson-play body {
   .art-bounce,
   .art-float,
   .art-pulse,
-  .art-wiggle {
+  .art-wiggle,
+  .art-idle-swim,
+  .art-idle-bounce,
+  .art-idle-float,
+  .art-idle-pulse,
+  .art-idle-wiggle,
+  .art-react-happy,
+  .art-react-encourage,
+  .art-react-think,
+  .mirror-face-guide-pulse {
     animation: none;
   }
 }

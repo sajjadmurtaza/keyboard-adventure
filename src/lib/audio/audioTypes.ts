@@ -41,7 +41,8 @@ export type AudioGameEvent =
   | { type: "STREAK_5" }
   | { type: "LESSON_COMPLETE" }
   | { type: "LESSON_UNLOCKED" }
-  | { type: "BUTTON_TAP" };
+  | { type: "BUTTON_TAP" }
+  | { type: "DRESS_UP_LINE"; phrase: string };
 
 export type VoiceOption = {
   uri: string;

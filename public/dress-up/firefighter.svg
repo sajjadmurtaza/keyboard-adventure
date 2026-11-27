@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 220" width="280" height="220">
+  <defs>
+    <linearGradient id="fRed" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FF7A55"/>
+      <stop offset="45%" stop-color="#E53935"/>
+      <stop offset="100%" stop-color="#8E1515"/>
+    </linearGradient>
+    <linearGradient id="fBrim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#B71C1C"/>
+      <stop offset="100%" stop-color="#5A0C0C"/>
+    </linearGradient>
+    <linearGradient id="fGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFE082"/>
+      <stop offset="100%" stop-color="#F9A825"/>
+    </linearGradient>
+    <linearGradient id="fVisor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFE566" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#F4C430" stop-opacity="0.25"/>
+    </linearGradient>
+    <linearGradient id="fShine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#FFFFFF" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="fSoft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#3A0808" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <!-- rear brim -->
+  <ellipse cx="140" cy="168" rx="126" ry="30" fill="url(#fBrim)" stroke="#4A0A0A" stroke-width="4" filter="url(#fSoft)"/>
+  <!-- dome -->
+  <path d="M48 168 Q48 42 140 34 Q232 42 232 168 Z" fill="url(#fRed)" stroke="#4A0A0A" stroke-width="5" filter="url(#fSoft)"/>
+  <path d="M70 150 Q90 70 140 58 Q190 70 210 150" fill="url(#fShine)"/>
+  <!-- crest ridge -->
+  <path d="M140 38 L148 168 L132 168 Z" fill="#FF8A65" opacity="0.55"/>
+  <!-- badge -->
+  <rect x="112" y="58" width="56" height="48" rx="10" fill="url(#fGold)" stroke="#8D6E00" stroke-width="3"/>
+  <circle cx="140" cy="82" r="14" fill="#C62828" stroke="#8D1C1C" stroke-width="2"/>
+  <path d="M140 72 L144 80 L152 81 L146 87 L148 95 L140 91 L132 95 L134 87 L128 81 L136 80 Z" fill="#FFD54F"/>
+  <!-- front shield -->
+  <path d="M62 138 L140 108 L218 138 L218 162 Q140 186 62 162 Z" fill="#9B1C1C" stroke="#4A0A0A" stroke-width="4"/>
+  <text x="140" y="152" text-anchor="middle" font-family="Arial Black, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#FFD54F">FD</text>
+  <!-- yellow visor (below eyes line — face stays open above brim) -->
+  <path d="M78 168 Q140 196 202 168 Q200 178 140 188 Q80 178 78 168 Z" fill="url(#fVisor)" stroke="#C9A227" stroke-width="2" opacity="0.85"/>
+  <!-- reflective dots -->
+  <circle cx="88" cy="100" r="5" fill="#FFE082" opacity="0.8"/>
+  <circle cx="192" cy="100" r="5" fill="#FFE082" opacity="0.8"/>
+</svg>

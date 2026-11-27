@@ -191,6 +191,24 @@ export function ParentSettingsPanel({
           }
         />
       </label>
+      <p className="font-[family-name:var(--font-nunito)] font-semibold">Magic Dress-Up</p>
+      <label className="flex items-center justify-between text-lg">
+        Allow Magic Mirror camera
+        <input
+          type="checkbox"
+          data-testid="camera-dress-up"
+          checked={settings.cameraDressUp}
+          onChange={(event) =>
+            onChange({ ...settings, cameraDressUp: event.target.checked })
+          }
+        />
+      </label>
+      <p className="text-sm text-[#5A5C72]">
+        Off by default. Turning this on does <strong>not</strong> open the camera —
+        your child still taps <strong>Start</strong> in Magic Dress-Up or the optional
+        Learning Mirror during F/J typing. Video stays on this device; nothing is
+        recorded or uploaded. Microphone stays blocked.
+      </p>
       <p className="font-[family-name:var(--font-nunito)] font-semibold">Audio</p>
       <label className="flex items-center justify-between text-lg">
         Sound
@@ -346,15 +364,22 @@ export function ParentSettingsPanel({
         />
       </label>
       <label className="flex items-center justify-between text-lg">
-        Prefer voices on this device
+        Only voices on this device
         <input
           type="checkbox"
+          data-testid="prefer-local-voice"
           checked={settings.preferLocalVoice}
           onChange={(event) =>
             onChange({ ...settings, preferLocalVoice: event.target.checked })
           }
         />
       </label>
+      <p className="text-sm text-[#5A5C72]">
+        On by default. When enabled, speech (including the child&apos;s name) only uses a
+        voice marked local on this device — never a cloud/remote voice, and never the
+        browser default fallback. If no local voice is available, the app stays silent
+        instead of risking a remote voice.
+      </p>
 
       <p className="font-[family-name:var(--font-nunito)] font-semibold">All lessons</p>
       <div className="grid grid-cols-2 gap-2">
