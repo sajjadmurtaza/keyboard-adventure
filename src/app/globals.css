@@ -1019,7 +1019,7 @@ html.lesson-play body {
 .play-board .lesson-focus-pair {
   grid-area: pair;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   gap: clamp(0.35rem, 1.2vw, 0.85rem);
   min-width: 0;
@@ -1038,12 +1038,14 @@ html.lesson-play body {
 .play-board .lesson-focus-pair .association-area.association-card > div {
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 0.2rem !important;
   height: 100% !important;
   border: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  padding: 0.2rem 0.25rem !important;
+  padding: 0.15rem 0.25rem !important;
   border-radius: 0 !important;
 }
 
@@ -1071,8 +1073,13 @@ html.lesson-play body {
   padding-inline: 0.15rem;
 }
 
+/* Sit the giant letter beside the main picture (not mid-panel). */
 .play-board .lesson-focus-pair .lesson-focus-letter {
   flex: 0 0 auto;
+  align-self: flex-start;
+  align-items: flex-start;
+  /* Match place-label + gap so the letter lines up with assoc-art-slot */
+  padding-top: clamp(1.35rem, 3.8vh, 2.6rem);
 }
 
 .play-board .adventure-mirror {
@@ -1105,7 +1112,20 @@ html.lesson-play body {
   min-height: 0;
   max-height: none;
   aspect-ratio: auto;
-  background: #fffef6;
+  background: #e8f2ff;
+  /* Soft edge — avoid a harsh “picture frame” around the live feed */
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* Live: canvas fills the whole rounded panel (no letterbox inset). */
+.play-board .lesson-mirror-frame-play:has([data-testid="lesson-mirror-live-badge"]) {
+  background: #1a2438;
+}
+
+.play-board .lesson-mirror-frame-play [data-testid="lesson-mirror-canvas"] {
+  object-fit: cover;
+  object-position: center center;
 }
 
 .play-board .association-area.association-card {
@@ -1158,6 +1178,10 @@ html.lesson-play body {
   .play-board .lesson-focus-pair .association-area.association-card [data-testid="association-tour-cards"] {
     margin-top: 0.15rem;
   }
+}
+
+.play-board .lesson-focus-pair .association-area.association-card [data-testid="association-tour-cards"] {
+  margin-top: auto;
 }
 
 @media (max-height: 649px) {

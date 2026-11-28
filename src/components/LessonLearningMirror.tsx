@@ -580,7 +580,7 @@ export function LessonLearningMirror({
   // Play layout: same panel height as the picture card. Stage keeps compact magic frame.
   const frameClass = stageLayout
     ? "magic-mirror-frame relative overflow-hidden rounded-[20px] shadow-[0_8px_20px_rgba(48,48,71,0.12)]"
-    : "lesson-mirror-frame-play relative overflow-hidden rounded-[28px] border-[3px] border-[#d8e7ff] shadow-[0_10px_24px_rgba(118,87,232,0.12)]";
+    : "lesson-mirror-frame-play relative overflow-hidden rounded-[28px]";
 
   const offSceneMotion =
     reducedMotion || !activeItem
@@ -713,7 +713,7 @@ export function LessonLearningMirror({
       <canvas
         ref={canvasRef}
         data-testid="lesson-mirror-canvas"
-        className="absolute inset-0 z-0 h-full w-full object-contain"
+        className="absolute inset-0 z-0 h-full w-full object-cover"
       />
       {associationStickers}
       {companionProps}

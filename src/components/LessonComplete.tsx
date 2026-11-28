@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Celebration } from "@/components/celebration/Celebration";
 import { Mascot } from "@/components/Mascot";
+
+/** Seconds to wait before auto-advancing if the child doesn't tap a button. */
+export const LESSON_COMPLETE_AUTO_ADVANCE_SEC = 15;
 
 type LessonCompleteProps = {
   onAgain: () => void;
@@ -32,6 +35,18 @@ export function LessonComplete({
 }: LessonCompleteProps) {
   const [stars, setStars] = useState(reducedMotion ? 5 : 0);
   const [showButtons, setShowButtons] = useState(reducedMotion);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const cancelledRef = useRef(false);
+
+  const cancelAutoAdvance = useCallback(() => {
+    cancelledRef.current = true;
+    setSecondsLeft(null);
+  }, []);
+
+  const goNextOrAgain = useCallback(() => {
+    if (hasNext) onNext();
+    else onAgain();
+  }, [hasNext, onAgain, onNext]);
 
   useEffect(() => {
     if (reducedMotion) return;
@@ -47,6 +62,33 @@ export function LessonComplete({
       window.clearTimeout(buttons);
     };
   }, [reducedMotion]);
+
+  // Auto-advance after celebration buttons appear, unless the child taps first.
+  useEffect(() => {
+    if (!showButtons) return;
+    cancelledRef.current = false;
+    setSecondsLeft(LESSON_COMPLETE_AUTO_ADVANCE_SEC);
+    const started = Date.now();
+    const tick = window.setInterval(() => {
+      if (cancelledRef.current) {
+        window.clearInterval(tick);
+        return;
+      }
+      const left = Math.max(
+        0,
+        LESSON_COMPLETE_AUTO_ADVANCE_SEC -
+          Math.floor((Date.now() - started) / 1000),
+      );
+      setSecondsLeft(left);
+      if (left <= 0) {
+        window.clearInterval(tick);
+        goNextOrAgain();
+      }
+    }, 250);
+    return () => {
+      window.clearInterval(tick);
+    };
+  }, [showButtons, goNextOrAgain]);
 
   const wow = childName ? `Fantastic, ${childName}!` : "Fantastic work!";
 
@@ -82,35 +124,58 @@ export function LessonComplete({
           </p>
         ) : null}
         {showButtons ? (
-          <div className="relative z-[4] flex flex-wrap justify-center gap-4">
-            {costumeUnlock && onVisitWardrobe ? (
+          <div className="relative z-[4] flex flex-col items-center gap-3">
+            <div className="flex flex-wrap justify-center gap-4">
+              {costumeUnlock && onVisitWardrobe ? (
+                <button
+                  type="button"
+                  data-testid="visit-wardrobe"
+                  onClick={() => {
+                    cancelAutoAdvance();
+                    onVisitWardrobe();
+                  }}
+                  className="pressable min-h-16 rounded-full bg-[#FFD85A] px-10 font-[family-name:var(--font-display)] text-2xl font-bold text-[#34364A] shadow-lg"
+                >
+                  Visit Magic Mirror ✨
+                </button>
+              ) : null}
+              {hasNext && nextLabel ? (
+                <button
+                  type="button"
+                  data-testid="lesson-complete-next"
+                  onClick={() => {
+                    cancelAutoAdvance();
+                    onNext();
+                  }}
+                  className="pressable min-h-16 rounded-full bg-[#7657E8] px-10 font-[family-name:var(--font-display)] text-2xl font-bold text-white shadow-lg"
+                >
+                  {nextLabel === "Keep playing"
+                    ? "▶ Keep playing!"
+                    : `Next adventure: ${nextLabel} →`}
+                </button>
+              ) : null}
               <button
                 type="button"
-                data-testid="visit-wardrobe"
-                onClick={onVisitWardrobe}
-                className="pressable min-h-16 rounded-full bg-[#FFD85A] px-10 font-[family-name:var(--font-display)] text-2xl font-bold text-[#34364A] shadow-lg"
+                data-testid="lesson-complete-again"
+                onClick={() => {
+                  cancelAutoAdvance();
+                  onAgain();
+                }}
+                className="pressable min-h-14 rounded-full bg-white px-8 font-[family-name:var(--font-display)] text-xl font-bold text-[#7657E8] shadow-md"
               >
-                Visit Magic Mirror ✨
+                {nextLabel === "Keep playing" ? "Play again" : "Shuffle & play again"}
               </button>
-            ) : null}
-            {hasNext && nextLabel ? (
-              <button
-                type="button"
-                onClick={onNext}
-                className="pressable min-h-16 rounded-full bg-[#7657E8] px-10 font-[family-name:var(--font-display)] text-2xl font-bold text-white shadow-lg"
+            </div>
+            {secondsLeft != null && secondsLeft > 0 ? (
+              <p
+                className="font-[family-name:var(--font-nunito)] text-sm font-semibold text-[#5A5C72]"
+                data-testid="lesson-complete-auto-advance"
               >
-                {nextLabel === "Keep playing"
-                  ? "▶ Keep playing!"
-                  : `Next adventure: ${nextLabel} →`}
-              </button>
+                {hasNext
+                  ? `Next adventure in ${secondsLeft}…`
+                  : `Play again in ${secondsLeft}…`}
+              </p>
             ) : null}
-            <button
-              type="button"
-              onClick={onAgain}
-              className="pressable min-h-14 rounded-full bg-white px-8 font-[family-name:var(--font-display)] text-xl font-bold text-[#7657E8] shadow-md"
-            >
-              {nextLabel === "Keep playing" ? "Play again" : "Shuffle & play again"}
-            </button>
           </div>
         ) : (
           <div className="h-16" />
