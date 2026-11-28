@@ -1220,6 +1220,7 @@ function Play({
               <LessonLearningMirror
                 letter={target}
                 cameraAllowedByParent={settings.cameraLessonMirror}
+                personCutoutAllowedByParent={settings.cameraPersonCutout}
                 mood={mood}
                 reducedMotion={reducedMotion}
                 onOpenParentSettings={onOpenParentSettings}

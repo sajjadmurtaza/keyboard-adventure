@@ -1,6 +1,7 @@
 import type { LetterArtId } from "@/data/letterAssociations";
 import { associationsFor } from "@/data/letterAssociations";
 import type { DressUpAnchor } from "@/data/dressUpCostumes";
+import { magicWorldForArt } from "@/data/magicWorldCatalog";
 import { fallbackMirrorProp } from "@/lib/dressUp/fallbackMirrorProp";
 
 /** Bump when replacing files under public/lesson-mirror/. */
@@ -51,11 +52,13 @@ export const LESSON_MIRROR_COSTUMES: readonly LessonMirrorCostume[] = [
   {
     art: "apple",
     name: "Apple",
-    assetPath: lessonAsset("apple.svg"),
+    // Orchard scene + falling fruit ambient — not a face hat.
+    assetPath: "",
     anchor: "helmet",
-    scale: 2.5,
-    offsetY: -0.02,
-    style: "face-frame",
+    scale: 1,
+    offsetY: 0,
+    style: "scene",
+    fallback: true,
   },
   {
     art: "ant",
@@ -125,13 +128,13 @@ export const LESSON_MIRROR_COSTUMES: readonly LessonMirrorCostume[] = [
   {
     art: "fish",
     name: "Fish",
-    // Underwater world + LetterArt companions; ambient draws swimming fish.
-    assetPath: "",
+    // Head-relative swimming companion; ambient draws the reef.
+    assetPath: wearableAsset("fish.png"),
     anchor: "helmet",
-    scale: 1,
-    offsetY: 0,
-    style: "scene",
-    fallback: true,
+    scale: 1.15,
+    offsetY: -0.1,
+    offsetX: 0.82,
+    style: "companion",
   },
   {
     art: "frog",
@@ -220,11 +223,13 @@ export const LESSON_MIRROR_COSTUMES: readonly LessonMirrorCostume[] = [
   {
     art: "kite",
     name: "Kite",
+    // Flies beside / above the child — head-relative, not a hat.
     assetPath: wearableAsset("kite.png"),
     anchor: "hat",
-    scale: 1.7,
-    offsetY: -0.95,
-    style: "head-accessory",
+    scale: 1.35,
+    offsetY: -1.05,
+    offsetX: 0.55,
+    style: "companion",
   },
   {
     art: "king",
@@ -275,13 +280,13 @@ export const LESSON_MIRROR_COSTUMES: readonly LessonMirrorCostume[] = [
   {
     art: "octopus",
     name: "Octopus",
-    // Underwater companion — face stays clear; ambient draws the sea world.
-    assetPath: "",
+    // Complete octopus companion follows beside the head.
+    assetPath: wearableAsset("octopus.png"),
     anchor: "helmet",
-    scale: 1,
-    offsetY: 0,
-    style: "scene",
-    fallback: true,
+    scale: 1.2,
+    offsetY: 0.05,
+    offsetX: 0.88,
+    style: "companion",
   },
   {
     art: "panda",
@@ -322,13 +327,12 @@ export const LESSON_MIRROR_COSTUMES: readonly LessonMirrorCostume[] = [
   {
     art: "sun",
     name: "Sun",
-    // Warm environment + illustrated sun in-scene (face stays clear).
-    assetPath: "",
-    anchor: "helmet",
-    scale: 1,
-    offsetY: 0,
-    style: "scene",
-    fallback: true,
+    // Golden rays follow the head; heat ambient fills the world.
+    assetPath: wearableAsset("sun.png"),
+    anchor: "hat",
+    scale: 1.9,
+    offsetY: -0.55,
+    style: "head-accessory",
   },
   {
     art: "star",
@@ -346,6 +350,15 @@ export const LESSON_MIRROR_COSTUMES: readonly LessonMirrorCostume[] = [
     anchor: "hat",
     scale: 1.85,
     offsetY: -0.7,
+    style: "head-accessory",
+  },
+  {
+    art: "umbrella",
+    name: "Umbrella",
+    assetPath: wearableAsset("umbrella.png"),
+    anchor: "hat",
+    scale: 1.85,
+    offsetY: -0.75,
     style: "head-accessory",
   },
   {
@@ -383,38 +396,78 @@ function titleFromArt(art: LetterArtId): string {
     .join(" ");
 }
 
-/** True when the costume paints onto the face canvas (not LetterArt companion/scene). */
+/** True when the costume paints onto the face canvas (tracked accessory or companion). */
 export function isCanvasLessonCostume(
   costume: LessonMirrorCostume | null | undefined,
 ): boolean {
   if (!costume) return false;
   if (!costume.assetPath) return false;
-  if (costume.style === "companion" || costume.style === "scene") return false;
+  if (costume.style === "scene") return false;
   return (
     costume.style === "face-frame" ||
     costume.style === "head-accessory" ||
     costume.style === "eye-accessory" ||
     costume.style === "body-wear" ||
-    costume.style === "hand-prop"
+    costume.style === "hand-prop" ||
+    costume.style === "companion"
   );
 }
 
-/** Scene / companion modes keep the face clear and use ambient + LetterArt. */
+/** Scene-only: clear face + ambient. Canvas companions are tracked, not DOM stickers. */
 export function isSceneLessonCostume(
   costume: LessonMirrorCostume | null | undefined,
 ): boolean {
-  return costume?.style === "scene" || costume?.style === "companion";
+  return costume?.style === "scene";
+}
+
+/** DOM LetterArt companions when no canvas asset is available. */
+export function isDomCompanionCostume(
+  costume: LessonMirrorCostume | null | undefined,
+): boolean {
+  return (
+    costume?.style === "companion" &&
+    (!costume.assetPath || !isCanvasLessonCostume(costume))
+  );
 }
 
 /**
- * Dedicated wearable when available; otherwise a LetterArt companion prop
- * so every association stays recognizable without a generic circle.
+ * Hybrid Magic Mirror: dedicated tracked costumes keep Dress-Up alignment
+ * while Magic Worlds ambient still paints around them.
  */
 export function lessonMirrorCostumeForArt(
   art: LetterArtId | undefined,
 ): LessonMirrorCostume | null {
   if (!art) return null;
+  const world = magicWorldForArt(art);
   const dedicated = DEDICATED.get(art);
+
+  // Hybrid: prefer a real tracked asset whenever the catalog asks for
+  // wearable / companion (or the dedicated entry already is canvas-ready).
+  if (dedicated && isCanvasLessonCostume(dedicated)) {
+    if (
+      !world ||
+      world.mirrorMode === "wearable" ||
+      world.mirrorMode === "companion" ||
+      dedicated.style === "companion"
+    ) {
+      return dedicated;
+    }
+  }
+
+  // Scene worlds (and any leftover non-canvas dedicated): clear face + ambient.
+  if (world) {
+    return {
+      art,
+      name: dedicated?.name ?? world.word,
+      assetPath: "",
+      anchor: "helmet",
+      scale: 1,
+      offsetY: 0,
+      style: "scene",
+      fallback: !dedicated || dedicated.style === "scene",
+    };
+  }
+
   if (dedicated) return dedicated;
   return fallbackMirrorProp(art, titleFromArt(art));
 }

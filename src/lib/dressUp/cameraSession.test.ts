@@ -40,9 +40,19 @@ describe("cameraSession", () => {
       configurable: true,
     });
 
+    const gum = navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>;
     const result = await startCameraSession({ parentAllowed: true });
     expect(result.ok).toBe(true);
     expect(getActiveCameraStream()).toBe(stream);
+    expect(gum).toHaveBeenCalledWith({
+      audio: false,
+      video: {
+        facingMode: "user",
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        aspectRatio: { ideal: 16 / 9 },
+      },
+    });
 
     stopCameraTracks();
     expect(stream._track.stop).toHaveBeenCalled();

@@ -68,6 +68,9 @@ export function drawCostumeOverlay(
     entrance?: number;
     /** Extra vertical bob in face-height units (e.g. juice sip). */
     actionBob?: number;
+    /** Soft-clamp companion props inside the usable canvas. */
+    canvasW?: number;
+    canvasH?: number;
   },
 ): void {
   if (!pose || !image) return;
@@ -107,6 +110,17 @@ export function drawCostumeOverlay(
     cy =
       (pose.leftEyeY + pose.rightEyeY) / 2 +
       pose.height * costume.offsetY;
+  }
+
+  // Soft edge clamp for large lateral companions (octopus / kite / fish).
+  // Wearables stay face-aligned — only nudge when offsetX is clearly companion-like.
+  const canvasW = options?.canvasW;
+  const canvasH = options?.canvasH;
+  if (canvasW && canvasH && Math.abs(offsetX) >= 0.45) {
+    const marginX = drawW * 0.45;
+    const marginY = drawH * 0.45;
+    cx = Math.min(canvasW - marginX, Math.max(marginX, cx));
+    cy = Math.min(canvasH - marginY, Math.max(marginY, cy));
   }
 
   const animate = options?.animate !== false;

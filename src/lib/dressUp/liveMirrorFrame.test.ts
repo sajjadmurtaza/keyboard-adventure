@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { drawLiveMirrorFrame } from "@/lib/dressUp/liveMirrorFrame";
+import {
+  drawLiveMirrorFrame,
+  FACE_TOO_CLOSE_HEIGHT_RATIO,
+  isFaceTooClose,
+  PORTRAIT_FALLBACK_FACE_RATIO,
+  portraitFallbackPose,
+} from "@/lib/dressUp/liveMirrorFrame";
 import { FacePoseSmoother } from "@/lib/dressUp/smoothing";
 
 function mockCanvas() {
@@ -42,10 +48,19 @@ describe("drawLiveMirrorFrame", () => {
 
     expect(result.detected).toBe(false);
     expect(result.tooClose).toBe(false);
+    expect(result.faceHeightRatio).toBeNull();
     expect(result.costumeDrawn).toBe(false);
     expect(calls).toContain("drawImage");
     expect(canvas.width).toBe(320);
     expect(canvas.height).toBe(240);
+  });
+
+  it("calibrates standing-mirror too-close from face height ratio", () => {
+    expect(isFaceTooClose(240 * 0.3, 240)).toBe(false);
+    expect(isFaceTooClose(240 * FACE_TOO_CLOSE_HEIGHT_RATIO + 1, 240)).toBe(true);
+    const fallback = portraitFallbackPose(640, 480);
+    expect(fallback.height / 480).toBeLessThan(0.4);
+    expect(fallback.width).toBeCloseTo(Math.min(640, 480) * PORTRAIT_FALLBACK_FACE_RATIO);
   });
 
   it("still draws the costume with a portrait fallback when tracking is cold", () => {
@@ -136,8 +151,39 @@ describe("drawLiveMirrorFrame", () => {
     expect(landmarker.detectForVideo).toHaveBeenCalled();
     expect(result.detected).toBe(true);
     expect(result.pose).not.toBeNull();
+    expect(result.faceHeightRatio).not.toBeNull();
     expect(result.costumeDrawn).toBe(true);
     // video + costume
     expect(calls.filter((c) => c === "drawImage").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("hides tracked costumes when the face leaves and requireFaceForCostume is set", () => {
+    const { canvas, calls } = mockCanvas();
+    const video = {
+      videoWidth: 320,
+      videoHeight: 240,
+    } as HTMLVideoElement;
+    const landmarker = {
+      detectForVideo: vi.fn(() => ({ faceLandmarks: [] as never[] })),
+    };
+    const image = {
+      naturalWidth: 100,
+      naturalHeight: 100,
+    } as unknown as CanvasImageSource;
+
+    const result = drawLiveMirrorFrame({
+      video,
+      canvas,
+      landmarker,
+      smoother: new FacePoseSmoother(1),
+      costume: { scale: 2, offsetY: 0, anchor: "helmet" },
+      costumeImage: image,
+      requireFaceForCostume: true,
+    });
+
+    expect(result.detected).toBe(false);
+    expect(result.costumeDrawn).toBe(false);
+    // video only
+    expect(calls.filter((c) => c === "drawImage")).toHaveLength(1);
   });
 });

@@ -65,14 +65,20 @@ describe("settings", () => {
   it("keeps Magic Mirror cameras off by default and separate", () => {
     expect(defaultSettings.cameraDressUp).toBe(false);
     expect(defaultSettings.cameraLessonMirror).toBe(false);
+    expect(defaultSettings.cameraPersonCutout).toBe(false);
     expect(loadSettings().cameraDressUp).toBe(false);
     expect(loadSettings().cameraLessonMirror).toBe(false);
+    expect(loadSettings().cameraPersonCutout).toBe(false);
     saveSettings({ ...defaultSettings, cameraDressUp: true });
     expect(loadSettings().cameraDressUp).toBe(true);
     expect(loadSettings().cameraLessonMirror).toBe(false);
+    expect(loadSettings().cameraPersonCutout).toBe(false);
     saveSettings({ ...defaultSettings, cameraLessonMirror: true });
     expect(loadSettings().cameraLessonMirror).toBe(true);
     expect(loadSettings().cameraDressUp).toBe(false);
+    saveSettings({ ...defaultSettings, cameraPersonCutout: true });
+    expect(loadSettings().cameraPersonCutout).toBe(true);
+    expect(loadSettings().cameraLessonMirror).toBe(false);
   });
 
   it("drops scam-like settings payloads", () => {

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Star">
+  <defs>
+    <linearGradient id="star-fill" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFE566"/>
+      <stop offset="100%" stop-color="#F5A623"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" fill="#FFF8E7"/>
+  <path fill="url(#star-fill)" stroke="#E8940A" stroke-width="4" stroke-linejoin="round"
+    d="M120 28 L142 92 L210 92 L156 132 L176 198 L120 158 L64 198 L84 132 L30 92 L98 92 Z"/>
+</svg>

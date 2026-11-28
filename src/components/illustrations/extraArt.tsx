@@ -172,9 +172,28 @@ function Guitar() {
 function House() {
   return (
     <Frame>
-      <path d="M36 108l64-52 64 52v56H36z" fill="#FF9A3C" />
-      <rect x="84" y="120" width="32" height="44" fill="#8B5A2B" />
-      <rect x="50" y="118" width="24" height="20" fill="#B9ECFF" />
+      <ellipse cx="100" cy="176" rx="62" ry="9" fill={NAVY} opacity="0.1" />
+      {/* Lawn */}
+      <ellipse cx="100" cy="158" rx="78" ry="16" fill="#7BC47F" opacity="0.55" />
+      {/* Walls */}
+      <rect x="42" y="96" width="116" height="64" rx="6" fill="#FFE0B2" />
+      {/* Roof */}
+      <path d="M30 100l70-54 70 54z" fill="#E85A4A" />
+      <path d="M30 100l70-54 70 54" stroke="#C62828" strokeWidth="3" fill="none" />
+      {/* Chimney */}
+      <rect x="128" y="48" width="18" height="32" fill="#8D6E63" />
+      <rect x="124" y="44" width="26" height="8" rx="2" fill="#6D4C41" />
+      {/* Door */}
+      <rect x="86" y="118" width="28" height="42" rx="4" fill="#6D4C41" />
+      <circle cx="108" cy="140" r="3" fill="#FFD54F" />
+      {/* Windows */}
+      <rect x="52" y="112" width="26" height="24" rx="3" fill="#81D4FA" stroke="#0277BD" strokeWidth="3" />
+      <path d="M65 112v24M52 124h26" stroke="#0277BD" strokeWidth="2" />
+      <rect x="122" y="112" width="26" height="24" rx="3" fill="#81D4FA" stroke="#0277BD" strokeWidth="3" />
+      <path d="M135 112v24M122 124h26" stroke="#0277BD" strokeWidth="2" />
+      {/* Flower pot */}
+      <rect x="54" y="148" width="14" height="10" rx="2" fill="#FF8A65" />
+      <circle cx="61" cy="144" r="5" fill="#EC407A" />
     </Frame>
   );
 }
@@ -463,12 +482,35 @@ function Tree() {
 function Train() {
   return (
     <Frame>
-      <rect x="36" y="88" width="56" height="48" rx="8" fill="#FF786B" />
-      <rect x="96" y="100" width="68" height="36" rx="8" fill="#59C7F2" />
-      <rect x="44" y="70" width="28" height="24" fill="#B9ECFF" />
-      <circle cx="58" cy="144" r="12" fill={NAVY} />
-      <circle cx="120" cy="144" r="12" fill={NAVY} />
-      <circle cx="148" cy="144" r="12" fill={NAVY} />
+      <ellipse cx="100" cy="172" rx="70" ry="10" fill={NAVY} opacity="0.12" />
+      {/* Track */}
+      <rect x="24" y="148" width="152" height="6" rx="2" fill="#6B7280" />
+      <rect x="30" y="154" width="18" height="4" fill="#9CA3AF" />
+      <rect x="60" y="154" width="18" height="4" fill="#9CA3AF" />
+      <rect x="90" y="154" width="18" height="4" fill="#9CA3AF" />
+      <rect x="120" y="154" width="18" height="4" fill="#9CA3AF" />
+      <rect x="150" y="154" width="18" height="4" fill="#9CA3AF" />
+      {/* Caboose / cars */}
+      <rect x="108" y="96" width="52" height="44" rx="10" fill="#4FC3F7" />
+      <rect x="116" y="104" width="16" height="16" rx="3" fill="#E3F7FF" />
+      <rect x="136" y="104" width="16" height="16" rx="3" fill="#E3F7FF" />
+      <rect x="58" y="88" width="54" height="52" rx="10" fill="#FF6B5A" />
+      <rect x="66" y="64" width="30" height="28" rx="6" fill="#FF8A7A" />
+      <rect x="72" y="70" width="18" height="16" rx="3" fill="#B9ECFF" />
+      {/* Chimney + puff */}
+      <rect x="78" y="44" width="14" height="22" rx="3" fill="#5A4A42" />
+      <circle cx="85" cy="34" r="10" fill="#E8EEF5" opacity="0.9" />
+      <circle cx="96" cy="28" r="7" fill="#E8EEF5" opacity="0.75" />
+      {/* Cowcatcher */}
+      <path d="M58 130l-16 18h16z" fill="#FFD54F" />
+      {/* Wheels */}
+      <circle cx="74" cy="144" r="14" fill={NAVY} />
+      <circle cx="74" cy="144" r="6" fill="#FFD54F" />
+      <circle cx="108" cy="144" r="12" fill={NAVY} />
+      <circle cx="108" cy="144" r="5" fill="#FFD54F" />
+      <circle cx="142" cy="144" r="12" fill={NAVY} />
+      <circle cx="142" cy="144" r="5" fill="#FFD54F" />
+      <rect x="108" y="140" width="34" height="6" rx="2" fill="#5A4A42" />
     </Frame>
   );
 }

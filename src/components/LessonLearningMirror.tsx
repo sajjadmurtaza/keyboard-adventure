@@ -1,9 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { associationsFor } from "@/data/letterAssociations";
+import {
+  associationsFor,
+  type LetterArtId,
+} from "@/data/letterAssociations";
 import {
   isCanvasLessonCostume,
+  isDomCompanionCostume,
   isSceneLessonCostume,
   lessonMirrorCostumeForArt,
 } from "@/data/lessonMirrorCostumes";
@@ -20,6 +24,9 @@ import {
 } from "@/lib/dressUp/lessonMirrorImages";
 import { getFaceLandmarker } from "@/lib/dressUp/faceLandmarker";
 import { getPoseLandmarker } from "@/lib/dressUp/poseLandmarker";
+import { getImageSegmenter } from "@/lib/dressUp/imageSegmenter";
+import { drawCostumeOverlay } from "@/lib/dressUp/faceOverlay";
+import { mirrorFacePose } from "@/lib/dressUp/facePose";
 import { drawLiveMirrorFrame } from "@/lib/dressUp/liveMirrorFrame";
 import { drawLessonMirrorExperience } from "@/lib/dressUp/lessonMirrorExperience";
 import { drawLivingMirrorMood } from "@/lib/dressUp/livingMirrorEffects";
@@ -27,24 +34,33 @@ import { FacePoseSmoother } from "@/lib/dressUp/smoothing";
 import { LetterArt } from "@/components/illustrations/LetterArt";
 import { useAudio } from "@/hooks/useAudio";
 import type { PoseLandmarkerHandle } from "@/lib/dressUp/poseLandmarker";
+import type { ImageSegmenterHandle } from "@/lib/dressUp/imageSegmenter";
 
 type MirrorMood = "idle" | "success" | "retry";
 
 type LessonLearningMirrorProps = {
   letter: string;
   cameraAllowedByParent: boolean;
+  /**
+   * Parent-authorized local person cutout. When false or unsupported, the
+   * mirror keeps the rectangular live-video overlay.
+   */
+  personCutoutAllowedByParent?: boolean;
   mood: MirrorMood;
   reducedMotion?: boolean;
   onOpenParentSettings: () => void;
   /** Wider stage layout for Magic Learning Stage */
   stageLayout?: boolean;
+  /** Dev/preview: lock the active association art. */
+  forceArt?: LetterArtId;
 };
 
 type MirrorState = "off" | "starting" | "live" | "error";
 
 const EMPTY_STEP = { key: "", index: 0 };
 /** Headroom around video so petal rings / hoods are not clipped. */
-const LESSON_STAGE_PAD = 0.28;
+/** Extra stage around the full camera frame for hats / companions (no digital zoom). */
+const LESSON_STAGE_PAD = 0.32;
 
 /**
  * Optional in-lesson Magic Mirror — continuous live face + association costume.
@@ -53,10 +69,12 @@ const LESSON_STAGE_PAD = 0.28;
 export function LessonLearningMirror({
   letter,
   cameraAllowedByParent,
+  personCutoutAllowedByParent = false,
   mood,
   reducedMotion = false,
   onOpenParentSettings,
   stageLayout = true,
+  forceArt,
 }: LessonLearningMirrorProps) {
   const [mirror, setMirror] = useState<MirrorState>("off");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -73,7 +91,13 @@ export function LessonLearningMirror({
 
   const items = associationsFor(letter);
   const index = assocStep.key === letter ? assocStep.index : 0;
-  const activeItem = items[index] ?? items[0];
+  const activeItem = forceArt
+    ? (items.find((item) => item.art === forceArt) ?? {
+        word: forceArt,
+        art: forceArt,
+        motion: "bounce" as const,
+      })
+    : (items[index] ?? items[0]);
   const costume = lessonMirrorCostumeForArt(activeItem?.art);
   const scene = livingSceneForArt(activeItem?.art);
   const experience = mirrorExperienceForArt(activeItem?.art);
@@ -88,6 +112,8 @@ export function LessonLearningMirror({
     null,
   );
   const poseLandmarkerRef = useRef<PoseLandmarkerHandle | null>(null);
+  const segmenterRef = useRef<ImageSegmenterHandle | null>(null);
+  const cutoutAllowedRef = useRef(personCutoutAllowedByParent);
   const rafRef = useRef(0);
   const runningRef = useRef(false);
   const sessionGenRef = useRef(0);
@@ -148,6 +174,10 @@ export function LessonLearningMirror({
   }, [cameraAllowedByParent]);
 
   useEffect(() => {
+    cutoutAllowedRef.current = personCutoutAllowedByParent;
+  }, [personCutoutAllowedByParent]);
+
+  useEffect(() => {
     moodRef.current = mood;
   }, [mood]);
 
@@ -188,6 +218,16 @@ export function LessonLearningMirror({
     landmarkerRef.current = null;
   }, []);
 
+  const releaseSegmenter = useCallback(() => {
+    if (!segmenterRef.current) return;
+    try {
+      segmenterRef.current.close();
+    } catch {
+      /* ignore */
+    }
+    segmenterRef.current = null;
+  }, []);
+
   useEffect(() => {
     if (cameraAllowedByParent) return;
     if (mirror !== "live" && mirror !== "starting") return;
@@ -205,8 +245,9 @@ export function LessonLearningMirror({
       document.removeEventListener("visibilitychange", onVis);
       tearDown();
       releaseLandmarker();
+      releaseSegmenter();
     };
-  }, [tearDown, releaseLandmarker]);
+  }, [tearDown, releaseLandmarker, releaseSegmenter]);
 
   /* Camera-off: keep the themed world alive on the same canvas region. */
   useEffect(() => {
@@ -223,8 +264,12 @@ export function LessonLearningMirror({
       if (!active) return;
       const parent = canvas.parentElement;
       if (parent) {
-        const w = Math.max(1, Math.floor(parent.clientWidth));
-        const h = Math.max(1, Math.floor(parent.clientHeight));
+        const rect = parent.getBoundingClientRect();
+        const w = Math.max(1, Math.floor(rect.width || parent.clientWidth));
+        const h = Math.max(
+          1,
+          Math.floor(rect.height || parent.clientHeight || 320),
+        );
         if (canvas.width !== w || canvas.height !== h) {
           canvas.width = w;
           canvas.height = h;
@@ -328,6 +373,19 @@ export function LessonLearningMirror({
         }
       }
 
+      let personCutout: HTMLCanvasElement | null = null;
+      if (cutoutAllowedRef.current && segmenterRef.current) {
+        try {
+          personCutout = segmenterRef.current.segmentPerson(
+            video,
+            performance.now(),
+          );
+        } catch {
+          personCutout = null;
+        }
+      }
+
+      const nowMs = performance.now();
       const frame = drawLiveMirrorFrame({
         video,
         canvas,
@@ -340,22 +398,57 @@ export function LessonLearningMirror({
         costumeEntrance,
         costumeActionBob,
         shoulderOverride,
+        personCutout,
+        requireFaceForCostume: true,
+        drawBackdrop: personCutout
+          ? (ctx, cw, ch) => {
+              drawLessonMirrorExperience(
+                ctx,
+                cw,
+                ch,
+                experienceRef.current,
+                moodRef.current,
+                reducedMotionRef.current,
+                nowMs,
+                null,
+              );
+            }
+          : undefined,
       });
 
       const ctx = canvas.getContext("2d");
       if (ctx) {
-        const nowMs = performance.now();
-        // Ambient world first (heat / sea / rain…) so the child feels the object.
-        drawLessonMirrorExperience(
-          ctx,
-          canvas.width,
-          canvas.height,
-          experienceRef.current,
-          moodRef.current,
-          reducedMotionRef.current,
-          nowMs,
-          frame.pose,
-        );
+        // Rectangular overlay keeps ambient as a soft wash over the video.
+        // Person cutout already drew the world behind the child.
+        if (!frame.personCutoutUsed) {
+          drawLessonMirrorExperience(
+            ctx,
+            canvas.width,
+            canvas.height,
+            experienceRef.current,
+            moodRef.current,
+            reducedMotionRef.current,
+            nowMs,
+            frame.pose,
+          );
+          // Hybrid: keep Dress-Up tracking above the ambient wash.
+          if (canvasCostume && image && frame.pose && frame.detected) {
+            drawCostumeOverlay(
+              ctx,
+              mirrorFacePose(frame.pose, canvas.width),
+              canvasCostume,
+              image,
+              {
+                nowMs,
+                animate: !reducedMotionRef.current,
+                entrance: costumeEntrance,
+                actionBob: costumeActionBob,
+                canvasW: canvas.width,
+                canvasH: canvas.height,
+              },
+            );
+          }
+        }
         drawLivingMirrorMood(
           ctx,
           canvas.width,
@@ -463,6 +556,16 @@ export function LessonLearningMirror({
         poseLandmarkerRef.current = null;
       }
     }
+    // Optional local person cutout — never required; rectangular overlay remains the fallback.
+    if (personCutoutAllowedByParent) {
+      try {
+        segmenterRef.current = await getImageSegmenter();
+      } catch {
+        segmenterRef.current = null;
+      }
+    } else {
+      segmenterRef.current = null;
+    }
     if (gen !== sessionGenRef.current) return;
 
     smootherRef.current.reset();
@@ -540,7 +643,8 @@ export function LessonLearningMirror({
       </span>
     ) : null;
 
-  const companionMode = isSceneLessonCostume(costume);
+  const companionMode =
+    isSceneLessonCostume(costume) || isDomCompanionCostume(costume);
   const reactClass =
     !reducedMotion && mood === "success" && activeItem
       ? `lesson-mirror-react lesson-mirror-react--${activeItem.art}`
@@ -609,7 +713,7 @@ export function LessonLearningMirror({
       <canvas
         ref={canvasRef}
         data-testid="lesson-mirror-canvas"
-        className="absolute inset-0 z-0 h-full w-full object-cover"
+        className="absolute inset-0 z-0 h-full w-full object-contain"
       />
       {associationStickers}
       {companionProps}
@@ -640,7 +744,7 @@ export function LessonLearningMirror({
           className="pointer-events-none absolute bottom-3 left-1/2 z-[2] w-[90%] -translate-x-1/2 rounded-full bg-white/95 px-3 py-1.5 text-center font-[family-name:var(--font-nunito)] text-xs font-bold text-[#7048D7] shadow"
           data-testid="lesson-mirror-too-close"
         >
-          A little farther back — let&apos;s fit your whole costume!
+          A little farther back!
         </p>
       ) : null}
     </>

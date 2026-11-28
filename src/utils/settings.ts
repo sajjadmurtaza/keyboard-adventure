@@ -49,6 +49,13 @@ export type ParentSettings = {
    * Default false. Enabling never auto-starts getUserMedia — child must tap Start camera.
    */
   cameraLessonMirror: boolean;
+  /**
+   * Parent allows local person segmentation (cutout) when a model is present.
+   * Extra on-device processing only — never uploads frames or masks.
+   * Default false. Requires Learning Mirror (or Dress-Up) camera consent separately.
+   * Unsupported/slow devices fall back to the rectangular live-video overlay.
+   */
+  cameraPersonCutout: boolean;
 };
 
 export const defaultSettings: ParentSettings = {
@@ -77,6 +84,7 @@ export const defaultSettings: ParentSettings = {
   difficulty: "beginner",
   cameraDressUp: false,
   cameraLessonMirror: false,
+  cameraPersonCutout: false,
 };
 
 function asBool(value: unknown, fallback: boolean): boolean {
@@ -155,6 +163,11 @@ export function loadSettings(): ParentSettings {
       cameraLessonMirror: asBool(
         parsed.cameraLessonMirror,
         defaultSettings.cameraLessonMirror,
+      ),
+      // Never enable cutout from older settings blobs
+      cameraPersonCutout: asBool(
+        parsed.cameraPersonCutout,
+        defaultSettings.cameraPersonCutout,
       ),
     };
   } catch {

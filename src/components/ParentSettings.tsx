@@ -214,10 +214,23 @@ export function ParentSettingsPanel({
           }
         />
       </label>
+      <label className="flex items-center justify-between text-lg">
+        Allow person cutout in Magic Worlds
+        <input
+          type="checkbox"
+          data-testid="camera-person-cutout"
+          checked={settings.cameraPersonCutout}
+          onChange={(event) =>
+            onChange({ ...settings, cameraPersonCutout: event.target.checked })
+          }
+        />
+      </label>
       <p className="text-sm text-[#5A5C72]">
-        Both off by default. Turning either on does <strong>not</strong> open the camera —
+        Cameras off by default. Turning any option on does <strong>not</strong> open the camera —
         your child still taps <strong>Start</strong>. Dress-Up and Learning Mirror are
-        separate choices. Video stays on this device; nothing is recorded or uploaded.
+        separate choices. Person cutout runs extra on-device processing so your child can
+        appear inside the animated world; slower devices keep the normal live-video view.
+        Video stays on this device; nothing is recorded or uploaded.
         Microphone stays blocked. Lessons work fully without any camera.
       </p>
       <p className="font-[family-name:var(--font-nunito)] font-semibold">Audio</p>

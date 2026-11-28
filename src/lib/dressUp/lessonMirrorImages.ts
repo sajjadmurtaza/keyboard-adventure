@@ -74,21 +74,21 @@ function loadOne(costume: LessonMirrorCostume): Promise<MirrorImage> {
   });
 }
 
-/** Load one canvas wearable. Companion props (empty assetPath) skip the network. */
+/** Load one canvas wearable / head-relative companion. Empty assetPath skips. */
 export function ensureLessonMirrorImage(
   costume: LessonMirrorCostume,
 ): Promise<MirrorImage | null> {
-  if (!costume.assetPath || costume.style === "companion") {
+  if (!costume.assetPath || costume.style === "scene") {
     return Promise.resolve(null);
   }
   return loadOne(costume);
 }
 
-/** Preload dedicated lesson-mirror SVGs (same-origin + sun). */
+/** Preload dedicated lesson-mirror assets (wearables + companions). */
 export function preloadLessonMirrorImages(): Promise<void> {
-  preloadPromise ??= Promise.all(LESSON_MIRROR_COSTUMES.map(loadOne)).then(
-    () => undefined,
-  );
+  preloadPromise ??= Promise.all(
+    LESSON_MIRROR_COSTUMES.filter((c) => c.assetPath).map(loadOne),
+  ).then(() => undefined);
   return preloadPromise.catch((err) => {
     preloadPromise = null;
     throw err;

@@ -3,13 +3,14 @@ import { associationsFor } from "@/data/letterAssociations";
 import {
   LESSON_MIRROR_COSTUMES,
   isCanvasLessonCostume,
+  isDomCompanionCostume,
   isLessonMirrorArt,
   isSceneLessonCostume,
   lessonMirrorCostumeForArt,
 } from "@/data/lessonMirrorCostumes";
 
-describe("lessonMirrorCostumes", () => {
-  it("covers every F and J association with meaningful world styles", () => {
+describe("lessonMirrorCostumes — hybrid Magic Mirror", () => {
+  it("covers every F and J association with tracked hybrid styles", () => {
     for (const letter of ["f", "j"] as const) {
       const items = associationsFor(letter);
       expect(items).toHaveLength(3);
@@ -21,9 +22,15 @@ describe("lessonMirrorCostumes", () => {
         expect(isLessonMirrorArt(item.art)).toBe(true);
       }
     }
-    expect(lessonMirrorCostumeForArt("fish")!.style).toBe("scene");
-    expect(isSceneLessonCostume(lessonMirrorCostumeForArt("fish"))).toBe(true);
-    expect(isCanvasLessonCostume(lessonMirrorCostumeForArt("fish"))).toBe(false);
+
+    const fish = lessonMirrorCostumeForArt("fish");
+    expect(fish!.style).toBe("companion");
+    expect(isCanvasLessonCostume(fish)).toBe(true);
+    expect(isSceneLessonCostume(fish)).toBe(false);
+    expect(fish!.assetPath).toContain("/lesson-mirror/wearables/fish.png");
+
+    expect(lessonMirrorCostumeForArt("frog")!.style).toBe("face-frame");
+    expect(isCanvasLessonCostume(lessonMirrorCostumeForArt("frog"))).toBe(true);
 
     expect(lessonMirrorCostumeForArt("juice")!.style).toBe("hand-prop");
     expect(lessonMirrorCostumeForArt("juice")!.anchor).toBe("mouth");
@@ -38,22 +45,26 @@ describe("lessonMirrorCostumes", () => {
     );
   });
 
-  it("uses an environmental sun world (not a face ring)", () => {
+  it("tracks sun rays on the head while heat ambient fills the world", () => {
     const sun = lessonMirrorCostumeForArt("sun");
     expect(sun).not.toBeNull();
     expect(sun!.name).toBe("Sun");
-    expect(sun!.style).toBe("scene");
-    expect(isSceneLessonCostume(sun)).toBe(true);
-    expect(isCanvasLessonCostume(sun)).toBe(false);
-    expect(isLessonMirrorArt("sun")).toBe(true);
+    expect(sun!.style).toBe("head-accessory");
+    expect(sun!.anchor).toBe("hat");
+    expect(isCanvasLessonCostume(sun)).toBe(true);
+    expect(isSceneLessonCostume(sun)).toBe(false);
+    expect(sun!.assetPath).toContain("/lesson-mirror/wearables/sun.png");
   });
 
-  it("keeps octopus as an underwater swimming companion (not a hat)", () => {
+  it("keeps octopus as a head-relative companion (not a face hat)", () => {
     const octopus = lessonMirrorCostumeForArt("octopus");
     expect(octopus).not.toBeNull();
-    expect(octopus!.style).toBe("scene");
-    expect(isSceneLessonCostume(octopus)).toBe(true);
-    expect(isCanvasLessonCostume(octopus)).toBe(false);
+    expect(octopus!.style).toBe("companion");
+    expect(octopus!.offsetX).toBeGreaterThan(0.5);
+    expect(isCanvasLessonCostume(octopus)).toBe(true);
+    expect(isSceneLessonCostume(octopus)).toBe(false);
+    expect(isDomCompanionCostume(octopus)).toBe(false);
+    expect(octopus!.assetPath).toContain("/lesson-mirror/wearables/octopus.png");
   });
 
   it("places the drum as a musical hand prop, not a face frame", () => {
@@ -98,48 +109,48 @@ describe("lessonMirrorCostumes", () => {
       "sun",
       "star",
       "snake",
+      "umbrella",
       "unicorn",
       "zebra",
     ]);
   });
 
-  it("uses sheet wearables for lion, robot, and royal accessories", () => {
+  it("tracks animal face-frames and royal crowns as canvas wearables", () => {
     const lion = lessonMirrorCostumeForArt("lion");
-    expect(lion?.assetPath).toContain("/lesson-mirror/wearables/lion.png");
     expect(lion?.style).toBe("face-frame");
-    expect(lion?.fallback).toBeFalsy();
+    expect(isCanvasLessonCostume(lion)).toBe(true);
 
     const robot = lessonMirrorCostumeForArt("robot");
-    expect(robot?.assetPath).toContain("/lesson-mirror/wearables/robot.png");
+    expect(robot?.style).toBe("face-frame");
+    expect(isCanvasLessonCostume(robot)).toBe(true);
 
     const king = lessonMirrorCostumeForArt("king");
     expect(king?.style).toBe("head-accessory");
     expect(king?.assetPath).toContain("/lesson-mirror/wearables/king.png");
   });
 
-  it("never uses a generic circle — missing arts become LetterArt companions", () => {
+  it("never uses a generic circle — vehicles become Magic World scenes", () => {
     const van = lessonMirrorCostumeForArt("van");
     expect(van).not.toBeNull();
-    expect(van!.fallback).toBe(true);
-    expect(van!.style).toBe("companion");
+    expect(van!.style).toBe("scene");
     expect(van!.assetPath).toBe("");
     expect(isLessonMirrorArt("van")).toBe(false);
     expect(isCanvasLessonCostume(van)).toBe(false);
+    expect(isSceneLessonCostume(van)).toBe(true);
   });
 
-  it("uses a real apple hood for Apple", () => {
+  it("places Apple in the orchard world (not a face hat)", () => {
     const apple = lessonMirrorCostumeForArt("apple");
     expect(apple).not.toBeNull();
-    expect(apple!.fallback).toBeFalsy();
-    expect(apple!.assetPath).toContain("/lesson-mirror/apple.svg");
+    expect(apple!.style).toBe("scene");
+    expect(isSceneLessonCostume(apple)).toBe(true);
     expect(isLessonMirrorArt("apple")).toBe(true);
   });
 
-  it("titles known association arts and unknown slugs as companions", () => {
+  it("titles known association arts and unknown slugs", () => {
     const ice = lessonMirrorCostumeForArt("ice-cream");
     expect(ice?.name).toBe("Ice cream");
-    expect(ice?.fallback).toBe(true);
-    expect(ice?.style).toBe("companion");
+    expect(ice?.style).toBe("scene");
     const madeUp = lessonMirrorCostumeForArt("zz-unknown" as never);
     expect(madeUp?.name).toBe("Zz Unknown");
     expect(madeUp?.fallback).toBe(true);
@@ -163,11 +174,21 @@ describe("lessonMirrorCostumes", () => {
     expect(hat?.assetPath).toContain("/lesson-mirror/wearables/hat.png");
   });
 
-  it("promotes kite from companion to a head accessory", () => {
+  it("flies the kite as a head-relative companion", () => {
     const kite = lessonMirrorCostumeForArt("kite");
-    expect(kite?.style).toBe("head-accessory");
-    expect(kite?.fallback).toBeFalsy();
-    expect(isLessonMirrorArt("kite")).toBe(true);
+    expect(kite?.style).toBe("companion");
     expect(isCanvasLessonCostume(kite)).toBe(true);
+    expect(isSceneLessonCostume(kite)).toBe(false);
+    expect(isLessonMirrorArt("kite")).toBe(true);
+    expect(kite?.assetPath).toContain("/lesson-mirror/wearables/kite.png");
+  });
+
+  it("uses DOM companions only when no canvas asset is available", () => {
+    const fallback = lessonMirrorCostumeForArt("zz-unknown" as never);
+    expect(isDomCompanionCostume(fallback)).toBe(true);
+    expect(isDomCompanionCostume(lessonMirrorCostumeForArt("octopus"))).toBe(
+      false,
+    );
+    expect(isDomCompanionCostume(null)).toBe(false);
   });
 });

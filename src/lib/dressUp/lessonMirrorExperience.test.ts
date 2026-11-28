@@ -17,6 +17,7 @@ function mockCtx() {
     closePath: vi.fn(),
     fill: vi.fn(),
     stroke: vi.fn(),
+    setLineDash: vi.fn(),
     createRadialGradient: vi.fn(() => ({
       addColorStop: vi.fn(),
     })),
@@ -67,5 +68,35 @@ describe("drawLessonMirrorExperience", () => {
       null,
     );
     expect(ctx.fillRect).toHaveBeenCalled();
+  });
+
+  it("draws orchard, woodland, travel, sky, royal, playroom, and special worlds", () => {
+    const ctx = mockCtx();
+    const samples = [
+      "orange",
+      "owl",
+      "van",
+      "airplane",
+      "king",
+      "ball",
+      "gap",
+      "igloo",
+      "umbrella",
+      "drum",
+    ] as const;
+    for (const art of samples) {
+      drawLessonMirrorExperience(
+        ctx,
+        320,
+        240,
+        mirrorExperienceForArt(art),
+        "success",
+        false,
+        1500,
+        null,
+      );
+    }
+    expect(ctx.fillRect).toHaveBeenCalled();
+    expect(ctx.setLineDash).toHaveBeenCalled();
   });
 });

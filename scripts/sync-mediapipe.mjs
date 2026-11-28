@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Copy MediaPipe WASM from node_modules and ensure the face landmarker model
- * exists under public/mediapipe (no runtime CDN).
+ * Copy MediaPipe WASM from node_modules and ensure local models exist under
+ * public/mediapipe (no runtime CDN).
  */
-import { cpSync, existsSync, mkdirSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -30,24 +30,37 @@ if (!existsSync(modelDest)) {
     console.error("Failed to download model:", res.status);
     process.exit(1);
   }
-  const buf = Buffer.from(await res.arrayBuffer());
-  const { writeFileSync } = await import("node:fs");
-  writeFileSync(modelDest, buf);
+  writeFileSync(modelDest, Buffer.from(await res.arrayBuffer()));
   console.log("Saved", modelDest);
 } else {
   console.log("Model already present:", modelDest);
 }
 
-/**
- * Optional Pose Landmarker (jacket shoulders). Not downloaded by default —
- * place pose_landmarker_lite.task under public/mediapipe/ to enable.
- * Until then, jacket try-on uses face-derived shoulder estimates.
- */
-const poseDest = join(root, "public/mediapipe/pose_landmarker_lite.task");
-if (existsSync(poseDest)) {
-  console.log("Pose model present:", poseDest);
-} else {
-  console.log(
-    "Pose model not bundled (optional). Jacket uses face-shoulder fallback.",
-  );
+async function ensureOptionalModel(dest, url, label) {
+  if (existsSync(dest)) {
+    console.log(`${label} present:`, dest);
+    return;
+  }
+  console.log(`Downloading optional ${label} (one-time)…`);
+  const res = await fetch(url);
+  if (!res.ok) {
+    console.log(`Skipped ${label}: download failed (${res.status}).`);
+    return;
+  }
+  writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
+  console.log("Saved", dest);
 }
+
+/** Optional Pose Landmarker (jacket shoulders). */
+await ensureOptionalModel(
+  join(root, "public/mediapipe/pose_landmarker_lite.task"),
+  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task",
+  "Pose model",
+);
+
+/** Optional Image Segmenter (parent-authorized person cutout). */
+await ensureOptionalModel(
+  join(root, "public/mediapipe/selfie_segmenter.tflite"),
+  "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite",
+  "Selfie segmenter",
+);

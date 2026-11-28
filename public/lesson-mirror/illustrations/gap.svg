@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+<ellipse cx="100" cy="176" rx="54" ry="9" fill="#263238" opacity="0.12"/>
+  <rect x="28" y="70" width="48" height="60" rx="10" fill="#7C4DFF"/>
+  <rect x="124" y="70" width="48" height="60" rx="10" fill="#7C4DFF"/>
+  <path d="M88 100h24" stroke="#FFD54F" stroke-width="6" stroke-dasharray="6 6"/>
+  <path d="M100 80v40" stroke="#FFD54F" stroke-width="4" stroke-dasharray="4 6"/>
+  <text x="100" y="160" text-anchor="middle" font-size="18" fill="#263238" font-family="Nunito,sans-serif" font-weight="700">GAP</text>
+</svg>

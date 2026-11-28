@@ -27,20 +27,43 @@ export type LiveMirrorFrameResult = {
   pose: FacePose | null;
   /** True when the face fills most of the frame — child should move back. */
   tooClose: boolean;
+  /** Face height as a fraction of the video frame height (framing metric). */
+  faceHeightRatio: number | null;
   /** Costume was painted this frame (tracked or portrait fallback). */
   costumeDrawn: boolean;
+  /** True when a person cutout was composited this frame. */
+  personCutoutUsed: boolean;
 };
 
-/** Centered portrait pose so costumes still appear when tracking is cold. */
+/**
+ * Ideal standing-mirror face height ≈ 25–35% of frame height.
+ * Above this ratio the child is too close for complete accessories.
+ */
+export const FACE_TOO_CLOSE_HEIGHT_RATIO = 0.38;
+
+/** Comfortable fallback face size (~30% of the shorter video side). */
+export const PORTRAIT_FALLBACK_FACE_RATIO = 0.3;
+
+/** True when face height dominates the frame (selfie-close). */
+export function isFaceTooClose(
+  faceHeight: number,
+  videoHeight: number,
+  threshold = FACE_TOO_CLOSE_HEIGHT_RATIO,
+): boolean {
+  if (videoHeight <= 0 || faceHeight <= 0) return false;
+  return faceHeight / videoHeight > threshold;
+}
+
+/** Centered pose so costumes still appear when tracking is cold (farther back). */
 export function portraitFallbackPose(
   videoW: number,
   videoH: number,
   pad = 0,
 ): FacePose {
-  const faceW = Math.min(videoW, videoH) * 0.44;
+  const faceW = Math.min(videoW, videoH) * PORTRAIT_FALLBACK_FACE_RATIO;
   const faceH = faceW * 1.15;
   const cx = pad + videoW / 2;
-  const cy = pad + videoH * 0.48;
+  const cy = pad + videoH * 0.42;
   const eyeSpan = faceW * 0.38;
   return {
     cx,
@@ -85,6 +108,26 @@ export function drawLiveMirrorFrame(opts: {
     width: number;
     rotation?: number;
   } | null;
+  /**
+   * Optional person cutout (alpha-masked video). When present, the full-frame
+   * rectangular video is skipped and this layer is drawn instead so ambient
+   * worlds can sit behind the real child.
+   */
+  personCutout?: CanvasImageSource | null;
+  /**
+   * Drawn after the stage fill and before the camera/person layer.
+   * Use for immersive ambient worlds when person cutout is active.
+   */
+  drawBackdrop?: (
+    ctx: CanvasRenderingContext2D,
+    canvasW: number,
+    canvasH: number,
+  ) => void;
+  /**
+   * When true (lesson Hybrid Mirror), hide wearables if the face leaves the
+   * frame. Dress-Up keeps a portrait fallback so the wardrobe stays visible.
+   */
+  requireFaceForCostume?: boolean;
 }): LiveMirrorFrameResult {
   const {
     video,
@@ -98,12 +141,22 @@ export function drawLiveMirrorFrame(opts: {
     costumeEntrance = 1,
     costumeActionBob = 0,
     shoulderOverride = null,
+    personCutout = null,
+    drawBackdrop,
+    requireFaceForCostume = false,
   } = opts;
 
   const w = video.videoWidth;
   const h = video.videoHeight;
   if (!w || !h) {
-    return { detected: false, pose: null, tooClose: false, costumeDrawn: false };
+    return {
+      detected: false,
+      pose: null,
+      tooClose: false,
+      faceHeightRatio: null,
+      costumeDrawn: false,
+      personCutoutUsed: false,
+    };
   }
 
   const pad = Math.round(Math.min(w, h) * Math.max(0, stagePad));
@@ -116,23 +169,40 @@ export function drawLiveMirrorFrame(opts: {
 
   const ctx = canvas.getContext("2d");
   if (!ctx) {
-    return { detected: false, pose: null, tooClose: false, costumeDrawn: false };
+    return {
+      detected: false,
+      pose: null,
+      tooClose: false,
+      faceHeightRatio: null,
+      costumeDrawn: false,
+      personCutoutUsed: false,
+    };
   }
 
   // Stage backdrop (visible when costumes extend into padding)
   ctx.fillStyle = stageFill;
   ctx.fillRect(0, 0, canvasW, canvasH);
 
-  // Layer 1 — continuous live camera (mirrored) inside the padded inset
+  const useCutout = Boolean(personCutout);
+  if (useCutout && drawBackdrop) {
+    drawBackdrop(ctx, canvasW, canvasH);
+  }
+
+  // Layer 1 — full-frame live camera (mirrored). No digital zoom / face crop.
   ctx.save();
   ctx.translate(pad + w, pad);
   ctx.scale(-1, 1);
-  ctx.drawImage(video, 0, 0, w, h);
+  if (useCutout && personCutout) {
+    ctx.drawImage(personCutout, 0, 0, w, h);
+  } else {
+    ctx.drawImage(video, 0, 0, w, h);
+  }
   ctx.restore();
 
   let pose: FacePose | null = null;
   let detected = false;
   let tooClose = false;
+  let faceHeightRatio: number | null = null;
   let costumeDrawn = false;
 
   // Layer 2 — face-tracked costume when possible
@@ -145,12 +215,19 @@ export function drawLiveMirrorFrame(opts: {
         const smoothed = smoother.next(raw);
         if (smoothed) {
           detected = true;
-          tooClose = smoothed.width > w * 0.58;
+          faceHeightRatio = smoothed.height / h;
+          tooClose = isFaceTooClose(smoothed.height, h);
           pose = {
             ...smoothed,
             cx: smoothed.cx + pad,
             cy: smoothed.cy + pad,
             crownY: smoothed.crownY + pad,
+            leftEyeX: smoothed.leftEyeX + pad,
+            leftEyeY: smoothed.leftEyeY + pad,
+            rightEyeX: smoothed.rightEyeX + pad,
+            rightEyeY: smoothed.rightEyeY + pad,
+            shoulderCx: smoothed.shoulderCx + pad,
+            shoulderCy: smoothed.shoulderCy + pad,
           };
         }
       } else {
@@ -161,9 +238,14 @@ export function drawLiveMirrorFrame(opts: {
     }
   }
 
-  // Always paint the association prop: track the face when we have it,
-  // otherwise park a portrait-sized hood so kids still see Fish/Frog/Flower.
-  if (costume && costumeImage) {
+  // Track when we have a face. Optional portrait fallback when tracking is cold
+  // (no landmarker yet). When requireFaceForCostume, hide overlays if the child
+  // left the frame so ambient worlds keep running alone.
+  const mayDrawCostume =
+    Boolean(costume && costumeImage) &&
+    (detected || !requireFaceForCostume || !landmarker);
+
+  if (mayDrawCostume && costume && costumeImage) {
     let drawPose = pose ?? portraitFallbackPose(w, h, pad);
     if (shoulderOverride) {
       drawPose = {
@@ -180,9 +262,18 @@ export function drawLiveMirrorFrame(opts: {
       animate: true,
       entrance: costumeEntrance,
       actionBob: costumeActionBob,
+      canvasW,
+      canvasH,
     });
     costumeDrawn = true;
   }
 
-  return { detected, pose, tooClose, costumeDrawn };
+  return {
+    detected,
+    pose,
+    tooClose,
+    faceHeightRatio,
+    costumeDrawn,
+    personCutoutUsed: useCutout,
+  };
 }

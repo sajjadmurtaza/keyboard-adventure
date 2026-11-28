@@ -1000,9 +1000,9 @@ html.lesson-play body {
   min-height: var(--focus-band-height);
 }
 
-/* Mirror on: two equal panels that always fill the band (left = art+letter, right = camera). */
+/* Mirror on: learning panel ~65%, Magic Mirror ~35%. */
 .play-board .lesson-focus[data-has-mirror="true"] {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 65fr) minmax(0, 35fr);
   grid-template-areas: "pair mirror";
 }
 

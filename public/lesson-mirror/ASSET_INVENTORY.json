@@ -2,7 +2,7 @@
   "summary": {
     "alphabetAssociations": 78,
     "specialAssociations": 15,
-    "dedicatedFaceFrames": 32,
+    "dedicatedFaceFrames": 31,
     "companionLetterArt": 59,
     "mirrorSvgBytes": 18962,
     "wearablePngBytes": 1697814,
@@ -841,12 +841,12 @@
       "word": "Octopus",
       "art": "octopus",
       "illustration": "LetterArt/octopus",
-      "costume": "lesson-mirror/wearables/octopus.png",
-      "style": "head-accessory",
+      "costume": "\"\"",
+      "style": "scene",
       "requiredNew": null,
       "reusable": [],
       "animation": "swim",
-      "sizeBytes": 24829
+      "sizeBytes": 0
     },
     {
       "key": "p",

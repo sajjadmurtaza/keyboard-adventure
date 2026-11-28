@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+<ellipse cx="100" cy="176" rx="54" ry="9" fill="#263238" opacity="0.12"/>
+  <path d="M70 36h60l30 30v60l-30 30H70l-30-30V66z" fill="#E53935" stroke="#B71C1C" stroke-width="4"/>
+  <text x="100" y="112" text-anchor="middle" font-size="28" fill="#fff" font-family="Nunito,sans-serif" font-weight="800">STOP</text>
+</svg>
