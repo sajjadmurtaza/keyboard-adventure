@@ -37,6 +37,14 @@ export function LessonComplete({
   const [showButtons, setShowButtons] = useState(reducedMotion);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const cancelledRef = useRef(false);
+  const advancedRef = useRef(false);
+  const hasNextRef = useRef(hasNext);
+  const onNextRef = useRef(onNext);
+  const onAgainRef = useRef(onAgain);
+
+  hasNextRef.current = hasNext;
+  onNextRef.current = onNext;
+  onAgainRef.current = onAgain;
 
   const cancelAutoAdvance = useCallback(() => {
     cancelledRef.current = true;
@@ -44,9 +52,13 @@ export function LessonComplete({
   }, []);
 
   const goNextOrAgain = useCallback(() => {
-    if (hasNext) onNext();
-    else onAgain();
-  }, [hasNext, onAgain, onNext]);
+    if (advancedRef.current) return;
+    advancedRef.current = true;
+    cancelledRef.current = true;
+    setSecondsLeft(null);
+    if (hasNextRef.current) onNextRef.current();
+    else onAgainRef.current();
+  }, []);
 
   useEffect(() => {
     if (reducedMotion) return;
@@ -64,13 +76,16 @@ export function LessonComplete({
   }, [reducedMotion]);
 
   // Auto-advance after celebration buttons appear, unless the child taps first.
+  // Keep deps to showButtons only — parent onNext identity must not reset the timer
+  // or double-fire next lesson (that remount race crashed the mirror).
   useEffect(() => {
     if (!showButtons) return;
+    if (advancedRef.current) return;
     cancelledRef.current = false;
     setSecondsLeft(LESSON_COMPLETE_AUTO_ADVANCE_SEC);
     const started = Date.now();
     const tick = window.setInterval(() => {
-      if (cancelledRef.current) {
+      if (cancelledRef.current || advancedRef.current) {
         window.clearInterval(tick);
         return;
       }
@@ -131,6 +146,7 @@ export function LessonComplete({
                   type="button"
                   data-testid="visit-wardrobe"
                   onClick={() => {
+                    advancedRef.current = true;
                     cancelAutoAdvance();
                     onVisitWardrobe();
                   }}
@@ -145,7 +161,7 @@ export function LessonComplete({
                   data-testid="lesson-complete-next"
                   onClick={() => {
                     cancelAutoAdvance();
-                    onNext();
+                    goNextOrAgain();
                   }}
                   className="pressable min-h-16 rounded-full bg-[#7657E8] px-10 font-[family-name:var(--font-display)] text-2xl font-bold text-white shadow-lg"
                 >
@@ -158,6 +174,7 @@ export function LessonComplete({
                 type="button"
                 data-testid="lesson-complete-again"
                 onClick={() => {
+                  advancedRef.current = true;
                   cancelAutoAdvance();
                   onAgain();
                 }}

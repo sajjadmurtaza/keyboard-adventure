@@ -30,8 +30,10 @@ import { getFaceLandmarker } from "@/lib/dressUp/faceLandmarker";
 import { getPoseLandmarker } from "@/lib/dressUp/poseLandmarker";
 import { getImageSegmenter } from "@/lib/dressUp/imageSegmenter";
 import { drawCostumeOverlay } from "@/lib/dressUp/faceOverlay";
-import { mirrorFacePose } from "@/lib/dressUp/facePose";
-import { drawLiveMirrorFrame } from "@/lib/dressUp/liveMirrorFrame";
+import {
+  drawLiveMirrorFrame,
+  MirrorFramingSmoother,
+} from "@/lib/dressUp/liveMirrorFrame";
 import { drawLessonMirrorExperience } from "@/lib/dressUp/lessonMirrorExperience";
 import { drawLivingMirrorMood } from "@/lib/dressUp/livingMirrorEffects";
 import { FacePoseSmoother } from "@/lib/dressUp/smoothing";
@@ -83,7 +85,10 @@ export function LessonLearningMirror({
   const [mirror, setMirror] = useState<MirrorState>("off");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [tooClose, setTooClose] = useState(false);
+  const [tooFar, setTooFar] = useState(false);
   const [faceMissing, setFaceMissing] = useState(false);
+  /** Soft companion scale driven by face-centered framing zoom. */
+  const [companionZoom, setCompanionZoom] = useState(1);
   const [canvasCostumeReady, setCanvasCostumeReady] = useState(false);
 
   const { audio } = useAudio();
@@ -127,11 +132,17 @@ export function LessonLearningMirror({
   const parentAllowedRef = useRef(cameraAllowedByParent);
   const reducedMotionRef = useRef(reducedMotion);
   const smootherRef = useRef(new FacePoseSmoother(0.38));
+  const framingRef = useRef(new MirrorFramingSmoother(0.16));
   const moodRef = useRef(mood);
   const tooCloseRef = useRef(false);
+  const tooFarRef = useRef(false);
   const lastHintPublishRef = useRef(0);
   const costumeArtRef = useRef<string | null>(null);
   const costumeSwapAtRef = useRef(0);
+  const mirrorRef = useRef<MirrorState>("off");
+  const startMirrorRef = useRef<() => Promise<void>>(async () => undefined);
+  const autoStartInFlightRef = useRef(false);
+  const autoStartAttemptsRef = useRef(0);
 
   useEffect(() => {
     costumeRef.current = costume;
@@ -190,12 +201,17 @@ export function LessonLearningMirror({
   }, [reducedMotion]);
 
   useEffect(() => {
+    mirrorRef.current = mirror;
+  }, [mirror]);
+
+  useEffect(() => {
     void preloadLessonMirrorImages().catch(() => undefined);
   }, []);
 
   const tearDown = useCallback(() => {
     sessionGenRef.current += 1;
     runningRef.current = false;
+    autoStartInFlightRef.current = false;
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
@@ -205,31 +221,14 @@ export function LessonLearningMirror({
     const video = videoRef.current;
     if (video) video.srcObject = null;
     smootherRef.current.reset();
+    framingRef.current.reset();
     tooCloseRef.current = false;
+    tooFarRef.current = false;
     setTooClose(false);
+    setTooFar(false);
     setFaceMissing(false);
     setMirror("off");
     setErrorMessage(null);
-  }, []);
-
-  const releaseLandmarker = useCallback(() => {
-    if (!landmarkerRef.current) return;
-    try {
-      landmarkerRef.current.close();
-    } catch {
-      /* ignore */
-    }
-    landmarkerRef.current = null;
-  }, []);
-
-  const releaseSegmenter = useCallback(() => {
-    if (!segmenterRef.current) return;
-    try {
-      segmenterRef.current.close();
-    } catch {
-      /* ignore */
-    }
-    segmenterRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -244,16 +243,30 @@ export function LessonLearningMirror({
   useEffect(() => {
     const onVis = () => {
       // Pause the stream while the tab is hidden; resume later if still wanted.
-      if (document.visibilityState === "hidden") tearDown();
+      if (document.visibilityState === "hidden") {
+        tearDown();
+        return;
+      }
+      // Tab visible again — retry auto-start if parent still allows it.
+      if (
+        cameraAllowedByParent &&
+        !isLessonMirrorPaused() &&
+        mirrorRef.current === "off"
+      ) {
+        void startMirrorRef.current();
+      }
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
       document.removeEventListener("visibilitychange", onVis);
       tearDown();
-      releaseLandmarker();
-      releaseSegmenter();
+      // Keep MediaPipe singletons warm across lesson remounts — closing them
+      // while the next lesson auto-starts caused crashes on "next adventure".
+      landmarkerRef.current = null;
+      poseLandmarkerRef.current = null;
+      segmenterRef.current = null;
     };
-  }, [tearDown, releaseLandmarker, releaseSegmenter]);
+  }, [tearDown, cameraAllowedByParent]);
 
   /* Camera-off: keep the themed world alive on the same canvas region. */
   useEffect(() => {
@@ -397,6 +410,7 @@ export function LessonLearningMirror({
         canvas,
         landmarker: landmarkerRef.current,
         smoother: smootherRef.current,
+        framing: framingRef.current,
         costume: canvasCostume,
         costumeImage: image,
         stagePad: LESSON_STAGE_PAD,
@@ -426,6 +440,7 @@ export function LessonLearningMirror({
       if (ctx) {
         // Rectangular overlay keeps ambient as a soft wash over the video.
         // Person cutout already drew the world behind the child.
+        // frame.pose is already mirrored + framed in canvas space.
         if (!frame.personCutoutUsed) {
           drawLessonMirrorExperience(
             ctx,
@@ -441,7 +456,7 @@ export function LessonLearningMirror({
           if (canvasCostume && image && frame.pose && frame.detected) {
             drawCostumeOverlay(
               ctx,
-              mirrorFacePose(frame.pose, canvas.width),
+              frame.pose,
               canvasCostume,
               image,
               {
@@ -473,6 +488,11 @@ export function LessonLearningMirror({
           tooCloseRef.current = frame.tooClose;
           setTooClose(frame.tooClose);
         }
+        if (tooFarRef.current !== frame.tooFar) {
+          tooFarRef.current = frame.tooFar;
+          setTooFar(frame.tooFar);
+        }
+        setCompanionZoom(frame.zoom);
         setFaceMissing(!frame.detected);
         if (frame.costumeDrawn) setCanvasCostumeReady(true);
       }
@@ -508,6 +528,7 @@ export function LessonLearningMirror({
     const videoEl = videoRef.current;
     if (videoEl) videoEl.srcObject = null;
     smootherRef.current.reset();
+    framingRef.current.reset();
 
     const gen = sessionGenRef.current;
     setMirror("starting");
@@ -525,11 +546,30 @@ export function LessonLearningMirror({
     }
 
     streamRef.current = session.stream;
-    const video = videoRef.current;
+
+    // Remount / next-lesson can briefly leave the <video> unset — wait a few
+    // frames instead of sticking in error (which blocked auto-start).
+    let video: HTMLVideoElement | null = videoRef.current;
+    for (let i = 0; i < 45 && !video; i += 1) {
+      if (gen !== sessionGenRef.current) {
+        stopCameraTracks(session.stream);
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve());
+      });
+      video = videoRef.current;
+    }
     if (!video) {
       stopCameraTracks(session.stream);
-      setMirror("error");
-      setErrorMessage("Could not start the camera.");
+      if (autoStartAttemptsRef.current < 3) {
+        // Stay "off" so the auto-start effect can try again on the next paint.
+        setMirror("off");
+        setErrorMessage(null);
+      } else {
+        setMirror("error");
+        setErrorMessage("Could not start the camera.");
+      }
       return;
     }
     video.srcObject = session.stream;
@@ -590,9 +630,12 @@ export function LessonLearningMirror({
     if (gen !== sessionGenRef.current) return;
 
     smootherRef.current.reset();
+    autoStartAttemptsRef.current = 0;
     setFaceMissing(true);
     setMirror("live");
   }, [cameraAllowedByParent]);
+
+  startMirrorRef.current = startMirror;
 
   // Parent allowed + not paused → open the mirror without another Start tap
   // (new lesson, remount, or return to this tab).
@@ -603,7 +646,13 @@ export function LessonLearningMirror({
     if (typeof document !== "undefined" && document.visibilityState === "hidden") {
       return;
     }
-    void startMirror();
+    if (autoStartInFlightRef.current) return;
+    if (autoStartAttemptsRef.current >= 3) return;
+    autoStartInFlightRef.current = true;
+    autoStartAttemptsRef.current += 1;
+    void startMirror().finally(() => {
+      autoStartInFlightRef.current = false;
+    });
   }, [cameraAllowedByParent, mirror, startMirror]);
 
   const shellClass = stageLayout
@@ -707,6 +756,7 @@ export function LessonLearningMirror({
     ) : null;
 
   /** Face-relative LetterArt props when no dedicated wearable exists. */
+  const companionScale = Math.min(1.35, Math.max(0.72, companionZoom * 0.92));
   const companionProps =
     activeItem && mirror === "live" && companionMode ? (
       <div
@@ -719,6 +769,9 @@ export function LessonLearningMirror({
           className={`lesson-mirror-companion lesson-mirror-companion--left ${
             reducedMotion ? "" : offSceneMotion
           }`}
+          style={{
+            transform: `translateY(-50%) rotate(-8deg) scale(${companionScale})`,
+          }}
         >
           <LetterArt id={activeItem.art} className="h-full w-full drop-shadow-md" />
         </div>
@@ -726,7 +779,10 @@ export function LessonLearningMirror({
           className={`lesson-mirror-companion lesson-mirror-companion--right ${
             reducedMotion ? "" : offSceneMotion
           }`}
-          style={{ animationDelay: reducedMotion ? undefined : "0.35s" }}
+          style={{
+            animationDelay: reducedMotion ? undefined : "0.35s",
+            transform: `translateY(-50%) rotate(8deg) scale(${companionScale})`,
+          }}
         >
           <LetterArt id={activeItem.art} className="h-full w-full drop-shadow-md" />
         </div>
@@ -778,6 +834,14 @@ export function LessonLearningMirror({
           data-testid="lesson-mirror-too-close"
         >
           A little farther back!
+        </p>
+      ) : null}
+      {mirror === "live" && tooFar && !tooClose && !faceMissing ? (
+        <p
+          className="pointer-events-none absolute bottom-3 left-1/2 z-[2] w-[90%] -translate-x-1/2 rounded-full bg-white/95 px-3 py-1.5 text-center font-[family-name:var(--font-nunito)] text-xs font-bold text-[#7048D7] shadow"
+          data-testid="lesson-mirror-too-far"
+        >
+          A little closer!
         </p>
       ) : null}
     </>
@@ -840,7 +904,10 @@ export function LessonLearningMirror({
                 <button
                   type="button"
                   data-testid="lesson-mirror-start"
-                  onClick={() => void startMirror()}
+                  onClick={() => {
+                    autoStartAttemptsRef.current = 0;
+                    void startMirror();
+                  }}
                   className={`pressable rounded-full bg-[#7048D7] font-[family-name:var(--font-display)] font-bold text-white shadow-md ${
                     stageLayout
                       ? "mt-0.5 min-h-8 px-3 text-xs"

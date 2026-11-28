@@ -26,7 +26,10 @@ import {
   getFaceLandmarker,
   isFaceLandmarkerWarm,
 } from "@/lib/dressUp/faceLandmarker";
-import { drawLiveMirrorFrame } from "@/lib/dressUp/liveMirrorFrame";
+import {
+  drawLiveMirrorFrame,
+  MirrorFramingSmoother,
+} from "@/lib/dressUp/liveMirrorFrame";
 import { mirrorChildStatus } from "@/lib/dressUp/mirrorChildStatus";
 import { FacePoseSmoother } from "@/lib/dressUp/smoothing";
 
@@ -75,6 +78,7 @@ export function MagicDressUp({
   const runningRef = useRef(false);
   const sessionGenRef = useRef(0);
   const smootherRef = useRef(new FacePoseSmoother(0.38));
+  const framingRef = useRef(new MirrorFramingSmoother(0.16));
   const perfRef = useRef(PERF_ENABLED ? new DressUpPerfSession() : null);
   const lastPerfPublishRef = useRef(0);
   const cheerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -149,6 +153,7 @@ export function MagicDressUp({
     const video = videoRef.current;
     if (video) video.srcObject = null;
     smootherRef.current.reset();
+    framingRef.current.reset();
     setMirror("idle");
     setFaceMissing(false);
     setLoadHint(null);
@@ -232,6 +237,7 @@ export function MagicDressUp({
         canvas,
         landmarker,
         smoother: smootherRef.current,
+        framing: framingRef.current,
         costume: costumeNow,
         costumeImage: image,
       });
@@ -349,6 +355,7 @@ export function MagicDressUp({
     if (gen !== sessionGenRef.current) return;
 
     smootherRef.current.reset();
+    framingRef.current.reset();
     perfRef.current?.noteLive();
     if (PERF_ENABLED && perfRef.current) {
       setPerfSnapshot(perfRef.current.snapshot());
