@@ -81,8 +81,8 @@ export function shouldSayName(
 export const ASSOCIATION_STEP_MS = 2200;
 export const ASSOCIATION_PAUSE_MS = 520;
 export const ASSOCIATION_REWARD_DELAY_MS = 1200;
-/** After the spoken tour, cycle Fish→Frog→Flower… on the mirror until the key is pressed. */
-export const ASSOCIATION_LOOP_MS = 1000;
+/** After the spoken tour, cycle costumes on the mirror until the key is pressed (match tour pace). */
+export const ASSOCIATION_LOOP_MS = 2200;
 
 export function getAssociationLine(key: string, word: string): string {
   return `${spokenKey(key)} is for ${word}!`;

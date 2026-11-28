@@ -64,9 +64,11 @@ type LessonLearningMirrorProps = {
 type MirrorState = "off" | "starting" | "live" | "error";
 
 const EMPTY_STEP = { key: "", index: 0 };
-/** Headroom around video so petal rings / hoods are not clipped. */
-/** Extra stage around the full camera frame for hats / companions (no digital zoom). */
-const LESSON_STAGE_PAD = 0.32;
+/**
+ * Tiny pad only — large pad made the live feed a floating hard rectangle
+ * inside the soft portal. Hats use adaptive zoom-out instead.
+ */
+const LESSON_STAGE_PAD = 0.06;
 
 /**
  * Optional in-lesson Magic Mirror — continuous live face + association costume.
@@ -814,7 +816,7 @@ export function LessonLearningMirror({
       {companionProps}
       {mirror === "live" ? (
         <div
-          className={`pointer-events-none absolute inset-0 rounded-[28px] ${
+          className={`pointer-events-none absolute inset-0 rounded-[14px] ${
             mood === "success" && !reducedMotion ? "lesson-mirror-win" : ""
           } ${mood === "retry" && !reducedMotion ? "lesson-mirror-miss" : ""} ${
             !reducedMotion && mood === "success" && costume && !companionMode

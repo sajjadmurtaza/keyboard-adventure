@@ -1065,10 +1065,10 @@ html.lesson-play body {
   min-height: var(--focus-band-height);
 }
 
-/* Mirror on: give the magic window more width (kid-friendly landscape). */
+/* Mirror on: one full-width Magic Learning Window. */
 .play-board .lesson-focus[data-has-mirror="true"] {
-  grid-template-columns: minmax(0, 54fr) minmax(0, 46fr);
-  grid-template-areas: "pair mirror";
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "stage";
 }
 
 .play-board .lesson-focus[data-has-mirror="false"] {
@@ -1081,8 +1081,76 @@ html.lesson-play body {
   min-height: clamp(140px, 20vh, 210px);
 }
 
+/* One catchy card: learn left, live mirror right — same world tint. */
+.play-board .lesson-magic-stage {
+  grid-area: stage;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) 1.35rem minmax(0, 0.92fr);
+  grid-template-areas: "learn seam mirror";
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: clamp(14px, 2vw, 21px);
+  border: 3px solid #d8e7ff;
+  background: #fffef6;
+  box-shadow:
+    0 14px 32px rgba(118, 87, 232, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.play-board .lesson-magic-learn {
+  grid-area: learn;
+  min-width: 0;
+  min-height: 0;
+}
+
+.play-board .lesson-magic-seam {
+  grid-area: seam;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--magic-accent, #7657e8) 18%, transparent) 20%,
+    color-mix(in srgb, var(--magic-accent, #7657e8) 28%, transparent) 50%,
+    color-mix(in srgb, var(--magic-accent, #7657e8) 18%, transparent) 80%,
+    transparent 100%
+  );
+}
+
+.play-board .lesson-magic-seam__line {
+  width: 3px;
+  flex: 1 1 auto;
+  max-height: 42%;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--magic-accent, #7657e8) 75%, #ffffff),
+    transparent
+  );
+  box-shadow: 0 0 12px color-mix(in srgb, var(--magic-accent, #7657e8) 45%, transparent);
+}
+
+.play-board .lesson-magic-seam__spark {
+  font-size: 0.85rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(48, 48, 71, 0.15));
+}
+
+.play-board .lesson-magic-mirror {
+  grid-area: mirror;
+  min-width: 0;
+  min-height: 0;
+}
+
 .play-board .lesson-focus-pair {
-  grid-area: pair;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1092,11 +1160,19 @@ html.lesson-play body {
   height: 100%;
   width: 100%;
   padding: clamp(0.25rem, 0.8vw, 0.5rem) clamp(0.4rem, 1.2vw, 0.75rem);
-  border-radius: 28px;
+  border-radius: 14px;
   border: 3px solid #d8e7ff;
   background: #fffef6;
   box-shadow: 0 10px 24px rgba(118, 87, 232, 0.12);
   overflow: hidden;
+}
+
+/* Inside the shared magic stage, learn panel is open (no second card). */
+.play-board .lesson-magic-stage .lesson-focus-pair {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 /* One shared left card: drop the nested association chrome. */
@@ -1150,7 +1226,6 @@ html.lesson-play body {
 }
 
 .play-board .adventure-mirror {
-  grid-area: mirror;
   min-width: 0;
   min-height: 0;
   height: 100%;
@@ -1172,51 +1247,51 @@ html.lesson-play body {
   height: 100%;
 }
 
-.play-board .lesson-mirror-frame-play {
+/* Mirror is an inset looking-glass inside the shared stage (not a second card). */
+.play-board .lesson-magic-stage .lesson-mirror-frame-play {
   flex: 1 1 auto;
   width: 100%;
   height: 100%;
   min-height: 0;
   max-height: none;
   aspect-ratio: auto;
-  /* Soft portal — matches the picture card, not a hard camera square */
-  border-radius: clamp(28px, 4.5vw, 48px);
-  border: 3px solid color-mix(in srgb, var(--mirror-blend, #d8e7ff) 55%, #ffffff);
-  background: var(--mirror-blend, #e8f2ff);
-  box-shadow:
-    0 12px 28px rgba(118, 87, 232, 0.1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   overflow: hidden;
   isolation: isolate;
 }
 
-/* Keep the scene tint when live — never a dark CCTV box. */
-.play-board .lesson-mirror-frame-play:has([data-testid="lesson-mirror-live-badge"]) {
-  background: var(--mirror-blend, #e8f2ff);
+.play-board
+  .lesson-magic-stage
+  .lesson-mirror-frame-play:has([data-testid="lesson-mirror-live-badge"]) {
+  background: #0b1a28;
 }
 
-.play-board .lesson-mirror-frame-play [data-testid="lesson-mirror-canvas"] {
+.play-board .lesson-magic-stage .lesson-mirror-frame-play [data-testid="lesson-mirror-canvas"] {
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   object-position: center center;
-  /* Feather the feed into the scene color so edges feel soft, not squared-off */
-  -webkit-mask-image: radial-gradient(
-    ellipse 96% 94% at 50% 48%,
-    #000 42%,
-    rgba(0, 0, 0, 0.92) 68%,
-    rgba(0, 0, 0, 0.55) 86%,
-    transparent 100%
+  /* Soft left fade into the shared stage so camera feels part of the same world */
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 7%,
+    #000 100%
   );
-  mask-image: radial-gradient(
-    ellipse 96% 94% at 50% 48%,
-    #000 42%,
-    rgba(0, 0, 0, 0.92) 68%,
-    rgba(0, 0, 0, 0.55) 86%,
-    transparent 100%
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 7%,
+    #000 100%
   );
 }
 
-/* Soft vignette wash in the scene tint — only while the camera is live. */
 .play-board
+  .lesson-magic-stage
   .lesson-mirror-frame-play.lesson-mirror-portal:has(
     [data-testid="lesson-mirror-live-badge"]
   )::after {
@@ -1226,12 +1301,30 @@ html.lesson-play body {
   inset: 0;
   z-index: 1;
   border-radius: inherit;
-  background: radial-gradient(
-    ellipse 88% 82% at 50% 45%,
-    transparent 40%,
-    color-mix(in srgb, var(--mirror-blend, #e8f2ff) 55%, transparent) 78%,
-    color-mix(in srgb, var(--mirror-blend, #e8f2ff) 88%, transparent) 100%
+  box-shadow: inset 0 0 28px 10px rgba(255, 255, 255, 0.12);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--mirror-blend, #e8f2ff) 55%, transparent) 0%,
+    transparent 14%
   );
+}
+
+/* Standalone mirror frame (non-stage fallbacks). */
+.play-board .lesson-mirror-frame-play {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: auto;
+  border-radius: clamp(14px, 2.25vw, 24px);
+  border: 3px solid color-mix(in srgb, var(--mirror-blend, #d8e7ff) 40%, #ffffff);
+  background: var(--mirror-blend, #e8f2ff);
+  box-shadow:
+    0 12px 28px rgba(118, 87, 232, 0.12),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.75);
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .play-board .association-area.association-card {
@@ -1389,12 +1482,58 @@ html.lesson-play body {
   }
 
   .play-board .lesson-focus[data-has-mirror="true"] {
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      "pair pair"
-      "mirror mirror";
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "stage";
     max-height: none;
     height: auto;
+  }
+
+  .play-board .lesson-magic-stage {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1.1rem minmax(120px, 28vh);
+    grid-template-areas:
+      "learn"
+      "seam"
+      "mirror";
+  }
+
+  .play-board .lesson-magic-seam {
+    flex-direction: row;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--magic-accent, #7657e8) 22%, transparent) 50%,
+      transparent 100%
+    );
+  }
+
+  .play-board .lesson-magic-seam__line {
+    width: auto;
+    height: 3px;
+    max-height: none;
+    flex: 1 1 auto;
+    max-width: 42%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--magic-accent, #7657e8) 75%, #ffffff),
+      transparent
+    );
+  }
+
+  .play-board .lesson-magic-stage .lesson-mirror-frame-play [data-testid="lesson-mirror-canvas"] {
+    -webkit-mask-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      #000 10%,
+      #000 100%
+    );
+    mask-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      #000 10%,
+      #000 100%
+    );
   }
 
   .play-board .lesson-focus-pair {
@@ -1417,7 +1556,7 @@ html.lesson-play body {
   }
 
   .play-board .lesson-focus-pair {
-    border-radius: 22px;
+    border-radius: 11px;
     gap: 0.25rem;
     padding: 0.35rem 0.45rem;
   }
@@ -1434,7 +1573,7 @@ html.lesson-play body {
   gap: var(--key-gap);
   width: 100%;
   padding: 10px 14px 14px;
-  border-radius: 28px;
+  border-radius: 14px;
   border: 2px solid #e8e1ff;
   background: #f7f5ff;
   box-shadow: 0 10px 24px rgba(118, 87, 232, 0.1);
@@ -1610,10 +1749,16 @@ html.lesson-play body {
 }
 
 .mobile-keyboard-open .lesson-focus[data-has-mirror="true"] {
-  grid-template-columns: auto minmax(4rem, auto);
-  grid-template-areas: "art letter";
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "stage";
 }
 
+.mobile-keyboard-open .lesson-magic-stage {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "learn";
+}
+
+.mobile-keyboard-open .lesson-magic-seam,
 .mobile-keyboard-open .adventure-mirror {
   display: none;
 }
@@ -2132,7 +2277,7 @@ html.lesson-play body {
   min-width: 196px;
   min-height: 122px;
   flex-shrink: 0;
-  border-radius: clamp(22px, 3vw, 36px);
+  border-radius: clamp(11px, 1.5vw, 18px);
   border: 3px solid color-mix(in srgb, var(--mirror-blend, #d8e7ff) 55%, #ffffff);
   background: var(--mirror-blend, #e8f2ff);
   box-shadow:
@@ -2160,16 +2305,18 @@ html.lesson-play body {
 }
 
 .magic-mirror-frame [data-testid="lesson-mirror-canvas"] {
+  object-fit: cover;
+  object-position: center center;
   -webkit-mask-image: radial-gradient(
-    ellipse 96% 94% at 50% 48%,
-    #000 45%,
-    rgba(0, 0, 0, 0.9) 72%,
+    ellipse 102% 102% at 50% 50%,
+    #000 72%,
+    rgba(0, 0, 0, 0.92) 88%,
     transparent 100%
   );
   mask-image: radial-gradient(
-    ellipse 96% 94% at 50% 48%,
-    #000 45%,
-    rgba(0, 0, 0, 0.9) 72%,
+    ellipse 102% 102% at 50% 50%,
+    #000 72%,
+    rgba(0, 0, 0, 0.92) 88%,
     transparent 100%
   );
 }

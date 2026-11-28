@@ -1201,33 +1201,57 @@ function Play({
         </button>
       </div>
       <div className="target-group relative z-[3] min-h-0 w-full">
-        {/* Balanced focus band: [Picture + Letter] | Mirror — fills width on every screen. */}
+        {/* One Magic Learning Window: learn + mirror live in the same card. */}
         <div
           className="lesson-focus min-w-0"
           data-has-mirror={showMirror ? "true" : "false"}
         >
           {showMirror ? (
             <div
-              className="lesson-focus-pair"
+              className="lesson-magic-stage"
+              data-testid="lesson-magic-stage"
               style={
                 focusScene
                   ? {
                       background: focusScene.tint,
                       borderColor: focusScene.border,
+                      ["--magic-accent" as string]: focusScene.border,
                     }
                   : undefined
               }
             >
-              <div className="lesson-focus-art">{association}</div>
-              <div className="lesson-focus-letter">
-                <TargetLetter
-                  key={`${step}-${target}`}
-                  target={target}
-                  mood={reducedMotion && mood === "idle" ? "idle" : mood}
+              <div className="lesson-magic-learn lesson-focus-pair">
+                <div className="lesson-focus-art">{association}</div>
+                <div className="lesson-focus-letter">
+                  <TargetLetter
+                    key={`${step}-${target}`}
+                    target={target}
+                    mood={reducedMotion && mood === "idle" ? "idle" : mood}
+                    reducedMotion={reducedMotion}
+                    burst={mood === "success" && !reducedMotion}
+                    burstLevel={tightKb ? 1 : burstLevel}
+                    size={tightKb ? "compact" : "stage"}
+                    accentColor={focusScene?.border}
+                  />
+                </div>
+              </div>
+              <div className="lesson-magic-seam" aria-hidden>
+                <span className="lesson-magic-seam__spark">✨</span>
+                <span className="lesson-magic-seam__line" />
+                <span className="lesson-magic-seam__spark">🪄</span>
+              </div>
+              <div
+                className="adventure-mirror lesson-magic-mirror"
+                data-testid="adventure-mirror"
+              >
+                <LessonLearningMirror
+                  letter={target}
+                  cameraAllowedByParent={settings.cameraLessonMirror}
+                  personCutoutAllowedByParent={settings.cameraPersonCutout}
+                  mood={mood}
                   reducedMotion={reducedMotion}
-                  burst={mood === "success" && !reducedMotion}
-                  burstLevel={tightKb ? 1 : burstLevel}
-                  size={tightKb ? "compact" : "stage"}
+                  onOpenParentSettings={onOpenParentSettings}
+                  stageLayout={false}
                 />
               </div>
             </div>
@@ -1243,23 +1267,11 @@ function Play({
                   burst={mood === "success" && !reducedMotion}
                   burstLevel={tightKb ? 1 : burstLevel}
                   size={tightKb ? "compact" : compact ? "mobile" : "desktop"}
+                  accentColor={focusScene?.border}
                 />
               </div>
             </>
           )}
-          {showMirror ? (
-            <div className="adventure-mirror" data-testid="adventure-mirror">
-              <LessonLearningMirror
-                letter={target}
-                cameraAllowedByParent={settings.cameraLessonMirror}
-                personCutoutAllowedByParent={settings.cameraPersonCutout}
-                mood={mood}
-                reducedMotion={reducedMotion}
-                onOpenParentSettings={onOpenParentSettings}
-                stageLayout={false}
-              />
-            </div>
-          ) : null}
         </div>
       </div>
       {compact ? (
