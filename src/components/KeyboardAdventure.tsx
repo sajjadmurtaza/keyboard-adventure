@@ -7,6 +7,7 @@ import { ChildNameSetup } from "@/components/ChildNameSetup";
 import { AdventureMap } from "@/components/AdventureMap";
 import { FeedbackMessage } from "@/components/FeedbackMessage";
 import { LessonComplete } from "@/components/LessonComplete";
+import { FIND_HELP_IDLE_SEC } from "@/components/keyboardFindHelp";
 import { Mascot } from "@/components/Mascot";
 import { ParentSettingsPanel } from "@/components/ParentSettings";
 import { ProgressStars } from "@/components/ProgressStars";
@@ -220,6 +221,20 @@ export function KeyboardAdventure() {
 
   const target = sequence[index] ?? "f";
   const childName = settings.childName.trim();
+
+  // If the child doesn't press anything for 5s, pump the target key harder.
+  useEffect(() => {
+    if (view !== "play") return;
+    if (lessonPhase !== "ready") return;
+    if (mood !== "idle") return;
+    const gen = lessonGenRef.current;
+    const timer = window.setTimeout(() => {
+      if (gen !== lessonGenRef.current) return;
+      if (phaseRef.current !== "ready") return;
+      setHelpLevel((level) => Math.max(level, 2));
+    }, FIND_HELP_IDLE_SEC * 1000);
+    return () => window.clearTimeout(timer);
+  }, [view, lessonPhase, mood, index, target]);
 
   useEffect(() => {
     audio?.configure(settings);
@@ -1114,7 +1129,7 @@ function Play({
     </div>
   ) : compact && !tightKb ? (
     <div className="flex shrink-0 flex-col items-center" data-testid="mini-key">
-      <MiniKeyHint target={target} pulse={helpLevel >= 1} />
+      <MiniKeyHint target={target} pulse={helpLevel >= 1 || mood === "retry"} />
       {showTypeButton ? (
         <StartTypingButton miss={mood === "retry"} onPress={onStartTyping} />
       ) : null}

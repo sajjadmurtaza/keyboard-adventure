@@ -3,6 +3,10 @@
 import { useRef } from "react";
 import { FingerGuide } from "@/components/FingerGuide";
 import { KeyboardKey } from "@/components/KeyboardKey";
+import {
+  showTargetFingerPoint,
+  targetKeyTone,
+} from "@/components/keyboardFindHelp";
 import { keyboardRows, type KeyboardLayoutId } from "@/utils/keyboardLayouts";
 import { displayKey, normalizeTarget } from "@/utils/keys";
 
@@ -32,15 +36,19 @@ export function VirtualKeyboard({
   const wanted = normalizeTarget(target);
   const rows = keyboardRows(layout);
   const stageRef = useRef<HTMLDivElement>(null);
+  const findHelp = helpLevel >= 1 || mood === "retry";
+  const point = showTargetFingerPoint(helpLevel, mood);
 
   function toneFor(key: string) {
-    if (missedKey && normalizeTarget(missedKey) === key) return "miss" as const;
-    if (!highlightOn) return "idle" as const;
-    if (wanted !== key) return "idle" as const;
-    if (mood === "success") return "success" as const;
-    if (mood === "retry" || helpLevel >= 2) return "strong" as const;
-    if (arrive) return "pulse" as const;
-    return "lit" as const;
+    return targetKeyTone({
+      key,
+      wanted,
+      highlightOn,
+      mood,
+      helpLevel,
+      missedKey: missedKey ? normalizeTarget(missedKey) : null,
+      arrive,
+    });
   }
 
   return (
@@ -49,6 +57,8 @@ export function VirtualKeyboard({
       className="keyboard-stage relative w-full max-w-[68rem]"
       data-testid="visual-keyboard"
       data-layout={layout}
+      data-find-help={findHelp ? "true" : "false"}
+      data-help-level={String(helpLevel)}
     >
       <div className="keyboard-shell">
         <div className="keyboard-rows">
@@ -74,7 +84,7 @@ export function VirtualKeyboard({
                   label={displayKey(key)}
                   bump={key === "f" || key === "j"}
                   tone={toneFor(key)}
-                  point={wanted === key && helpLevel >= 3}
+                  point={wanted === key && point}
                 />
               ))}
             </div>
@@ -86,7 +96,7 @@ export function VirtualKeyboard({
             label="SPACE"
             wide
             tone={toneFor(" ")}
-            point={wanted === " " && helpLevel >= 3}
+            point={wanted === " " && point}
           />
         </div>
         {fingerHints ? (

@@ -1,6 +1,7 @@
 /**
- * Single owner for Magic Dress-Up getUserMedia lifecycle.
- * Never starts without an explicit Start Magic Mirror call from the UI.
+ * Single owner for Magic Dress-Up / Learning Mirror getUserMedia lifecycle.
+ * Callers must have parent consent. Learning Mirror may auto-start when the
+ * parent setting is on; Dress-Up still uses an explicit Start control.
  */
 
 export type CameraSessionError =

@@ -226,11 +226,12 @@ export function ParentSettingsPanel({
         />
       </label>
       <p className="text-sm text-[#5A5C72]">
-        Cameras off by default. Turning any option on does <strong>not</strong> open the camera —
-        your child still taps <strong>Start</strong>. Dress-Up and Learning Mirror are
-        separate choices. Person cutout runs extra on-device processing so your child can
-        appear inside the animated world; slower devices keep the normal live-video view.
-        Video stays on this device; nothing is recorded or uploaded.
+        Cameras off by default. When Learning Mirror is allowed, lessons can open the
+        camera automatically for this visit (the browser may still ask once).{" "}
+        <strong>Stop</strong> pauses until your child taps <strong>Start</strong> again.
+        Dress-Up stays a separate Start. Person cutout runs extra on-device processing so
+        your child can appear inside the animated world; slower devices keep the normal
+        live-video view. Video stays on this device; nothing is recorded or uploaded.
         Microphone stays blocked. Lessons work fully without any camera.
       </p>
       <p className="font-[family-name:var(--font-nunito)] font-semibold">Audio</p>

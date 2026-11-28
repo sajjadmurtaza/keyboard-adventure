@@ -44,9 +44,10 @@ export type ParentSettings = {
    */
   cameraDressUp: boolean;
   /**
-   * Parent allows the optional in-lesson Learning Mirror (F/J experiment).
+   * Parent allows the optional in-lesson Learning Mirror.
    * Independent of Magic Dress-Up — dress-up consent never silently enables lesson camera use.
-   * Default false. Enabling never auto-starts getUserMedia — child must tap Start camera.
+   * Default false. When on, the lesson mirror may open the camera for this visit
+   * (browser may still ask once). Stop pauses until Start or a fresh tab.
    */
   cameraLessonMirror: boolean;
   /**

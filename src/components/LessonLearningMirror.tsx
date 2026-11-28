@@ -18,6 +18,10 @@ import {
   stopCameraTracks,
 } from "@/lib/dressUp/cameraSession";
 import {
+  isLessonMirrorPaused,
+  setLessonMirrorPaused,
+} from "@/lib/dressUp/lessonMirrorPreference";
+import {
   ensureLessonMirrorImage,
   getCachedLessonMirrorImage,
   preloadLessonMirrorImages,
@@ -231,6 +235,7 @@ export function LessonLearningMirror({
   useEffect(() => {
     if (cameraAllowedByParent) return;
     if (mirror !== "live" && mirror !== "starting") return;
+    setLessonMirrorPaused(false);
     /* eslint-disable react-hooks/set-state-in-effect -- camera must stop when parent revokes */
     tearDown();
     /* eslint-enable react-hooks/set-state-in-effect */
@@ -238,6 +243,7 @@ export function LessonLearningMirror({
 
   useEffect(() => {
     const onVis = () => {
+      // Pause the stream while the tab is hidden; resume later if still wanted.
       if (document.visibilityState === "hidden") tearDown();
     };
     document.addEventListener("visibilitychange", onVis);
@@ -482,13 +488,27 @@ export function LessonLearningMirror({
     };
   }, [mirror, tearDown]);
 
-  async function startMirror() {
+  const startMirror = useCallback(async () => {
     if (!cameraAllowedByParent) {
       setMirror("error");
       setErrorMessage("Ask a grown-up to allow Learning Mirror in Parent settings.");
       return;
     }
-    tearDown();
+    setLessonMirrorPaused(false);
+    // Reset the stream without flashing mirror back to "off" (that would
+    // re-trigger auto-start and stack sessions).
+    sessionGenRef.current += 1;
+    runningRef.current = false;
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+    }
+    stopCameraTracks(streamRef.current);
+    streamRef.current = null;
+    const videoEl = videoRef.current;
+    if (videoEl) videoEl.srcObject = null;
+    smootherRef.current.reset();
+
     const gen = sessionGenRef.current;
     setMirror("starting");
     setErrorMessage(null);
@@ -532,9 +552,10 @@ export function LessonLearningMirror({
     } catch {
       /* still show camera + DOM stickers */
     }
-    if (costume && isCanvasLessonCostume(costume)) {
+    const costumeNow = costumeRef.current;
+    if (costumeNow && isCanvasLessonCostume(costumeNow)) {
       try {
-        await ensureLessonMirrorImage(costume);
+        await ensureLessonMirrorImage(costumeNow);
         if (gen === sessionGenRef.current) setCanvasCostumeReady(true);
       } catch {
         /* portrait stickers / companions still show the object */
@@ -549,7 +570,7 @@ export function LessonLearningMirror({
       landmarkerRef.current = null;
     }
     // Lazy pose model only when jacket (body-wear) may need shoulders.
-    if (costume?.style === "body-wear") {
+    if (costumeNow?.style === "body-wear") {
       try {
         poseLandmarkerRef.current = await getPoseLandmarker();
       } catch {
@@ -557,7 +578,7 @@ export function LessonLearningMirror({
       }
     }
     // Optional local person cutout — never required; rectangular overlay remains the fallback.
-    if (personCutoutAllowedByParent) {
+    if (cutoutAllowedRef.current) {
       try {
         segmenterRef.current = await getImageSegmenter();
       } catch {
@@ -571,7 +592,19 @@ export function LessonLearningMirror({
     smootherRef.current.reset();
     setFaceMissing(true);
     setMirror("live");
-  }
+  }, [cameraAllowedByParent]);
+
+  // Parent allowed + not paused → open the mirror without another Start tap
+  // (new lesson, remount, or return to this tab).
+  useEffect(() => {
+    if (!cameraAllowedByParent) return;
+    if (isLessonMirrorPaused()) return;
+    if (mirror !== "off") return;
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+      return;
+    }
+    void startMirror();
+  }, [cameraAllowedByParent, mirror, startMirror]);
 
   const shellClass = stageLayout
     ? "magic-mirror-shell"
@@ -835,7 +868,10 @@ export function LessonLearningMirror({
             <button
               type="button"
               data-testid="lesson-mirror-stop"
-              onClick={tearDown}
+              onClick={() => {
+                setLessonMirrorPaused(true);
+                tearDown();
+              }}
               className="pressable pointer-events-auto min-h-8 shrink-0 rounded-full bg-white/95 px-3 font-[family-name:var(--font-display)] text-xs font-bold text-[#7048D7] shadow"
             >
               Stop
