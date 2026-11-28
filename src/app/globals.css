@@ -1173,6 +1173,35 @@ html.lesson-play body {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+  /* Art left, big letter toward the mirror seam with breathing room */
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: clamp(1rem, 3.2vw, 2.75rem);
+  padding: clamp(0.45rem, 1.2vh, 0.85rem) clamp(0.85rem, 2.4vw, 1.75rem)
+    clamp(0.35rem, 1vh, 0.65rem) clamp(0.55rem, 1.6vw, 1.1rem);
+}
+
+/* Sit the letter beside the hero icon (not the tour-card row). */
+.play-board .lesson-magic-stage .lesson-focus-letter {
+  flex: 1 1 auto;
+  align-self: flex-start;
+  justify-content: flex-end;
+  align-items: flex-start;
+  /* Place label + half icon ≈ optical center of the King/art */
+  padding-top: clamp(1.35rem, 3.8vh, 2.85rem);
+  padding-right: clamp(0.35rem, 1.5vw, 1rem);
+  min-width: clamp(5.5rem, 12vw, 8.5rem);
+}
+
+.play-board .lesson-magic-stage .lesson-focus-art {
+  flex: 0 1 auto;
+  width: min(100%, 15rem);
+  max-width: min(100%, 15rem);
+}
+
+.play-board .lesson-magic-stage .target-wrapper {
+  min-width: clamp(4.5rem, 11vw, 7.5rem);
+  padding-inline: clamp(0.35rem, 1.2vw, 0.85rem);
 }
 
 /* One shared left card: drop the nested association chrome. */

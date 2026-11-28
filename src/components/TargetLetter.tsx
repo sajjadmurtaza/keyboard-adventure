@@ -66,7 +66,7 @@ export function TargetLetter({
       : size === "mobile"
         ? "clamp(130px, 38vw, 185px)"
         : size === "stage"
-          ? "clamp(110px, 20vh, 220px)"
+          ? "clamp(140px, 26vh, 280px)"
           : "var(--target-size)";
 
   // Keep the glyph black; object color only lives outside as rim + glow.
