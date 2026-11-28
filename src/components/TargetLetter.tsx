@@ -29,10 +29,9 @@ export function objectLetterGlow(
   }
   if (!accent) return "none";
   return [
-    `0 0 10px ${accent}`,
-    `0 0 22px color-mix(in srgb, ${accent} 85%, transparent)`,
-    `0 0 40px color-mix(in srgb, ${accent} 55%, transparent)`,
-    `0 5px 0 color-mix(in srgb, ${accent} 35%, transparent)`,
+    `0 0 8px color-mix(in srgb, ${accent} 80%, transparent)`,
+    `0 0 18px color-mix(in srgb, ${accent} 55%, transparent)`,
+    `0 3px 0 color-mix(in srgb, ${accent} 28%, transparent)`,
   ].join(", ");
 }
 
@@ -66,7 +65,7 @@ export function TargetLetter({
       : size === "mobile"
         ? "clamp(130px, 38vw, 185px)"
         : size === "stage"
-          ? "clamp(140px, 26vh, 280px)"
+          ? "clamp(96px, 16.5vh, 176px)"
           : "var(--target-size)";
 
   // Keep the glyph black; object color only lives outside as rim + glow.
@@ -81,7 +80,7 @@ export function TargetLetter({
   const objectRim =
     mood === "idle" && accentColor
       ? {
-          WebkitTextStroke: `0.09em ${accentColor}`,
+          WebkitTextStroke: `0.055em ${accentColor}`,
           paintOrder: "stroke fill" as const,
         }
       : undefined;
@@ -89,7 +88,7 @@ export function TargetLetter({
   return (
     <div
       className={`target-wrapper relative z-[3] flex min-h-0 flex-col items-center justify-center ${
-        stage ? "min-w-[2.75rem] shrink-0 px-1" : ""
+        stage ? "shrink-0 px-0.5" : ""
       }`}
       data-testid="target-letter"
       data-accent={accentColor ?? ""}
@@ -98,9 +97,9 @@ export function TargetLetter({
       {mood === "success" ? <div className="target-halo-win" /> : null}
       {mood === "idle" && accentColor ? (
         <div
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[78%] w-[78%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-50"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[70%] w-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-35"
           style={{
-            background: `radial-gradient(circle, color-mix(in srgb, ${accentColor} 45%, transparent) 0%, transparent 70%)`,
+            background: `radial-gradient(circle, color-mix(in srgb, ${accentColor} 35%, transparent) 0%, transparent 72%)`,
           }}
           aria-hidden
         />

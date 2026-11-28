@@ -1085,7 +1085,7 @@ html.lesson-play body {
 .play-board .lesson-magic-stage {
   grid-area: stage;
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) 1.35rem minmax(0, 0.92fr);
+  grid-template-columns: minmax(0, 1.2fr) 1.1rem minmax(0, 0.8fr);
   grid-template-areas: "learn seam mirror";
   width: 100%;
   height: 100%;
@@ -1167,41 +1167,53 @@ html.lesson-play body {
   overflow: hidden;
 }
 
-/* Inside the shared magic stage, learn panel is open (no second card). */
+/*
+ * Kid-clear learn layout: one centered [picture | letter] cluster.
+ * No margin hacks — art and letter share the same vertical center.
+ */
 .play-board .lesson-magic-stage .lesson-focus-pair {
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  /* Art left, big letter toward the mirror seam with breathing room */
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: clamp(1rem, 3.2vw, 2.75rem);
-  padding: clamp(0.45rem, 1.2vh, 0.85rem) clamp(0.85rem, 2.4vw, 1.75rem)
-    clamp(0.35rem, 1vh, 0.65rem) clamp(0.55rem, 1.6vw, 1.1rem);
+  justify-content: center;
+  align-items: center;
+  gap: clamp(0.65rem, 1.8vw, 1.35rem);
+  padding: clamp(0.4rem, 1vh, 0.75rem) clamp(0.6rem, 1.6vw, 1.1rem);
 }
 
-/* Sit the letter beside the hero icon (not the tour-card row). */
 .play-board .lesson-magic-stage .lesson-focus-letter {
-  flex: 1 1 auto;
-  align-self: flex-start;
-  justify-content: flex-end;
-  align-items: flex-start;
-  /* Place label + half icon ≈ optical center of the King/art */
-  padding-top: clamp(1.35rem, 3.8vh, 2.85rem);
-  padding-right: clamp(0.35rem, 1.5vw, 1rem);
-  min-width: clamp(5.5rem, 12vw, 8.5rem);
+  flex: 0 0 auto;
+  align-self: center;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  /* Lift slightly so the glyph lines up with the hero icon, above tour cards */
+  transform: translateY(clamp(-1.6rem, -3.2vh, -0.85rem));
 }
 
 .play-board .lesson-magic-stage .lesson-focus-art {
   flex: 0 1 auto;
-  width: min(100%, 15rem);
-  max-width: min(100%, 15rem);
+  width: min(100%, 15.5rem);
+  max-width: min(100%, 15.5rem);
+  height: auto;
+  align-self: center;
 }
 
 .play-board .lesson-magic-stage .target-wrapper {
-  min-width: clamp(4.5rem, 11vw, 7.5rem);
-  padding-inline: clamp(0.35rem, 1.2vw, 0.85rem);
+  min-width: 0;
+  padding-inline: 0.15rem;
+}
+
+/* Keep word + tour cards centered under the picture column */
+.play-board
+  .lesson-magic-stage
+  .lesson-focus-art
+  .association-area.association-card {
+  width: 100%;
+  align-items: center;
 }
 
 /* One shared left card: drop the nested association chrome. */
