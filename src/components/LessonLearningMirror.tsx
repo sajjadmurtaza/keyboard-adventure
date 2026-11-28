@@ -659,10 +659,16 @@ export function LessonLearningMirror({
     ? "magic-mirror-shell"
     : "lesson-mirror-shell-play";
 
-  // Play layout: same panel height as the picture card. Stage keeps compact magic frame.
+  // Play layout: soft blended portal beside the picture card. Stage keeps compact frame.
   const frameClass = stageLayout
-    ? "magic-mirror-frame relative overflow-hidden rounded-[20px] shadow-[0_8px_20px_rgba(48,48,71,0.12)]"
-    : "lesson-mirror-frame-play relative overflow-hidden rounded-[28px]";
+    ? "magic-mirror-frame lesson-mirror-portal relative overflow-hidden"
+    : "lesson-mirror-frame-play lesson-mirror-portal relative overflow-hidden";
+
+  const blendTint = scene?.tint ?? "#E8F6FF";
+  const frameStyle = {
+    background: blendTint,
+    ["--mirror-blend" as string]: blendTint,
+  };
 
   const offSceneMotion =
     reducedMotion || !activeItem
@@ -685,7 +691,7 @@ export function LessonLearningMirror({
       >
         <div
           className={`${frameClass} flex flex-col items-center justify-center gap-1 p-2 text-center`}
-          style={{ background: scene?.tint ?? "#E8F6FF" }}
+          style={frameStyle}
         >
           {activeItem ? (
             <div
@@ -718,7 +724,7 @@ export function LessonLearningMirror({
   const liveBadge =
     mirror === "live" ? (
       <span
-        className="pointer-events-none absolute left-2 top-2 z-[2] rounded-full bg-[#2AA85A] px-2.5 py-0.5 font-[family-name:var(--font-nunito)] text-[11px] font-bold text-white shadow"
+        className="pointer-events-none absolute left-3 top-3 z-[2] rounded-full bg-white/90 px-2.5 py-0.5 font-[family-name:var(--font-nunito)] text-[10px] font-bold text-[#2AA85A] shadow-sm ring-1 ring-[#2AA85A]/35"
         data-testid="lesson-mirror-live-badge"
       >
         ● Live
@@ -857,10 +863,7 @@ export function LessonLearningMirror({
       data-mirror-live={mirror === "live" ? "true" : "false"}
       data-mirror-fallback={costume?.fallback ? "true" : "false"}
     >
-      <div
-        className={frameClass}
-        style={{ background: scene?.tint ?? "#E8F6FF" }}
-      >
+      <div className={frameClass} style={frameStyle}>
         {liveBadge}
         {media}
         {mirror !== "live" ? (

@@ -5,6 +5,7 @@ import type { AudioGameEvent, VoiceOption } from "@/lib/audio/audioTypes";
 import { SoundManager } from "@/lib/audio/SoundManager";
 import { SpeechManager } from "@/lib/audio/SpeechManager";
 import {
+  ASSOCIATION_LOOP_MS,
   ASSOCIATION_PAUSE_MS,
   ASSOCIATION_STEP_MS,
   getLessonCompletePhrase,
@@ -12,6 +13,7 @@ import {
   getPreviewPhrase,
   getStreakPhrase,
   getTargetTourLines,
+  getIdleFindHelpInstruction,
   getWrongInstruction,
 } from "@/lib/audio/speechPhrases";
 import { associationsFor } from "@/data/letterAssociations";
@@ -39,6 +41,10 @@ export class AudioManager {
   private focusIndex = 0;
   private assocStep: AssociationStep = { key: "", index: 0 };
   private assocListeners = new Set<() => void>();
+  /** Independent of speech bump — costume carousel while waiting for a key. */
+  private assocLoopGen = 0;
+  private assocLoopTimer: number | null = null;
+  private assocLoopKey: string | null = null;
 
   subscribeAssociation = (listener: () => void) => {
     this.assocListeners.add(listener);
@@ -69,6 +75,7 @@ export class AudioManager {
   }
 
   leaveScreen() {
+    this.stopAssocLoop();
     this.stopSpeech();
     this.sounds.stopLong();
   }
@@ -127,9 +134,25 @@ export class AudioManager {
 
     if (event.type === "TARGET_WRONG") {
       this.haltTour();
+      // Keep cycling costumes on the mirror while the child retries.
+      this.startAssocLoop(event.key);
       if (!settings?.sound) return;
       this.sounds.play("wrong");
       this.maybeWrongSpeech(event.key, event.attempts);
+      return;
+    }
+
+    if (event.type === "TARGET_FIND_HELP") {
+      if (!settings?.sound || !settings.voiceGuidance) return;
+      this.speech.cancel();
+      this.sounds.play("button");
+      const name = parseChildName(settings.childName) ?? undefined;
+      const line = getIdleFindHelpInstruction(
+        event.key,
+        name,
+        event.force === true,
+      );
+      this.say("high", "hint", 0, line);
       return;
     }
 
@@ -235,15 +258,26 @@ export class AudioManager {
     this.focusIndex = pinned ?? 0;
     const gen = this.generation;
     const stepMs = ASSOCIATION_STEP_MS;
+    const assocLineCount =
+      pinned != null && pinned >= 0 ? 1 : Math.max(items.length, 0);
 
     const play = (i: number) => {
       if (gen !== this.generation) return;
       const text = lines[i];
-      if (!text) return;
-      this.setAssoc(
-        key,
-        pinned ?? Math.min(i, Math.max(0, items.length - 1)),
-      );
+      if (!text) {
+        // Spoken tour finished — keep rotating costumes until the key is pressed.
+        this.startAssocLoop(key);
+        return;
+      }
+      if (pinned != null && pinned >= 0) {
+        this.setAssoc(key, pinned);
+      } else if (i < items.length) {
+        this.setAssoc(key, i);
+      }
+      // Prompt / review lines: start the 1s costume carousel while we wait.
+      if (i >= assocLineCount) {
+        this.startAssocLoop(key);
+      }
       const lineStarted = Date.now();
       const advance = () => {
         if (gen !== this.generation) return;
@@ -262,7 +296,8 @@ export class AudioManager {
       this.say("high", "instruction", 0, text, afterSpeak);
     };
 
-    this.setAssoc(key, 0);
+    this.stopAssocLoop();
+    this.setAssoc(key, pinned != null && pinned >= 0 ? pinned : 0);
     this.later(() => play(0), options.delay);
   }
 
@@ -278,7 +313,41 @@ export class AudioManager {
   private haltTour(pictureKey?: string) {
     this.bump();
     this.speech.cancel();
-    if (pictureKey) this.setAssoc(pictureKey, this.focusIndex);
+    if (pictureKey) {
+      this.stopAssocLoop();
+      this.setAssoc(pictureKey, this.focusIndex);
+    }
+  }
+
+  /** Cycle every association on the mirror (~1s) until stopAssocLoop / new target. */
+  private startAssocLoop(key: string) {
+    const items = associationsFor(key);
+    if (items.length <= 1) {
+      this.stopAssocLoop();
+      return;
+    }
+    if (this.assocLoopKey === key && this.assocLoopTimer != null) return;
+
+    this.stopAssocLoop();
+    this.assocLoopKey = key;
+    const loopGen = this.assocLoopGen;
+    const tick = () => {
+      if (loopGen !== this.assocLoopGen) return;
+      if (this.assocStep.key !== key) return;
+      const next = (this.assocStep.index + 1) % items.length;
+      this.setAssoc(key, next);
+      this.assocLoopTimer = window.setTimeout(tick, ASSOCIATION_LOOP_MS);
+    };
+    this.assocLoopTimer = window.setTimeout(tick, ASSOCIATION_LOOP_MS);
+  }
+
+  private stopAssocLoop() {
+    this.assocLoopGen += 1;
+    this.assocLoopKey = null;
+    if (this.assocLoopTimer != null) {
+      window.clearTimeout(this.assocLoopTimer);
+      this.assocLoopTimer = null;
+    }
   }
 
   private maybeCorrectSpeech(phrase: string, speakPraise: boolean, streak: number) {
@@ -352,6 +421,8 @@ export class AudioManager {
     this.generation += 1;
     for (const id of this.timers) window.clearTimeout(id);
     this.timers.clear();
+    // Costume loop uses its own timer; stopAssocLoop is called explicitly on
+    // correct / new target. Wrong presses restart the loop after haltTour.
   }
 
   private later(fn: () => void, ms: number) {

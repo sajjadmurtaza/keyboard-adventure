@@ -344,9 +344,40 @@ html.lesson-play body {
   z-index: 3;
 }
 
+/* 15s idle — even louder find-me pulse + purple ring. */
+@keyframes key-force {
+  0%,
+  100% {
+    transform: scale(1.18);
+    box-shadow:
+      0 5px 0 #c4a92e,
+      0 0 0 3px rgba(118, 87, 232, 0.55),
+      0 0 18px 6px rgba(255, 216, 90, 0.75);
+  }
+  50% {
+    transform: scale(1.48);
+    box-shadow:
+      0 8px 0 #c4a92e,
+      0 0 0 10px rgba(118, 87, 232, 0.4),
+      0 0 40px 16px rgba(255, 216, 90, 0.9);
+  }
+}
+
+.key-force {
+  animation: key-force 0.48s ease-in-out infinite;
+  z-index: 4;
+  outline: 3px solid rgba(118, 87, 232, 0.85);
+  outline-offset: 3px;
+}
+
 .keyboard-stage[data-find-help="true"] .keycap-idle {
   opacity: 0.48;
   filter: saturate(0.75);
+}
+
+.keyboard-stage[data-find-help-force="true"] .keycap-idle {
+  opacity: 0.28;
+  filter: saturate(0.45) brightness(0.92);
 }
 
 .keyboard-stage[data-find-help="true"] .keycap-target {
@@ -1034,9 +1065,9 @@ html.lesson-play body {
   min-height: var(--focus-band-height);
 }
 
-/* Mirror on: learning panel ~65%, Magic Mirror ~35%. */
+/* Mirror on: give the magic window more width (kid-friendly landscape). */
 .play-board .lesson-focus[data-has-mirror="true"] {
-  grid-template-columns: minmax(0, 65fr) minmax(0, 35fr);
+  grid-template-columns: minmax(0, 54fr) minmax(0, 46fr);
   grid-template-areas: "pair mirror";
 }
 
@@ -1148,20 +1179,59 @@ html.lesson-play body {
   min-height: 0;
   max-height: none;
   aspect-ratio: auto;
-  background: #e8f2ff;
-  /* Soft edge — avoid a harsh “picture frame” around the live feed */
-  border-color: transparent;
-  box-shadow: none;
+  /* Soft portal — matches the picture card, not a hard camera square */
+  border-radius: clamp(28px, 4.5vw, 48px);
+  border: 3px solid color-mix(in srgb, var(--mirror-blend, #d8e7ff) 55%, #ffffff);
+  background: var(--mirror-blend, #e8f2ff);
+  box-shadow:
+    0 12px 28px rgba(118, 87, 232, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+  overflow: hidden;
+  isolation: isolate;
 }
 
-/* Live: canvas fills the whole rounded panel (no letterbox inset). */
+/* Keep the scene tint when live — never a dark CCTV box. */
 .play-board .lesson-mirror-frame-play:has([data-testid="lesson-mirror-live-badge"]) {
-  background: #1a2438;
+  background: var(--mirror-blend, #e8f2ff);
 }
 
 .play-board .lesson-mirror-frame-play [data-testid="lesson-mirror-canvas"] {
   object-fit: cover;
   object-position: center center;
+  /* Feather the feed into the scene color so edges feel soft, not squared-off */
+  -webkit-mask-image: radial-gradient(
+    ellipse 96% 94% at 50% 48%,
+    #000 42%,
+    rgba(0, 0, 0, 0.92) 68%,
+    rgba(0, 0, 0, 0.55) 86%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 96% 94% at 50% 48%,
+    #000 42%,
+    rgba(0, 0, 0, 0.92) 68%,
+    rgba(0, 0, 0, 0.55) 86%,
+    transparent 100%
+  );
+}
+
+/* Soft vignette wash in the scene tint — only while the camera is live. */
+.play-board
+  .lesson-mirror-frame-play.lesson-mirror-portal:has(
+    [data-testid="lesson-mirror-live-badge"]
+  )::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse 88% 82% at 50% 45%,
+    transparent 40%,
+    color-mix(in srgb, var(--mirror-blend, #e8f2ff) 55%, transparent) 78%,
+    color-mix(in srgb, var(--mirror-blend, #e8f2ff) 88%, transparent) 100%
+  );
 }
 
 .play-board .association-area.association-card {
@@ -2054,14 +2124,54 @@ html.lesson-play body {
 }
 
 .magic-mirror-frame {
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 10;
   box-sizing: border-box;
-  width: min(34vw, calc(min(26dvh, 220px) * 4 / 3));
+  width: min(38vw, calc(min(26dvh, 220px) * 16 / 10));
   height: auto;
   max-height: min(26dvh, 220px);
-  min-width: 180px;
-  min-height: 135px;
+  min-width: 196px;
+  min-height: 122px;
   flex-shrink: 0;
+  border-radius: clamp(22px, 3vw, 36px);
+  border: 3px solid color-mix(in srgb, var(--mirror-blend, #d8e7ff) 55%, #ffffff);
+  background: var(--mirror-blend, #e8f2ff);
+  box-shadow:
+    0 10px 24px rgba(118, 87, 232, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.magic-mirror-frame.lesson-mirror-portal:has(
+    [data-testid="lesson-mirror-live-badge"]
+  )::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse 90% 84% at 50% 45%,
+    transparent 42%,
+    color-mix(in srgb, var(--mirror-blend, #e8f2ff) 50%, transparent) 80%,
+    color-mix(in srgb, var(--mirror-blend, #e8f2ff) 85%, transparent) 100%
+  );
+}
+
+.magic-mirror-frame [data-testid="lesson-mirror-canvas"] {
+  -webkit-mask-image: radial-gradient(
+    ellipse 96% 94% at 50% 48%,
+    #000 45%,
+    rgba(0, 0, 0, 0.9) 72%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 96% 94% at 50% 48%,
+    #000 45%,
+    rgba(0, 0, 0, 0.9) 72%,
+    transparent 100%
+  );
 }
 
 /* Mobile portrait: compact mirror, still-readable keys */
@@ -2097,10 +2207,10 @@ html.lesson-play body {
   }
 
   .magic-mirror-frame {
-    width: min(70vw, calc(min(20dvh, 160px) * 4 / 3));
+    width: min(78vw, calc(min(20dvh, 160px) * 16 / 10));
     max-height: min(20dvh, 160px);
-    min-width: 148px;
-    min-height: 111px;
+    min-width: 168px;
+    min-height: 105px;
   }
 
   .magic-learning-board .association-area.association-card.association-stage {
@@ -2111,7 +2221,7 @@ html.lesson-play body {
 
 @media (max-height: 759px) {
   .magic-mirror-frame {
-    width: min(30vw, calc(min(22dvh, 180px) * 4 / 3));
+    width: min(34vw, calc(min(22dvh, 180px) * 16 / 10));
     max-height: min(22dvh, 180px);
   }
 
@@ -2132,10 +2242,10 @@ html.lesson-play body {
   }
 
   .magic-mirror-frame {
-    width: min(26vw, calc(min(18dvh, 140px) * 4 / 3));
+    width: min(30vw, calc(min(18dvh, 140px) * 16 / 10));
     max-height: min(18dvh, 140px);
-    min-width: 132px;
-    min-height: 99px;
+    min-width: 148px;
+    min-height: 92px;
   }
 
   .magic-learning-stage {
@@ -2167,10 +2277,10 @@ html.lesson-play body {
   }
 
   .magic-mirror-frame {
-    width: min(24vw, calc(min(42dvh, 140px) * 4 / 3));
+    width: min(28vw, calc(min(42dvh, 140px) * 16 / 10));
     max-height: min(42dvh, 140px);
-    min-width: 120px;
-    min-height: 90px;
+    min-width: 140px;
+    min-height: 88px;
   }
 }
 
@@ -2192,6 +2302,7 @@ html.lesson-play body {
   .key-glow,
   .key-glow-strong,
   .key-pump,
+  .key-force,
   .key-miss,
   .key-hit,
   .star-pop,

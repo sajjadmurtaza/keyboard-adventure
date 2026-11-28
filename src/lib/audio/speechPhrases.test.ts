@@ -7,6 +7,7 @@ import {
   getAssociationLine,
   getTargetInstruction,
   getTargetTourLines,
+  getIdleFindHelpInstruction,
   getWrongInstruction,
   pickFresh,
   shouldSayName,
@@ -73,6 +74,16 @@ describe("speech phrases", () => {
     expect(getWrongInstruction("j", 6)).toBe("Try jay again.");
     expect(getWrongInstruction("j", 4)).toBeNull();
     expect(spokenKey(";")).toBe("semicolon");
+  });
+
+  it("speaks a stronger find prompt after a long idle", () => {
+    expect(getIdleFindHelpInstruction("f", "Ada", true)).toBe(
+      "Ada, look! Find eff and press it now!",
+    );
+    expect(getIdleFindHelpInstruction("f", undefined, true)).toBe(
+      "Look! Find eff and press it now!",
+    );
+    expect(getIdleFindHelpInstruction(" ", "Ada", true)).toMatch(/space bar now/i);
   });
 
   it("names celebrations", () => {

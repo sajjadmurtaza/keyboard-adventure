@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { FingerGuide } from "@/components/FingerGuide";
 import { KeyboardKey } from "@/components/KeyboardKey";
 import {
+  isForceFindHelp,
   showTargetFingerPoint,
   targetKeyTone,
 } from "@/components/keyboardFindHelp";
@@ -37,6 +38,7 @@ export function VirtualKeyboard({
   const rows = keyboardRows(layout);
   const stageRef = useRef<HTMLDivElement>(null);
   const findHelp = helpLevel >= 1 || mood === "retry";
+  const forceHelp = isForceFindHelp(helpLevel);
   const point = showTargetFingerPoint(helpLevel, mood);
 
   function toneFor(key: string) {
@@ -58,6 +60,7 @@ export function VirtualKeyboard({
       data-testid="visual-keyboard"
       data-layout={layout}
       data-find-help={findHelp ? "true" : "false"}
+      data-find-help-force={forceHelp ? "true" : "false"}
       data-help-level={String(helpLevel)}
     >
       <div className="keyboard-shell">

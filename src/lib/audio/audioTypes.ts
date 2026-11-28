@@ -37,6 +37,8 @@ export type AudioGameEvent =
       speakTeach?: boolean;
     }
   | { type: "TARGET_WRONG"; key: string; attempts: number }
+  /** Child idle too long — speak a find-the-key nudge (force = 15s escalation). */
+  | { type: "TARGET_FIND_HELP"; key: string; force?: boolean }
   | { type: "STREAK_3" }
   | { type: "STREAK_5" }
   | { type: "LESSON_COMPLETE" }

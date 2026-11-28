@@ -81,6 +81,8 @@ export function shouldSayName(
 export const ASSOCIATION_STEP_MS = 2200;
 export const ASSOCIATION_PAUSE_MS = 520;
 export const ASSOCIATION_REWARD_DELAY_MS = 1200;
+/** After the spoken tour, cycle Fish→Frog→Flower… on the mirror until the key is pressed. */
+export const ASSOCIATION_LOOP_MS = 1000;
 
 export function getAssociationLine(key: string, word: string): string {
   return `${spokenKey(key)} is for ${word}!`;
@@ -165,6 +167,30 @@ export function getWrongInstruction(
   }
   if (attempts % 3 === 0) return `Try ${label} again.`;
   return null;
+}
+
+/** Spoken nudge when the child has not pressed for a long idle stretch. */
+export function getIdleFindHelpInstruction(
+  key: string,
+  name?: string,
+  force = false,
+): string {
+  const label = spokenKey(key);
+  const who = parseChildName(name ?? "") ?? "";
+  if (normalizeTarget(key) === " ") {
+    if (force) {
+      return who
+        ? `${who}, look at the keyboard! Press the space bar now!`
+        : "Look at the keyboard! Press the space bar now!";
+    }
+    return who ? `${who}, press the space bar.` : "Press the space bar.";
+  }
+  if (force) {
+    return who
+      ? `${who}, look! Find ${label} and press it now!`
+      : `Look! Find ${label} and press it now!`;
+  }
+  return who ? `${who}, find ${label}.` : `Find ${label}.`;
 }
 
 export function getStreakPhrase(streak: number, name?: string): string {

@@ -7,7 +7,10 @@ import { ChildNameSetup } from "@/components/ChildNameSetup";
 import { AdventureMap } from "@/components/AdventureMap";
 import { FeedbackMessage } from "@/components/FeedbackMessage";
 import { LessonComplete } from "@/components/LessonComplete";
-import { FIND_HELP_IDLE_SEC } from "@/components/keyboardFindHelp";
+import {
+  FIND_HELP_FORCE_SEC,
+  FIND_HELP_IDLE_SEC,
+} from "@/components/keyboardFindHelp";
 import { Mascot } from "@/components/Mascot";
 import { ParentSettingsPanel } from "@/components/ParentSettings";
 import { ProgressStars } from "@/components/ProgressStars";
@@ -222,19 +225,29 @@ export function KeyboardAdventure() {
   const target = sequence[index] ?? "f";
   const childName = settings.childName.trim();
 
-  // If the child doesn't press anything for 5s, pump the target key harder.
+  // Idle find-help: 5s pump + finger, 15s force highlight + voice nudge.
   useEffect(() => {
     if (view !== "play") return;
     if (lessonPhase !== "ready") return;
     if (mood !== "idle") return;
     const gen = lessonGenRef.current;
-    const timer = window.setTimeout(() => {
+    const wanted = target;
+    const soft = window.setTimeout(() => {
       if (gen !== lessonGenRef.current) return;
       if (phaseRef.current !== "ready") return;
       setHelpLevel((level) => Math.max(level, 2));
     }, FIND_HELP_IDLE_SEC * 1000);
-    return () => window.clearTimeout(timer);
-  }, [view, lessonPhase, mood, index, target]);
+    const force = window.setTimeout(() => {
+      if (gen !== lessonGenRef.current) return;
+      if (phaseRef.current !== "ready") return;
+      setHelpLevel((level) => Math.max(level, 3));
+      audio?.notify({ type: "TARGET_FIND_HELP", key: wanted, force: true });
+    }, FIND_HELP_FORCE_SEC * 1000);
+    return () => {
+      window.clearTimeout(soft);
+      window.clearTimeout(force);
+    };
+  }, [view, lessonPhase, mood, index, target, audio]);
 
   useEffect(() => {
     audio?.configure(settings);
@@ -1129,7 +1142,11 @@ function Play({
     </div>
   ) : compact && !tightKb ? (
     <div className="flex shrink-0 flex-col items-center" data-testid="mini-key">
-      <MiniKeyHint target={target} pulse={helpLevel >= 1 || mood === "retry"} />
+      <MiniKeyHint
+        target={target}
+        pulse={helpLevel >= 1 || mood === "retry"}
+        force={helpLevel >= 3}
+      />
       {showTypeButton ? (
         <StartTypingButton miss={mood === "retry"} onPress={onStartTyping} />
       ) : null}

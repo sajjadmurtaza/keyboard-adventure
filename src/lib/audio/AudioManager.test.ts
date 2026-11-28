@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AudioManager } from "@/lib/audio/AudioManager";
 import {
   ASSOCIATION_PAUSE_MS,
+  ASSOCIATION_LOOP_MS,
   ASSOCIATION_STEP_MS,
 } from "@/lib/audio/speechPhrases";
 import { AUDIO_TIMING } from "@/lib/audio/audioTypes";
@@ -137,6 +138,30 @@ describe("AudioManager letter tour", () => {
     await finishLine(speech);
     expect(speech.spoken.at(-1)?.text).toBe("Ada, type eff.");
     expect(audio.getAssociation()).toEqual({ key: "f", index: 2 });
+
+    // After the tour, costumes keep rotating every second until the key is pressed.
+    await vi.advanceTimersByTimeAsync(ASSOCIATION_LOOP_MS);
+    expect(audio.getAssociation()).toEqual({ key: "f", index: 0 });
+    await vi.advanceTimersByTimeAsync(ASSOCIATION_LOOP_MS);
+    expect(audio.getAssociation()).toEqual({ key: "f", index: 1 });
+    await vi.advanceTimersByTimeAsync(ASSOCIATION_LOOP_MS);
+    expect(audio.getAssociation()).toEqual({ key: "f", index: 2 });
+  });
+
+  it("keeps rotating associations after a wrong press while waiting to retry", async () => {
+    const speech = installSpeech();
+    const audio = new AudioManager();
+    audio.configure(settings());
+    shownF(audio);
+    await vi.advanceTimersByTimeAsync(nextLetterSpeechDelay(settings()));
+    await finishLine(speech);
+    audio.notify({ type: "TARGET_WRONG", key: "f", attempts: 1 });
+    const before = audio.getAssociation().index;
+    await vi.advanceTimersByTimeAsync(ASSOCIATION_LOOP_MS);
+    expect(audio.getAssociation()).toEqual({
+      key: "f",
+      index: (before + 1) % 3,
+    });
   });
 
   it("does not replay Fish/Frog/Flower after a correct key — only praise", async () => {
@@ -320,6 +345,18 @@ describe("AudioManager letter tour", () => {
     await vi.advanceTimersByTimeAsync(nextLetterSpeechDelay(settings()));
     audio.notify({ type: "TARGET_WRONG", key: "f", attempts: 1 });
     expect(speech.spoken.map((item) => item.text)).toEqual(["eff is for Fish!"]);
+  });
+
+  it("speaks a force find-help nudge when the child idles too long", async () => {
+    const speech = installSpeech();
+    const audio = new AudioManager();
+    audio.configure(settings({ childName: "Ada" }));
+    shownF(audio);
+    await vi.advanceTimersByTimeAsync(nextLetterSpeechDelay(settings()));
+    audio.notify({ type: "TARGET_FIND_HELP", key: "f", force: true });
+    expect(speech.spoken.at(-1)?.text).toBe(
+      "Ada, look! Find eff and press it now!",
+    );
   });
 
   it("tours punctuation associations like letters (Stop → Pause → Wink)", async () => {
